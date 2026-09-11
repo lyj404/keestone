@@ -127,13 +127,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       const SizedBox(height: 16),
       ..._withGaps(_securityCards()),
       const SizedBox(height: 16),
-      Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: _withGaps(_syncCards()),
-        ),
-      ),
+      // _syncCards() already wraps its content in Form(_formKey).
+      ..._withGaps(_syncCards()),
       const SizedBox(height: 16),
       ..._withGaps(_databaseCards()),
     ];
