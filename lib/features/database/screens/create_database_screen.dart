@@ -1,12 +1,15 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
+import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/database_provider.dart';
 
@@ -60,108 +63,112 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.createDatabase)),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Clay icon
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          ClayColors.primary.withValues(alpha: 0.15),
-                          ClayColors.secondary.withValues(alpha: 0.1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ClayColors.primary.withValues(alpha: 0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Icon(Icons.add_rounded, size: 34, color: colorScheme.primary),
-                  ),
-                  const SizedBox(height: 28),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: l10n.databaseName,
-                      prefixIcon: const Icon(Icons.badge_outlined),
-                    ),
-                    validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
-                  ),
-                  const SizedBox(height: 14),
-                  PasswordTextField(
-                    controller: _passwordController,
-                    labelText: l10n.masterPassword,
-                    showStrengthIndicator: true,
-                    validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterPassword : null,
-                  ),
-                  const SizedBox(height: 14),
-                  PasswordTextField(
-                    controller: _confirmController,
-                    labelText: l10n.confirmPassword,
-                    validator: (v) => v != _passwordController.text ? l10n.passwordsNotMatch : null,
-                  ),
-                  const SizedBox(height: 14),
-                  OutlinedButton.icon(
-                    onPressed: _pickSaveLocation,
-                    icon: Icon(_savePath != null ? Icons.check_circle_outline_rounded : Icons.save_as_rounded, size: 18),
-                    label: Text(
-                      _savePath == null
-                          ? l10n.selectSaveLocation
-                          : _savePath!.split('/').last.split('\\').last,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
-                      foregroundColor: _savePath != null ? colorScheme.primary : null,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildKeyFilePicker(l10n, colorScheme),
-                  const SizedBox(height: 24),
-                  dbState.isLoading
-                      ? SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: colorScheme.primary),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: ClayColors.primary.withValues(alpha: 0.3),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Clay icon
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              ClayColors.primary.withValues(alpha: 0.15),
+                              ClayColors.secondary.withValues(alpha: 0.1),
                             ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          child: FilledButton(
-                            onPressed: _savePath != null ? _create : null,
-                            style: FilledButton.styleFrom(
-                              minimumSize: const Size.fromHeight(50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: ClayColors.primary.withValues(alpha: 0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
-                            child: Text(l10n.create),
-                          ),
+                          ],
                         ),
-                ],
+                        child: Icon(Icons.add_rounded, size: 34, color: colorScheme.primary),
+                      ),
+                      const SizedBox(height: 28),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.databaseName,
+                          prefixIcon: const Icon(Icons.badge_outlined),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
+                      ),
+                      const SizedBox(height: 14),
+                      PasswordTextField(
+                        controller: _passwordController,
+                        labelText: l10n.masterPassword,
+                        showStrengthIndicator: true,
+                        validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterPassword : null,
+                      ),
+                      const SizedBox(height: 14),
+                      PasswordTextField(
+                        controller: _confirmController,
+                        labelText: l10n.confirmPassword,
+                        validator: (v) => v != _passwordController.text ? l10n.passwordsNotMatch : null,
+                      ),
+                      const SizedBox(height: 14),
+                      OutlinedButton.icon(
+                        onPressed: _pickSaveLocation,
+                        icon: Icon(_savePath != null ? Icons.check_circle_outline_rounded : Icons.save_as_rounded, size: 18),
+                        label: Text(
+                          _savePath == null
+                              ? l10n.selectSaveLocation
+                              : _savePath!.split('/').last.split('\\').last,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                          foregroundColor: _savePath != null ? colorScheme.primary : null,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildKeyFilePicker(l10n, colorScheme),
+                      const SizedBox(height: 24),
+                      dbState.isLoading
+                          ? SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, color: colorScheme.primary),
+                            )
+                          : Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: ClayColors.primary.withValues(alpha: 0.3),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: FilledButton(
+                                onPressed: _savePath != null ? _create : null,
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(50),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                ),
+                                child: Text(l10n.create),
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -172,6 +179,15 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
 
   Future<void> _pickSaveLocation() async {
     final l10n = AppLocalizations.of(context)!;
+    // Android/iOS FilePicker.saveFile requires `bytes` up front, so we cannot
+    // only pick a path before the KDBX exists. Use app documents instead.
+    if (Platform.isAndroid || Platform.isIOS) {
+      final path = await _defaultMobileSavePath();
+      if (!mounted) return;
+      setState(() => _savePath = path);
+      showToast(context, path.split('/').last);
+      return;
+    }
     final result = await FilePicker.platform.saveFile(
       dialogTitle: l10n.saveDatabase,
       fileName: '${_nameController.text}${AppConstants.kdbxExtension}',
@@ -183,12 +199,27 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
     }
   }
 
-  void _create() {
+  Future<String> _defaultMobileSavePath() async {
+    final dir = await getApplicationDocumentsDirectory();
+    var name = _nameController.text.trim();
+    if (name.isEmpty) name = 'database';
+    // Keep the leaf name filesystem-safe on Android/iOS.
+    name = name.replaceAll(RegExp(r'[/\\:*?"<>|]'), '_');
+    return '${dir.path}/$name${AppConstants.kdbxExtension}';
+  }
+
+  Future<void> _create() async {
     if (!_formKey.currentState!.validate() || _savePath == null) return;
-    ref.read(databaseProvider.notifier).createDatabase(
+    var savePath = _savePath!;
+    if (Platform.isAndroid || Platform.isIOS) {
+      // Recompute so a later rename of the database still lands on a valid path.
+      savePath = await _defaultMobileSavePath();
+      if (mounted) setState(() => _savePath = savePath);
+    }
+    await ref.read(databaseProvider.notifier).createDatabase(
           _nameController.text,
           _passwordController.text,
-          _savePath!,
+          savePath,
           keyData: _keyData,
         );
   }

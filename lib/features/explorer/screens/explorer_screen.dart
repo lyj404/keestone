@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import '../../../core/utils/logger.dart';
@@ -20,7 +21,7 @@ import '../../../core/services/background_service.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/data/database_service.dart'
-    show SyncAuditChange, SyncAuditReport;
+    show DatabaseService, SyncAuditChange, SyncAuditReport;
 import '../../database/providers/database_provider.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../sync/providers/sync_provider.dart';
@@ -1075,18 +1076,22 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     if (confirmed != true || !context.mounted) return;
     final csvService = ref.read(csvServiceProvider);
     final csvContent = csvService.exportToCsv(entries);
-
-    final savePath = await FilePicker.platform.saveFile(
-      dialogTitle: l10n.exportCsv,
-      fileName: 'passwords.csv',
-      type: FileType.custom,
-      allowedExtensions: ['csv'],
-    );
-    if (savePath == null) return;
+    final csvBytes = Uint8List.fromList(utf8.encode(csvContent));
 
     try {
-      final file = File(savePath);
-      await file.writeAsString(csvContent, encoding: utf8);
+      // Android/iOS saveFile requires bytes; desktop picks a path then we write.
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.exportCsv,
+        fileName: 'passwords.csv',
+        type: FileType.custom,
+        allowedExtensions: ['csv'],
+        bytes: (Platform.isAndroid || Platform.isIOS) ? csvBytes : null,
+      );
+      if (savePath == null || !context.mounted) return;
+
+      if (!Platform.isAndroid && !Platform.isIOS) {
+        await File(savePath).writeAsBytes(csvBytes);
+      }
       if (context.mounted) showToast(context, l10n.exportSuccess);
     } catch (e) {
       if (context.mounted) showToast(context, l10n.exportFailed, isError: true);
@@ -1098,18 +1103,21 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     final dbService = ref.read(databaseServiceProvider);
     if (dbService.db == null) return;
 
-    final savePath = await FilePicker.platform.saveFile(
-      dialogTitle: l10n.exportKdbx,
-      fileName: 'database.kdbx',
-      type: FileType.custom,
-      allowedExtensions: ['kdbx'],
-    );
-    if (savePath == null) return;
-
     try {
       final bytes = await dbService.saveToBytes();
-      final file = File(savePath);
-      await file.writeAsBytes(bytes);
+      final isMobile = Platform.isAndroid || Platform.isIOS;
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: l10n.exportKdbx,
+        fileName: 'database.kdbx',
+        type: isMobile ? FileType.any : FileType.custom,
+        allowedExtensions: isMobile ? null : ['kdbx'],
+        bytes: isMobile ? bytes : null,
+      );
+      if (savePath == null || !context.mounted) return;
+
+      if (!Platform.isAndroid && !Platform.isIOS) {
+        await File(savePath).writeAsBytes(bytes);
+      }
       if (context.mounted) showToast(context, l10n.exportSuccess);
     } catch (e) {
       if (context.mounted) showToast(context, l10n.exportFailed, isError: true);

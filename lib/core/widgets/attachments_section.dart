@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:kpasslib/kpasslib.dart';
 import 'package:file_picker/file_picker.dart';
@@ -127,11 +128,17 @@ class AttachmentsSection extends StatelessWidget {
     if (data == null) return;
 
     try {
+      // Android/iOS saveFile requires the payload up front.
       final savePath = await FilePicker.platform.saveFile(
         fileName: name,
+        bytes: (Platform.isAndroid || Platform.isIOS)
+            ? Uint8List.fromList(data.data)
+            : null,
       );
       if (savePath == null) return;
-      await File(savePath).writeAsBytes(data.data);
+      if (!Platform.isAndroid && !Platform.isIOS) {
+        await File(savePath).writeAsBytes(data.data);
+      }
       if (context.mounted) showToast(context, l10n.attachmentSaved);
     } catch (e) {
       log.e('Save attachment failed', error: e);

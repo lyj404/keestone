@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
@@ -433,17 +434,20 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   Future<void> _openFile(BuildContext context) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['kdbx'],
-    );
-    if (result != null && result.files.single.path != null) {
+    try {
+      // Android/iOS FilePicker has no MIME mapping for `.kdbx` custom types.
+      final isMobile = Platform.isAndroid || Platform.isIOS;
+      final result = await FilePicker.platform.pickFiles(
+        type: isMobile ? FileType.any : FileType.custom,
+        allowedExtensions: isMobile ? null : ['kdbx'],
+      );
+      final path = result?.files.single.path;
+      if (path != null && context.mounted) {
+        unawaited(context.push('/unlock?path=${Uri.encodeComponent(path)}'));
+      }
+    } on PlatformException catch (e) {
       if (context.mounted) {
-        unawaited(
-          context.push(
-            '/unlock?path=${Uri.encodeComponent(result.files.single.path!)}',
-          ),
-        );
+        _showErrorDialog(context, e.message ?? e.code);
       }
     }
   }

@@ -19,27 +19,28 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
   KdbxEntry? _entry;
   bool _saved = false;
   bool _wasDirtyBeforeCreate = false;
+  late final DatabaseService _service;
 
   @override
   void initState() {
     super.initState();
-    final service = ref.read(databaseServiceProvider);
-    _wasDirtyBeforeCreate = service.isDirty;
-    _entry = service.createEntry(widget.group);
+    _service = ref.read(databaseServiceProvider);
+    _wasDirtyBeforeCreate = _service.isDirty;
+    _entry = _service.createEntry(widget.group);
   }
 
   @override
   void dispose() {
+    // Do not use `ref` here: dispose can run after the element is gone.
     if (!_saved && _entry != null) {
-      final service = ref.read(databaseServiceProvider);
       // Permanent discard (not recycle-bin) for abandoned draft entries.
-      service.discardItem(_entry!);
+      _service.discardItem(_entry!);
       // Restore dirty state: if database was clean before createEntry,
       // revert to clean since we're discarding the only change.
       if (!_wasDirtyBeforeCreate) {
-        service.markClean();
+        _service.markClean();
       }
-      service.rebuildEntryCache();
+      _service.rebuildEntryCache();
     }
     _titleCtrl.dispose();
     _usernameCtrl.dispose();
