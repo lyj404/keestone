@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:kpasslib/kpasslib.dart';
 import '../../database/providers/database_provider.dart';
 
 final currentGroupPathProvider = StateProvider<String>((ref) => '');
 
 final currentGroupProvider = Provider<KdbxGroup?>((ref) {
-  final db = ref.watch(databaseProvider).valueOrNull;
+  final db = ref.watch(databaseProvider).value;
   if (db == null) return null;
   final path = ref.watch(currentGroupPathProvider);
   final service = ref.read(databaseServiceProvider);
@@ -17,7 +18,7 @@ final selectedTagProvider = StateProvider<String?>((ref) => null);
 
 /// All unique tags across the entire database, sorted alphabetically.
 final allTagsProvider = Provider<List<String>>((ref) {
-  final db = ref.watch(databaseProvider).valueOrNull;
+  final db = ref.watch(databaseProvider).value;
   if (db == null) return [];
   final service = ref.read(databaseServiceProvider);
   final sorted = service.allTags.toList()..sort();
@@ -31,7 +32,7 @@ final isSavingProvider = StateProvider<bool>((ref) => false);
 final isRecycleBinProvider = Provider<bool>((ref) {
   final group = ref.watch(currentGroupProvider);
   if (group == null) return false;
-  final db = ref.watch(databaseProvider).valueOrNull;
+  final db = ref.watch(databaseProvider).value;
   if (db == null) return false;
   final recycleBinUuid = db.meta.recycleBinUuid;
   if (recycleBinUuid == null) return false;

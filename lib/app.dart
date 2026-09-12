@@ -58,7 +58,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
       // WM_DWMCOLORIZATIONCOLORCHANGED can reset the title bar to the OS
       // theme while we are in the background; re-assert the app theme.
       _syncWindowTitleBar(ref.read(themeModeProvider));
-      final db = ref.read(databaseProvider).valueOrNull;
+      final db = ref.read(databaseProvider).value;
       if (db != null) {
         ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db);
       }
@@ -77,7 +77,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
         !Platform.isLinux &&
         !Platform.isMacOS) {
       final notifier = ref.read(databaseProvider.notifier);
-      if (ref.read(databaseProvider).valueOrNull != null && notifier.isDirty) {
+      if (ref.read(databaseProvider).value != null && notifier.isDirty) {
         unawaited(
           notifier.save().then(
             (_) {},
@@ -121,7 +121,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
 
     // Copy shortcuts require an active entry in an unlocked database.
     final activeEntry = ref.read(activeEntryProvider);
-    final dbUnlocked = ref.read(databaseProvider).valueOrNull != null;
+    final dbUnlocked = ref.read(databaseProvider).value != null;
     if (activeEntry == null || !dbUnlocked) return KeyEventResult.ignored;
 
     String? message;

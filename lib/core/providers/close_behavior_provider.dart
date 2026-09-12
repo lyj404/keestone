@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../utils/secure_storage_helper.dart';
 
 /// What happens when the user clicks the window close button.

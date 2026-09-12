@@ -78,16 +78,11 @@ class KeyFilePicker extends StatelessWidget {
   }
 
   Future<void> _pickKeyFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      withData: true,
-    );
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      if (file.bytes != null) {
-        onKeyDataChanged(file.bytes);
-        onKeyNameChanged(file.name);
-      }
+    final file = await FilePicker.pickFile(type: FileType.any);
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      onKeyDataChanged(bytes);
+      onKeyNameChanged(file.name);
     }
   }
 }

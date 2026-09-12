@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../utils/logger.dart';
 import '../utils/secure_storage_helper.dart';
 import '../../features/database/providers/database_provider.dart';
@@ -51,7 +52,7 @@ class AutoSaveNotifier extends StateNotifier<int> {
 
   bool get _hasOpenDirtyDb {
     final dbState = _ref.read(databaseProvider);
-    return dbState.valueOrNull != null && _ref.read(isDirtyProvider);
+    return dbState.value != null && _ref.read(isDirtyProvider);
   }
 
   void _scheduleIdle() {

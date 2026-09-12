@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../utils/secure_storage_helper.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/database/providers/database_provider.dart';
@@ -47,7 +48,7 @@ class AutoLockNotifier extends StateNotifier<int> {
   Future<void> _lockAsync() async {
     final dbNotifier = _ref.read(databaseProvider.notifier);
     final dbState = _ref.read(databaseProvider);
-    final hasDb = dbState.valueOrNull != null;
+    final hasDb = dbState.value != null;
     if (!hasDb) return;
 
     final lockFuture = dbNotifier.lock();

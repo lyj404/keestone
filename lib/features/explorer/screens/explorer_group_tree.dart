@@ -32,7 +32,7 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
 
   @override
   Widget build(BuildContext context) {
-    final db = ref.watch(databaseProvider).valueOrNull;
+    final db = ref.watch(databaseProvider).value;
     if (db == null) return const SizedBox.shrink();
 
     // Expand all groups when database changes (first open or reload from cloud).

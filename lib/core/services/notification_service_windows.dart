@@ -11,40 +11,44 @@ class WindowsNotificationHelper {
   factory WindowsNotificationHelper() => _instance;
   WindowsNotificationHelper._();
 
-  int _hWnd = 0;
+  HWND _hWnd = HWND(nullptr);
   bool _classRegistered = false;
-  late final int _hInstance;
-  late final Pointer<Utf16> _classNamePtr;
-  late final Pointer<Utf16> _windowTitlePtr;
+  late final HINSTANCE _hInstance;
+  late final PCWSTR _classNamePtr;
+  late final PCWSTR _windowTitlePtr;
+  Pointer<NativeFunction<WNDPROC>>? _wndProc;
 
   void _ensureInitialized() {
     if (_classRegistered) return;
 
-    _hInstance = GetModuleHandle(nullptr);
-    const className = 'KeeStoneNotifyWnd';
-    _classNamePtr = className.toNativeUtf16();
-    _windowTitlePtr = 'KeeStone Notify'.toNativeUtf16();
+    _hInstance = HINSTANCE(GetModuleHandle(null).value);
+    _classNamePtr = 'KeeStoneNotifyWnd'.toPcwstr();
+    _windowTitlePtr = 'KeeStone Notify'.toPcwstr();
+    _wndProc = Pointer.fromFunction<WNDPROC>(_defWindowProc, 0);
 
     final wc = calloc<WNDCLASS>();
     try {
-      wc.ref.lpfnWndProc =
-          Pointer.fromFunction(WindowsNotificationHelper._defWindowProc, 0);
+      wc.ref.lpfnWndProc = _wndProc!;
       wc.ref.hInstance = _hInstance;
-      wc.ref.lpszClassName = _classNamePtr;
+      wc.ref.lpszClassName = PWSTR(_classNamePtr.cast());
       RegisterClass(wc);
       _classRegistered = true;
 
-      _hWnd = CreateWindowEx(
-        0,
+      final result = CreateWindowEx(
+        WINDOW_EX_STYLE(0),
         _classNamePtr,
         _windowTitlePtr,
+        WINDOW_STYLE(0),
         0,
-        0, 0, 0, 0,
+        0,
+        0,
+        0,
         HWND_MESSAGE,
-        0,
+        null,
         _hInstance,
         nullptr,
       );
+      _hWnd = result.value;
     } finally {
       calloc.free(wc);
     }
@@ -53,7 +57,7 @@ class WindowsNotificationHelper {
   void showBalloon(String title, String body) {
     _ensureInitialized();
 
-    if (_hWnd == 0) return;
+    if (_hWnd.isNull) return;
 
     final nid = calloc<NOTIFYICONDATA>();
     try {
@@ -66,7 +70,7 @@ class WindowsNotificationHelper {
       // previous NIM_ADD(NIF_INFO) + immediate NIM_DELETE made Explorer
       // cancel the balloon before it was visible.
       nid.ref.uFlags = NIF_MESSAGE;
-      if (Shell_NotifyIcon(NIM_ADD, nid) != 0) {
+      if (Shell_NotifyIcon(NIM_ADD, nid)) {
         nid.ref.uFlags = NIF_INFO;
         nid.ref.dwInfoFlags = NIIF_INFO;
         nid.ref.Anonymous.uTimeout = 10000;
@@ -92,19 +96,24 @@ class WindowsNotificationHelper {
     }
   }
 
-  static int _defWindowProc(int hWnd, int uMsg, int wParam, int lParam) {
-    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+  static int _defWindowProc(
+    Pointer hWnd,
+    int uMsg,
+    int wParam,
+    int lParam,
+  ) {
+    return DefWindowProc(HWND(hWnd), uMsg, WPARAM(wParam), LPARAM(lParam));
   }
 
   void dispose() {
-    if (_hWnd != 0) {
+    if (!_hWnd.isNull) {
       DestroyWindow(_hWnd);
-      _hWnd = 0;
+      _hWnd = HWND(nullptr);
     }
     if (_classRegistered) {
       UnregisterClass(_classNamePtr, _hInstance);
-      calloc.free(_classNamePtr);
-      calloc.free(_windowTitlePtr);
+      free(_classNamePtr);
+      free(_windowTitlePtr);
       _classRegistered = false;
     }
   }

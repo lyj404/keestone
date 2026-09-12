@@ -97,7 +97,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                             ),
                             loading: () =>
                                 const SizedBox(width: 48, height: 32),
-                            error: (_, __) => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
                           ),
                         ],
                       ),
@@ -164,7 +164,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                             ),
                             loading: () =>
                                 const SizedBox(width: 48, height: 32),
-                            error: (_, __) => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
                           ),
                         ],
                       ),

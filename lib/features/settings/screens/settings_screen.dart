@@ -524,7 +524,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _autoLockCard(brightness, l10n),
       _privacyCard(brightness, l10n),
       if ((Platform.isAndroid || Platform.isIOS) &&
-          ref.watch(biometricAvailableProvider).valueOrNull == true)
+          ref.watch(biometricAvailableProvider).value == true)
         _unlockMethodCard(brightness, l10n),
     ];
   }

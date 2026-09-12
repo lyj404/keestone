@@ -20,13 +20,13 @@ class NotificationService {
 
     if (Platform.isLinux) {
       await _plugin.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           linux: LinuxInitializationSettings(defaultActionName: 'Open'),
         ),
       );
     } else if (Platform.isAndroid) {
       await _plugin.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         ),
       );
@@ -37,7 +37,7 @@ class NotificationService {
           ?.requestNotificationsPermission();
     } else if (Platform.isMacOS) {
       await _plugin.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           macOS: DarwinInitializationSettings(
             requestAlertPermission: true,
             requestBadgePermission: false,
@@ -47,7 +47,7 @@ class NotificationService {
       );
     } else if (Platform.isIOS) {
       await _plugin.initialize(
-        const InitializationSettings(
+        settings: const InitializationSettings(
           iOS: DarwinInitializationSettings(
             requestAlertPermission: true,
             requestBadgePermission: false,
@@ -78,10 +78,10 @@ class NotificationService {
 
     if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
       await _plugin.show(
-        0,
-        title,
-        body,
-        NotificationDetails(
+        id: 0,
+        title: title,
+        body: body,
+        notificationDetails: NotificationDetails(
           android: Platform.isAndroid
               ? const AndroidNotificationDetails(
                   'expiry_reminder',
@@ -116,10 +116,12 @@ class NotificationService {
   Future<void> _showLinuxNotification(String title, String body) async {
     try {
       await _plugin.show(
-        0,
-        title,
-        body,
-        const NotificationDetails(linux: LinuxNotificationDetails()),
+        id: 0,
+        title: title,
+        body: body,
+        notificationDetails: const NotificationDetails(
+          linux: LinuxNotificationDetails(),
+        ),
       );
     } catch (_) {
       // Fallback to notify-send if plugin fails

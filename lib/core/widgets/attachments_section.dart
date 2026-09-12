@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:kpasslib/kpasslib.dart';
@@ -100,11 +99,9 @@ class AttachmentsSection extends StatelessWidget {
   Future<void> _addAttachment(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     try {
-      final result = await FilePicker.platform.pickFiles(withData: true);
-      if (result == null || result.files.isEmpty) return;
-      final file = result.files.single;
-      final bytes = file.bytes;
-      if (bytes == null) return;
+      final file = await FilePicker.pickFile();
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
 
       final db = service.db;
       if (db == null) return;
@@ -128,17 +125,11 @@ class AttachmentsSection extends StatelessWidget {
     if (data == null) return;
 
     try {
-      // Android/iOS saveFile requires the payload up front.
-      final savePath = await FilePicker.platform.saveFile(
+      final savePath = await FilePicker.saveFile(
         fileName: name,
-        bytes: (Platform.isAndroid || Platform.isIOS)
-            ? Uint8List.fromList(data.data)
-            : null,
+        bytes: Uint8List.fromList(data.data),
       );
       if (savePath == null) return;
-      if (!Platform.isAndroid && !Platform.isIOS) {
-        await File(savePath).writeAsBytes(data.data);
-      }
       if (context.mounted) showToast(context, l10n.attachmentSaved);
     } catch (e) {
       log.e('Save attachment failed', error: e);

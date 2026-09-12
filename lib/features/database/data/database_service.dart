@@ -386,9 +386,9 @@ class DatabaseService {
     AtomicRecoveryCandidate? pick(String path) =>
         candidates.where((c) => c.path == path).firstOrNull;
     final ordered = <AtomicRecoveryCandidate>[
-      if (pick(pending.target) case final c?) c,
-      if (pick(pending.rollback) case final c?) c,
-      if (pick(pending.temp) case final c?) c,
+      ?pick(pending.target),
+      ?pick(pending.rollback),
+      ?pick(pending.temp),
     ];
 
     for (final candidate in ordered) {

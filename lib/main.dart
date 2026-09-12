@@ -125,7 +125,7 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
   }
 
   Future<void> _persistDirtyDatabase() async {
-    final db = ref.read(databaseProvider).valueOrNull;
+    final db = ref.read(databaseProvider).value;
     if (db == null) return;
     final notifier = ref.read(databaseProvider.notifier);
 

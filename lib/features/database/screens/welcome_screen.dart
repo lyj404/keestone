@@ -398,7 +398,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                         );
                       },
                       loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
                   ],
                 ),
@@ -437,11 +437,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     try {
       // Android/iOS FilePicker has no MIME mapping for `.kdbx` custom types.
       final isMobile = Platform.isAndroid || Platform.isIOS;
-      final result = await FilePicker.platform.pickFiles(
+      final file = await FilePicker.pickFile(
         type: isMobile ? FileType.any : FileType.custom,
         allowedExtensions: isMobile ? null : ['kdbx'],
       );
-      final path = result?.files.single.path;
+      final path = file?.path;
       if (path != null && context.mounted) {
         unawaited(context.push('/unlock?path=${Uri.encodeComponent(path)}'));
       }

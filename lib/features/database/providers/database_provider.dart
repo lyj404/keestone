@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:kpasslib/kpasslib.dart';
 import '../../../core/utils/logger.dart';
 import '../data/csv_service.dart';

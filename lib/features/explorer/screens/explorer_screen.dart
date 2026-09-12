@@ -970,24 +970,15 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
 
   Future<void> _importCsv(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
-    final result = await FilePicker.platform.pickFiles(
+    final files = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
-      withData: true,
     );
-    if (result == null) return;
+    if (files.isEmpty) return;
 
     try {
-      final file = result.files.single;
-      final bytes =
-          file.bytes ??
-          (file.path != null ? await File(file.path!).readAsBytes() : null);
-      if (bytes == null) {
-        if (context.mounted) {
-          showToast(context, l10n.importFailed('No file data'), isError: true);
-        }
-        return;
-      }
+      final file = files.single;
+      final bytes = await file.readAsBytes();
 
       // Try UTF-8 first, fall back to system encoding (handles GBK/ANSI on Chinese Windows)
       String content = utf8.decode(bytes, allowMalformed: true);
@@ -1079,19 +1070,15 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     final csvBytes = Uint8List.fromList(utf8.encode(csvContent));
 
     try {
-      // Android/iOS saveFile requires bytes; desktop picks a path then we write.
-      final savePath = await FilePicker.platform.saveFile(
+      final savePath = await FilePicker.saveFile(
         dialogTitle: l10n.exportCsv,
         fileName: 'passwords.csv',
         type: FileType.custom,
         allowedExtensions: ['csv'],
-        bytes: (Platform.isAndroid || Platform.isIOS) ? csvBytes : null,
+        bytes: csvBytes,
       );
       if (savePath == null || !context.mounted) return;
 
-      if (!Platform.isAndroid && !Platform.isIOS) {
-        await File(savePath).writeAsBytes(csvBytes);
-      }
       if (context.mounted) showToast(context, l10n.exportSuccess);
     } catch (e) {
       if (context.mounted) showToast(context, l10n.exportFailed, isError: true);
@@ -1106,18 +1093,15 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     try {
       final bytes = await dbService.saveToBytes();
       final isMobile = Platform.isAndroid || Platform.isIOS;
-      final savePath = await FilePicker.platform.saveFile(
+      final savePath = await FilePicker.saveFile(
         dialogTitle: l10n.exportKdbx,
         fileName: 'database.kdbx',
         type: isMobile ? FileType.any : FileType.custom,
         allowedExtensions: isMobile ? null : ['kdbx'],
-        bytes: isMobile ? bytes : null,
+        bytes: bytes,
       );
       if (savePath == null || !context.mounted) return;
 
-      if (!Platform.isAndroid && !Platform.isIOS) {
-        await File(savePath).writeAsBytes(bytes);
-      }
       if (context.mounted) showToast(context, l10n.exportSuccess);
     } catch (e) {
       if (context.mounted) showToast(context, l10n.exportFailed, isError: true);
@@ -1152,7 +1136,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
 
   void _toggleEntrySelection(KdbxEntry entry) {
     final selected = ref.read(selectedEntriesProvider);
-    final newSet = {...selected};
+    final newSet = <KdbxEntry>{...selected};
     if (newSet.contains(entry)) {
       newSet.remove(entry);
     } else {
@@ -1193,7 +1177,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     final selected = ref.read(selectedEntriesProvider);
     if (selected.isEmpty) return;
     final service = ref.read(databaseServiceProvider);
-    final db = ref.read(databaseProvider).valueOrNull;
+    final db = ref.read(databaseProvider).value;
     if (db == null) return;
     final currentGroup = ref.read(currentGroupProvider);
     final target = await showMoveToGroupDialog(

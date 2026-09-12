@@ -187,14 +187,16 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
       showToast(context, path.split('/').last);
       return;
     }
-    final result = await FilePicker.platform.saveFile(
+    final result = await FilePicker.saveFile(
       dialogTitle: l10n.saveDatabase,
       fileName: '${_nameController.text}${AppConstants.kdbxExtension}',
       type: FileType.custom,
       allowedExtensions: ['kdbx'],
+      // Path-pick only: the real database is written later by DatabaseService.
+      bytes: Uint8List(0),
     );
     if (result != null) {
-      setState(() => _savePath = result);
+      setState(() => _savePath = result.toFilePath());
     }
   }
 

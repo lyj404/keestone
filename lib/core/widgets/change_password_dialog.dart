@@ -283,19 +283,14 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
   }
 
   Future<void> _pickNewKeyFile() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-      withData: true,
-    );
-    if (result != null && result.files.isNotEmpty) {
-      final file = result.files.first;
-      if (file.bytes != null) {
-        setState(() {
-          _newKeyData = file.bytes;
-          _newKeyFileName = file.name;
-          _removeKeyFile = false;
-        });
-      }
+    final file = await FilePicker.pickFile(type: FileType.any);
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      setState(() {
+        _newKeyData = bytes;
+        _newKeyFileName = file.name;
+        _removeKeyFile = false;
+      });
     }
   }
 }

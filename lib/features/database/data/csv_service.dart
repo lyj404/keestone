@@ -364,7 +364,7 @@ class CsvService {
       ]);
     }
 
-    return const ListToCsvConverter().convert(rows);
+    return Csv().encode(rows);
   }
 
   /// Detect CSV delimiter by sampling the first few lines.
