@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+import 'theme/theme_seed.dart';
 import 'tray_service_desktop.dart';
 import 'tray_service_linux.dart';
 
@@ -11,6 +12,9 @@ abstract class TrayServiceBase {
     required VoidCallback onShowWindow,
     required VoidCallback onExitApp,
   });
+
+  /// Swap tray icon to match the active [ThemeSeed]. No-op before [init].
+  Future<void> setSeedIcon(ThemeSeed seed);
   Future<void> dispose();
 }
 
@@ -41,6 +45,10 @@ class TrayService {
       onShowWindow: onShowWindow,
       onExitApp: onExitApp,
     );
+  }
+
+  Future<void> setSeedIcon(ThemeSeed seed) async {
+    await _impl?.setSeedIcon(seed);
   }
 
   Future<void> dispose() async {

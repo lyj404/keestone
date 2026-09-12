@@ -151,7 +151,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
       ScaffoldMessenger.of(navCtx).showSnackBar(
         SnackBar(
           content: Text(message, style: const TextStyle(color: Colors.white)),
-          backgroundColor: ClayColors.primary,
+          backgroundColor: Theme.of(navCtx).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
           shape: RoundedRectangleBorder(
@@ -180,7 +180,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
     final Color background;
     if (success) {
       message = l10n?.saved ?? 'Saved';
-      background = ClayColors.primary;
+      background = Theme.of(navCtx).colorScheme.primary;
     } else {
       final syncState = ref.read(syncStateProvider);
       if (syncState == SyncState.conflict) {
@@ -215,6 +215,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
     final effectiveLocale =
         locale ?? WidgetsBinding.instance.platformDispatcher.locale;
     final themeMode = ref.watch(themeModeProvider);
+    final themeSeed = ref.watch(themeSeedProvider);
     final router = ref.watch(appRouterProvider);
     // Auto-save: when the database becomes dirty, arm both the idle deadline
     // and the hard max deadline (user activity only postpones the idle one).
@@ -243,8 +244,8 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
           children: [
             MaterialApp.router(
               title: 'KeeStone',
-              theme: AppTheme.light(locale: effectiveLocale),
-              darkTheme: AppTheme.dark(locale: effectiveLocale),
+              theme: AppTheme.light(locale: effectiveLocale, seed: themeSeed),
+              darkTheme: AppTheme.dark(locale: effectiveLocale, seed: themeSeed),
               themeMode: themeMode,
               routerConfig: router,
               debugShowCheckedModeBanner: false,

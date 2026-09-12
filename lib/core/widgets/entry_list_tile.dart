@@ -296,9 +296,7 @@ class _EntryListTileState extends State<EntryListTile> {
           curve: Curves.easeOut,
           decoration: BoxDecoration(
             color: widget.isSelected
-                ? (brightness == Brightness.dark
-                      ? ClayColors.primaryContainerDark
-                      : colorScheme.primaryContainer)
+                ? colorScheme.primaryContainer
                 : _hovered
                 ? colorScheme.surfaceContainerLow
                 : (brightness == Brightness.dark

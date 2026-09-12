@@ -1,6 +1,7 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:dart_xdg_status_notifier_item/dart_xdg_status_notifier_item.dart';
+import 'theme/theme_seed.dart';
+import 'theme/theme_seed_icons.dart';
 import 'utils/logger.dart';
 import 'tray_service.dart';
 
@@ -9,6 +10,7 @@ TrayServiceBase createTrayServiceLinux() => TrayServiceLinux();
 class TrayServiceLinux implements TrayServiceBase {
   StatusNotifierItemClient? _client;
   bool _initialized = false;
+  ThemeSeed _seed = ThemeSeed.indigo;
 
   @override
   Future<void> init({
@@ -19,21 +21,7 @@ class TrayServiceLinux implements TrayServiceBase {
   }) async {
     if (_initialized) return;
 
-    // Get icon path
-    final exePath = Platform.resolvedExecutable;
-    final exeDir = exePath.substring(0, exePath.lastIndexOf(Platform.pathSeparator));
-    final releasePath = '$exeDir/data/flutter_assets/assets/icons/app_icon.png';
-    final debugPath = '$exeDir/../../../data/flutter_assets/assets/icons/app_icon.png';
-
-    String iconPath;
-    if (await File(releasePath).exists()) {
-      iconPath = releasePath;
-    } else if (await File(debugPath).exists()) {
-      iconPath = await File(debugPath).resolveSymbolicLinks();
-    } else {
-      iconPath = releasePath;
-    }
-
+    final iconPath = ThemeSeedIcons.resolveLinuxAbsolutePath(_seed);
     log.d('TrayServiceLinux: Using icon path: $iconPath');
 
     // Create menu items
@@ -66,9 +54,24 @@ class TrayServiceLinux implements TrayServiceBase {
       log.d('TrayServiceLinux: Connecting to D-Bus...');
       await _client!.connect();
       _initialized = true;
+      // Seed may have changed while the tray was starting up.
+      _client!.iconName = ThemeSeedIcons.resolveLinuxAbsolutePath(_seed);
       log.d('TrayServiceLinux: Connected successfully');
     } catch (e, stackTrace) {
       log.e('TrayServiceLinux: Failed to connect', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  @override
+  Future<void> setSeedIcon(ThemeSeed seed) async {
+    _seed = seed;
+    final client = _client;
+    if (!_initialized || client == null) return;
+    final iconPath = ThemeSeedIcons.resolveLinuxAbsolutePath(seed);
+    try {
+      client.iconName = iconPath;
+    } catch (e) {
+      log.w('TrayServiceLinux: setSeedIcon failed for $iconPath', error: e);
     }
   }
 

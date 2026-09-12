@@ -14,6 +14,9 @@ import 'core/providers/close_behavior_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/services/notification_service.dart';
 import 'core/tray_service.dart';
+import 'core/providers/theme_provider.dart';
+import 'core/theme/theme_seed.dart';
+import 'core/theme/theme_seed_icons.dart';
 import 'l10n/app_localizations.dart';
 import 'features/database/providers/database_provider.dart';
 
@@ -76,7 +79,11 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
       windowManager.addListener(this);
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
         await _initTray();
+        if (!mounted) return;
+        // Seed may have loaded after first frame; apply current seed.
+        await _applySeedIcons(ref.read(themeSeedProvider));
       });
     }
   }
@@ -95,6 +102,18 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
     } catch (e) {
       log.w('Tray init failed, close will exit app', error: e);
       _trayInitialized = false;
+    }
+  }
+
+  /// Keep tray + window titlebar icons in sync with the active theme seed.
+  Future<void> _applySeedIcons(ThemeSeed seed) async {
+    await TrayService().setSeedIcon(seed);
+    if (Platform.isWindows || Platform.isLinux) {
+      try {
+        await windowManager.setIcon(ThemeSeedIcons.assetPath(seed));
+      } catch (e) {
+        log.w('windowManager.setIcon failed', error: e);
+      }
     }
   }
 
@@ -297,6 +316,12 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      ref.listen<ThemeSeed>(themeSeedProvider, (previous, next) {
+        if (previous == next) return;
+        unawaited(_applySeedIcons(next));
+      });
+    }
     return const KeeStoneApp();
   }
 }

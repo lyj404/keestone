@@ -1183,8 +1183,8 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
               ? _toggleFab
               : (widget.onAddEntry ?? _toggleFab),
           tooltip: l10n.addEntry,
-          backgroundColor: isDark ? ClayColors.primaryDark : null,
-          foregroundColor: isDark ? ClayColors.onSurfaceDark : null,
+          backgroundColor: isDark ? colorScheme.primaryContainer : null,
+          foregroundColor: isDark ? colorScheme.onPrimaryContainer : null,
           elevation: isDark ? 4 : null,
           child: AnimatedRotation(
             turns: _fabExpanded ? 0.125 : 0,

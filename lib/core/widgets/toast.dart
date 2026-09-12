@@ -11,7 +11,9 @@ void showToast(BuildContext context, String message, {bool isError = false, Dura
   final animation = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
       .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
 
-  final bgColor = isError ? ClayColors.error : ClayColors.primary;
+  final bgColor = isError
+      ? ClayColors.error
+      : Theme.of(context).colorScheme.primary;
 
   entry = OverlayEntry(
     builder: (_) => Align(

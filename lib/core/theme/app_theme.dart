@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'theme_seed.dart';
+
 /// Minimal Neutral layout tokens (spacing, radius, density).
 ///
 /// Visual language (do not invent per-screen values):
@@ -199,9 +201,7 @@ class ClayDecoration {
     if (selected) {
       // Uniform border only — non-uniform Border + borderRadius is illegal.
       return BoxDecoration(
-        color: isDark
-            ? ClayColors.primaryContainerDark
-            : colorScheme.primaryContainer,
+        color: colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(
           color: colorScheme.primary.withValues(alpha: isDark ? 0.55 : 0.35),
@@ -221,10 +221,11 @@ class ClayDecoration {
   /// InputDecorationTheme, this box is for custom-drawn fields).
   static BoxDecoration input({
     required Brightness brightness,
+    required ColorScheme colorScheme,
     bool focused = false,
   }) {
     final isDark = brightness == Brightness.dark;
-    final focusColor = isDark ? ClayColors.primaryLight : ClayColors.primary;
+    final focusColor = colorScheme.primary;
     return BoxDecoration(
       color: isDark
           ? ClayColors.surfaceContainerDark
@@ -262,9 +263,9 @@ class ClayDecoration {
 }
 
 class AppTheme {
-  // Cache by resolved system font (platform + language).
-  static final _lightCache = <String?, ThemeData>{};
-  static final _darkCache = <String?, ThemeData>{};
+  // Cache by (seed, resolved system font).
+  static final _lightCache = <(ThemeSeed, String?), ThemeData>{};
+  static final _darkCache = <(ThemeSeed, String?), ThemeData>{};
 
   /// Shared type scale — screens should prefer textTheme over ad-hoc sizes.
   static TextTheme _textTheme({
@@ -339,17 +340,24 @@ class AppTheme {
     }
   }
 
-  static ThemeData light({Locale? locale}) {
+  static ThemeData light({
+    Locale? locale,
+    ThemeSeed seed = ThemeSeed.indigo,
+  }) {
     final fontFamily = resolveFontFamily(locale);
-    return _lightCache[fontFamily] ??= _buildLight(fontFamily);
+    return _lightCache[(seed, fontFamily)] ??= _buildLight(fontFamily, seed);
   }
 
-  static ThemeData dark({Locale? locale}) {
+  static ThemeData dark({
+    Locale? locale,
+    ThemeSeed seed = ThemeSeed.indigo,
+  }) {
     final fontFamily = resolveFontFamily(locale);
-    return _darkCache[fontFamily] ??= _buildDark(fontFamily);
+    return _darkCache[(seed, fontFamily)] ??= _buildDark(fontFamily, seed);
   }
 
-  static ThemeData _buildLight(String? fontFamily) {
+  static ThemeData _buildLight(String? fontFamily, ThemeSeed seed) {
+    final palette = seed.colors;
     final textTheme = _textTheme(
       base: ThemeData.light().textTheme,
       onSurface: ClayColors.onSurfaceLight,
@@ -362,10 +370,10 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: ColorScheme(
         brightness: Brightness.light,
-        primary: ClayColors.primary,
+        primary: palette.primary,
         onPrimary: Colors.white,
-        primaryContainer: const Color(0xFFE0E7FF),
-        onPrimaryContainer: const Color(0xFF3730A3),
+        primaryContainer: palette.primaryContainerLight,
+        onPrimaryContainer: palette.onPrimaryContainerLight,
         secondary: ClayColors.secondary,
         onSecondary: Colors.white,
         secondaryContainer: const Color(0xFFE0F2FE),
@@ -409,7 +417,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
-          borderSide: const BorderSide(color: ClayColors.primary, width: 1.5),
+          borderSide: BorderSide(color: palette.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
@@ -458,7 +466,7 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: ClayColors.primary,
+          backgroundColor: palette.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
@@ -489,7 +497,7 @@ class AppTheme {
         backgroundColor: ClayColors.onSurfaceLight,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: ClayColors.primary,
+        backgroundColor: palette.primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusXl),
@@ -524,9 +532,9 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: ClayColors.primary,
+          foregroundColor: palette.primary,
           textStyle: textTheme.titleMedium?.copyWith(
-            color: ClayColors.primary,
+            color: palette.primary,
           ),
         ),
       ),
@@ -535,10 +543,10 @@ class AppTheme {
         side: BorderSide(color: ClayColors.outlineLight),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: ClayColors.primary,
+        activeTrackColor: palette.primary,
         inactiveTrackColor: ClayColors.outlineLight,
-        thumbColor: ClayColors.primary,
-        overlayColor: ClayColors.primary.withValues(alpha: 0.1),
+        thumbColor: palette.primary,
+        overlayColor: palette.primary.withValues(alpha: 0.1),
         trackHeight: 6,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
       ),
@@ -547,7 +555,8 @@ class AppTheme {
     );
   }
 
-  static ThemeData _buildDark(String? fontFamily) {
+  static ThemeData _buildDark(String? fontFamily, ThemeSeed seed) {
+    final palette = seed.colors;
     final textTheme = _textTheme(
       base: ThemeData.dark().textTheme,
       onSurface: ClayColors.onSurfaceDark,
@@ -561,10 +570,10 @@ class AppTheme {
       colorScheme: ColorScheme(
         brightness: Brightness.dark,
         // Light primary for icons/accents; pair with dark onPrimary for filled controls.
-        primary: ClayColors.primaryLight,
-        onPrimary: ClayColors.onPrimaryDark,
-        primaryContainer: ClayColors.primaryContainerDark,
-        onPrimaryContainer: ClayColors.onPrimaryContainerDark,
+        primary: palette.primaryLight,
+        onPrimary: palette.onPrimaryDark,
+        primaryContainer: palette.primaryContainerDark,
+        onPrimaryContainer: palette.onPrimaryContainerDark,
         secondary: ClayColors.secondaryLight,
         onSecondary: const Color(0xFF082F49),
         secondaryContainer: ClayColors.secondaryContainerDark,
@@ -614,8 +623,8 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
-          borderSide: const BorderSide(
-            color: ClayColors.primaryLight,
+          borderSide: BorderSide(
+            color: palette.primaryLight,
             width: 1.5,
           ),
         ),
@@ -671,13 +680,13 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          // Light indigo + near-black label stays compliant in dark mode.
-          backgroundColor: ClayColors.primaryLight,
-          foregroundColor: ClayColors.onPrimaryDark,
-          disabledBackgroundColor: ClayColors.primaryLight.withValues(
+          // Light seed primary + near-black label stays compliant in dark mode.
+          backgroundColor: palette.primaryLight,
+          foregroundColor: palette.onPrimaryDark,
+          disabledBackgroundColor: palette.primaryLight.withValues(
             alpha: 0.35,
           ),
-          disabledForegroundColor: ClayColors.onPrimaryDark.withValues(
+          disabledForegroundColor: palette.onPrimaryDark.withValues(
             alpha: 0.55,
           ),
           shape: RoundedRectangleBorder(
@@ -685,7 +694,7 @@ class AppTheme {
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
           textStyle: textTheme.titleMedium?.copyWith(
-            color: ClayColors.onPrimaryDark,
+            color: palette.onPrimaryDark,
           ),
           elevation: 0,
         ),
@@ -712,11 +721,11 @@ class AppTheme {
           color: ClayColors.onSurfaceDark,
         ),
         backgroundColor: const Color(0xFF27272A),
-        actionTextColor: ClayColors.primaryMuted,
+        actionTextColor: palette.primaryMuted,
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: ClayColors.primaryLight,
-        foregroundColor: ClayColors.onPrimaryDark,
+        backgroundColor: palette.primaryLight,
+        foregroundColor: palette.onPrimaryDark,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusXl),
         ),
@@ -757,30 +766,30 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: ClayColors.primaryMuted,
+          foregroundColor: palette.primaryMuted,
           textStyle: textTheme.titleMedium?.copyWith(
-            color: ClayColors.primaryMuted,
+            color: palette.primaryMuted,
           ),
         ),
       ),
       iconTheme: const IconThemeData(color: ClayColors.onSurfaceVariantDark),
-      primaryIconTheme: const IconThemeData(color: ClayColors.primaryLight),
+      primaryIconTheme: IconThemeData(color: palette.primaryLight),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return ClayColors.primaryLight;
+            return palette.primaryLight;
           }
           return Colors.transparent;
         }),
-        checkColor: WidgetStateProperty.all(ClayColors.onPrimaryDark),
+        checkColor: WidgetStateProperty.all(palette.onPrimaryDark),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         side: BorderSide(color: ClayColors.outlineDark),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: ClayColors.primaryLight,
+        activeTrackColor: palette.primaryLight,
         inactiveTrackColor: ClayColors.outlineDark,
-        thumbColor: ClayColors.primaryLight,
-        overlayColor: ClayColors.primaryLight.withValues(alpha: 0.12),
+        thumbColor: palette.primaryLight,
+        overlayColor: palette.primaryLight.withValues(alpha: 0.12),
         trackHeight: 6,
         thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
       ),

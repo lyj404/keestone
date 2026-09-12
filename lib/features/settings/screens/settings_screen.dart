@@ -10,6 +10,7 @@ import '../../../core/widgets/toast.dart';
 import '../../../core/widgets/change_password_dialog.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/theme_provider.dart';
+import '../../../core/theme/theme_seed.dart';
 import '../../../core/providers/auto_lock_provider.dart';
 import '../../../core/providers/auto_save_provider.dart';
 import '../../../core/providers/privacy_provider.dart';
@@ -404,7 +405,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   List<Widget> _appearanceCards() {
     final l10n = AppLocalizations.of(context)!;
-    return [_themeCard(Theme.of(context).brightness, l10n)];
+    return [
+      _themeCard(Theme.of(context).brightness, l10n),
+      _themeSeedCard(Theme.of(context).brightness, l10n),
+    ];
+  }
+
+  Widget _themeSeedCard(Brightness brightness, AppLocalizations l10n) {
+    final currentSeed = ref.watch(themeSeedProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                child: Icon(
+                  Icons.palette_outlined,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  l10n.colorScheme,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final seed in ThemeSeed.values)
+                _ThemeSeedSwatch(
+                  seed: seed,
+                  selected: seed == currentSeed,
+                  onTap: () =>
+                      ref.read(themeSeedProvider.notifier).setThemeSeed(seed),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _themeCard(Brightness brightness, AppLocalizations l10n) {
@@ -865,7 +917,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: ClayColors.primary.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),

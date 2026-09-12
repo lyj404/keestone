@@ -10,7 +10,6 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
 
     return Center(
       child: Column(
@@ -20,9 +19,7 @@ class EmptyState extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: brightness == Brightness.dark
-                  ? ClayColors.primaryContainerDark
-                  : colorScheme.primaryContainer,
+              color: colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(ClayLayout.radiusXl),
             ),
             child: Icon(icon, size: 36, color: colorScheme.primary),

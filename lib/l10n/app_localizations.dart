@@ -1280,6 +1280,48 @@ abstract class AppLocalizations {
   /// **'深色模式'**
   String get darkTheme;
 
+  /// No description provided for @colorScheme.
+  ///
+  /// In zh, this message translates to:
+  /// **'配色方案'**
+  String get colorScheme;
+
+  /// No description provided for @themeSeedIndigo.
+  ///
+  /// In zh, this message translates to:
+  /// **'靛紫'**
+  String get themeSeedIndigo;
+
+  /// No description provided for @themeSeedEmerald.
+  ///
+  /// In zh, this message translates to:
+  /// **'青绿'**
+  String get themeSeedEmerald;
+
+  /// No description provided for @themeSeedSky.
+  ///
+  /// In zh, this message translates to:
+  /// **'天蓝'**
+  String get themeSeedSky;
+
+  /// No description provided for @themeSeedAmber.
+  ///
+  /// In zh, this message translates to:
+  /// **'琥珀'**
+  String get themeSeedAmber;
+
+  /// No description provided for @themeSeedSlate.
+  ///
+  /// In zh, this message translates to:
+  /// **'石板灰'**
+  String get themeSeedSlate;
+
+  /// No description provided for @themeSeedRose.
+  ///
+  /// In zh, this message translates to:
+  /// **'品红'**
+  String get themeSeedRose;
+
   /// No description provided for @chinese.
   ///
   /// In zh, this message translates to:

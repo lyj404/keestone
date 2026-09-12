@@ -1,6 +1,7 @@
-import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:system_tray/system_tray.dart';
+import 'theme/theme_seed.dart';
+import 'theme/theme_seed_icons.dart';
 import 'utils/logger.dart';
 import 'tray_service.dart';
 
@@ -9,6 +10,7 @@ TrayServiceBase createTrayServiceDesktop() => TrayServiceDesktop();
 class TrayServiceDesktop implements TrayServiceBase {
   final SystemTray _tray = SystemTray();
   bool _initialized = false;
+  ThemeSeed _seed = ThemeSeed.indigo;
 
   @override
   Future<void> init({
@@ -19,24 +21,7 @@ class TrayServiceDesktop implements TrayServiceBase {
   }) async {
     if (_initialized) return;
 
-    String iconPath;
-    if (Platform.isWindows) {
-      iconPath = 'assets/icons/app_icon.ico';
-    } else {
-      // macOS: AppIndicator needs absolute path
-      final exePath = Platform.resolvedExecutable;
-      final exeDir = exePath.substring(0, exePath.lastIndexOf(Platform.pathSeparator));
-      final releasePath = '$exeDir/data/flutter_assets/assets/icons/app_icon.png';
-      final debugPath = '$exeDir/../../../data/flutter_assets/assets/icons/app_icon.png';
-
-      if (File(releasePath).existsSync()) {
-        iconPath = releasePath;
-      } else if (await File(debugPath).exists()) {
-        iconPath = await File(debugPath).resolveSymbolicLinks();
-      } else {
-        iconPath = releasePath;
-      }
-    }
+    final iconPath = ThemeSeedIcons.assetPath(_seed);
 
     try {
       await _tray.initSystemTray(
@@ -66,6 +51,20 @@ class TrayServiceDesktop implements TrayServiceBase {
     });
 
     _initialized = true;
+    // Seed may have changed while the tray was starting up.
+    await _tray.setImage(ThemeSeedIcons.assetPath(_seed));
+  }
+
+  @override
+  Future<void> setSeedIcon(ThemeSeed seed) async {
+    _seed = seed;
+    if (!_initialized) return;
+    final iconPath = ThemeSeedIcons.assetPath(seed);
+    try {
+      await _tray.setImage(iconPath);
+    } catch (e) {
+      log.w('TrayServiceDesktop: setSeedIcon failed for $iconPath', error: e);
+    }
   }
 
   @override

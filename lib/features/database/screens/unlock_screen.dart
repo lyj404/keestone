@@ -149,8 +149,8 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              ClayColors.primary.withValues(alpha: 0.15),
-                              ClayColors.tertiary.withValues(alpha: 0.1),
+                              colorScheme.primary.withValues(alpha: 0.15),
+                              colorScheme.tertiary.withValues(alpha: 0.1),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -158,7 +158,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: ClayColors.primary.withValues(alpha: 0.12),
+                              color: colorScheme.primary.withValues(alpha: 0.12),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -270,7 +270,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                                     borderRadius: BorderRadius.circular(18),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: ClayColors.primary.withValues(
+                                        color: colorScheme.primary.withValues(
                                           alpha: 0.3,
                                         ),
                                         blurRadius: 16,

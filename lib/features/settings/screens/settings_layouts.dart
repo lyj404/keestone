@@ -128,3 +128,70 @@ class _SettingsNavItem extends StatelessWidget {
     );
   }
 }
+
+/// Circular color swatch for picking a [ThemeSeed].
+class _ThemeSeedSwatch extends StatelessWidget {
+  final ThemeSeed seed;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ThemeSeedSwatch({
+    required this.seed,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = seed.colors.primary;
+    final borderColor = selected
+        ? Theme.of(context).colorScheme.onSurface
+        : Theme.of(context).colorScheme.outline;
+    return Tooltip(
+      message: _labelOf(context, seed),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: _labelOf(context, seed),
+        child: InkResponse(
+          onTap: onTap,
+          radius: 22,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: borderColor,
+                width: selected ? 2.5 : 1,
+              ),
+            ),
+            child: selected
+                ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _labelOf(BuildContext context, ThemeSeed seed) {
+    final l10n = AppLocalizations.of(context)!;
+    switch (seed) {
+      case ThemeSeed.indigo:
+        return l10n.themeSeedIndigo;
+      case ThemeSeed.emerald:
+        return l10n.themeSeedEmerald;
+      case ThemeSeed.sky:
+        return l10n.themeSeedSky;
+      case ThemeSeed.amber:
+        return l10n.themeSeedAmber;
+      case ThemeSeed.slate:
+        return l10n.themeSeedSlate;
+      case ThemeSeed.rose:
+        return l10n.themeSeedRose;
+    }
+  }
+}

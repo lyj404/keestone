@@ -6,7 +6,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../../../core/widgets/toast.dart';
@@ -82,8 +81,8 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              ClayColors.primary.withValues(alpha: 0.15),
-                              ClayColors.secondary.withValues(alpha: 0.1),
+                              colorScheme.primary.withValues(alpha: 0.15),
+                              colorScheme.secondary.withValues(alpha: 0.1),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -91,7 +90,7 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: ClayColors.primary.withValues(alpha: 0.12),
+                              color: colorScheme.primary.withValues(alpha: 0.12),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -151,7 +150,7 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: ClayColors.primary.withValues(alpha: 0.3),
+                                    color: colorScheme.primary.withValues(alpha: 0.3),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6),
                                   ),

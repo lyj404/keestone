@@ -625,6 +625,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get darkTheme => '深色模式';
 
   @override
+  String get colorScheme => '配色方案';
+
+  @override
+  String get themeSeedIndigo => '靛紫';
+
+  @override
+  String get themeSeedEmerald => '青绿';
+
+  @override
+  String get themeSeedSky => '天蓝';
+
+  @override
+  String get themeSeedAmber => '琥珀';
+
+  @override
+  String get themeSeedSlate => '石板灰';
+
+  @override
+  String get themeSeedRose => '品红';
+
+  @override
   String get chinese => '中文';
 
   @override

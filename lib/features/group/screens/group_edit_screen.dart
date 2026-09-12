@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
@@ -53,8 +52,8 @@ class _GroupEditScreenState extends ConsumerState<GroupEditScreen> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          ClayColors.primary.withValues(alpha: 0.15),
-                          ClayColors.tertiary.withValues(alpha: 0.1),
+                          colorScheme.primary.withValues(alpha: 0.15),
+                          colorScheme.tertiary.withValues(alpha: 0.1),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -62,7 +61,7 @@ class _GroupEditScreenState extends ConsumerState<GroupEditScreen> {
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: ClayColors.primary.withValues(alpha: 0.12),
+                          color: colorScheme.primary.withValues(alpha: 0.12),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
