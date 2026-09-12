@@ -14,6 +14,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/providers/privacy_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/utils/clipboard_utils.dart';
+import 'core/utils/window_title_bar.dart';
 import 'features/database/providers/database_provider.dart';
 import 'features/explorer/providers/explorer_provider.dart';
 import 'features/sync/providers/sync_provider.dart';
@@ -54,6 +55,9 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
     final hideInBackground = ref.read(privacyProvider).hideInBackground;
     if (state == AppLifecycleState.resumed) {
       if (mounted) setState(() => _backgroundPrivacyVisible = false);
+      // WM_DWMCOLORIZATIONCOLORCHANGED can reset the title bar to the OS
+      // theme while we are in the background; re-assert the app theme.
+      _syncWindowTitleBar(ref.read(themeModeProvider));
       final db = ref.read(databaseProvider).valueOrNull;
       if (db != null) {
         ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db);
@@ -209,6 +213,30 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
     return TotpService().generateCode(config);
   }
 
+  /// Apply the effective theme brightness to the native title bar / chrome.
+  void _syncWindowTitleBar(ThemeMode themeMode) {
+    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) {
+      return;
+    }
+    final Brightness brightness;
+    switch (themeMode) {
+      case ThemeMode.dark:
+        brightness = Brightness.dark;
+      case ThemeMode.light:
+        brightness = Brightness.light;
+      case ThemeMode.system:
+        brightness =
+            WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    }
+    unawaited(WindowTitleBar.apply(brightness));
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    super.didChangePlatformBrightness();
+    _syncWindowTitleBar(ref.read(themeModeProvider));
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
@@ -224,6 +252,9 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
         ref.read(autoSaveProvider.notifier).onDirty();
       }
     });
+    // Keep the native title bar in lockstep with ThemeMode (including the
+    // async load from secure storage after first frame).
+    _syncWindowTitleBar(themeMode);
 
     return Focus(
       focusNode: _focusNode,

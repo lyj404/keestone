@@ -5,40 +5,144 @@
 
 #include "resource.h"
 
-namespace {
-
-/// Window attribute that enables dark mode window decorations.
-///
-/// Redefined in case the developer's machine has a Windows SDK older than
-/// version 10.0.22000.0.
-/// See: https://docs.microsoft.com/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1
+#define DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1 19
+#endif
+#ifndef DWMWA_BORDER_COLOR
+#define DWMWA_BORDER_COLOR 34
+#endif
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+#ifndef DWMWA_TEXT_COLOR
+#define DWMWA_TEXT_COLOR 36
+#endif
+#ifndef DWMWA_COLOR_DEFAULT
+#define DWMWA_COLOR_DEFAULT 0xFFFFFFFE
+#endif
+
+namespace {
 
 constexpr const wchar_t kWindowClassName[] = L"FLUTTER_RUNNER_WIN32_WINDOW";
 
-/// Registry key for app theme preference.
-///
-/// A value of 0 indicates apps should use dark mode. A non-zero or missing
-/// value indicates apps should use light mode.
 constexpr const wchar_t kGetPreferredBrightnessRegKey[] =
   L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize";
 constexpr const wchar_t kGetPreferredBrightnessRegValue[] = L"AppsUseLightTheme";
 
-// The number of Win32Window objects that currently exist.
-static int g_active_window_count = 0;
+int g_active_window_count = 0;
+
+// Undocumented uxtheme dark-mode helpers (ordinals from Windows 10 1809+).
+// Required to show a dark caption while the OS AppsUseLightTheme is light.
+enum PreferredAppMode : int {
+  kAppModeDefault = 0,
+  kAppModeAllowDark = 1,
+  kAppModeForceDark = 2,
+  kAppModeForceLight = 3,
+};
+
+using SetPreferredAppModeFn = int(WINAPI*)(int);
+using AllowDarkModeForWindowFn = BOOL(WINAPI*)(HWND, BOOL);
+
+SetPreferredAppModeFn GetSetPreferredAppMode() {
+  static auto fn = reinterpret_cast<SetPreferredAppModeFn>(
+      GetProcAddress(GetModuleHandleW(L"uxtheme.dll"), MAKEINTRESOURCEA(135)));
+  return fn;
+}
+
+AllowDarkModeForWindowFn GetAllowDarkModeForWindow() {
+  static auto fn = reinterpret_cast<AllowDarkModeForWindowFn>(
+      GetProcAddress(GetModuleHandleW(L"uxtheme.dll"), MAKEINTRESOURCEA(133)));
+  return fn;
+}
+
+// SetWindowCompositionAttribute(WCA_USEDARKMODECOLORS = 26) on older Win10.
+using SetWindowCompositionAttributeFn = BOOL(WINAPI*)(
+    HWND, const struct WINDOWCOMPOSITIONATTRIBDATA*);
+
+struct WINDOWCOMPOSITIONATTRIBDATA {
+  DWORD dwAttribute;
+  PVOID pvData;
+  SIZE_T cbData;
+};
+
+BOOL SetDarkModeComposition(HWND hwnd, BOOL enable) {
+  static auto fn = reinterpret_cast<SetWindowCompositionAttributeFn>(
+      GetProcAddress(GetModuleHandleW(L"user32.dll"),
+                     "SetWindowCompositionAttribute"));
+  if (fn == nullptr) {
+    return FALSE;
+  }
+  WINDOWCOMPOSITIONATTRIBDATA data{26, &enable, sizeof(enable)};
+  return fn(hwnd, &data);
+}
+
+void ApplyTitleBarBrightness(HWND window, bool dark) {
+  if (window == nullptr) {
+    return;
+  }
+  HWND hwnd = GetAncestor(window, GA_ROOT);
+  if (hwnd == nullptr) {
+    hwnd = window;
+  }
+
+  // 1) Force the process app mode so caption theming is not tied to the OS.
+  if (auto set_mode = GetSetPreferredAppMode()) {
+    set_mode(dark ? kAppModeForceDark : kAppModeForceLight);
+  }
+  // 2) Opt this HWND into dark (or light) non-client rendering.
+  if (auto allow = GetAllowDarkModeForWindow()) {
+    allow(hwnd, dark ? TRUE : FALSE);
+  }
+  SetDarkModeComposition(hwnd, dark ? TRUE : FALSE);
+
+  // 3) Standard DWM immersive dark mode.
+  BOOL enable_dark_mode = dark ? TRUE : FALSE;
+  DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                        &enable_dark_mode, sizeof(enable_dark_mode));
+  DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1,
+                        &enable_dark_mode, sizeof(enable_dark_mode));
+
+  // 4) Windows 11 explicit caption colors (do not touch the client area).
+  if (dark) {
+    const COLORREF caption = RGB(32, 32, 32);
+    const COLORREF text = RGB(255, 255, 255);
+    const COLORREF border = RGB(32, 32, 32);
+    DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption, sizeof(caption));
+    DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &text, sizeof(text));
+    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &border, sizeof(border));
+  } else {
+    const COLORREF def = DWMWA_COLOR_DEFAULT;
+    DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &def, sizeof(def));
+    DwmSetWindowAttribute(hwnd, DWMWA_TEXT_COLOR, &def, sizeof(def));
+    DwmSetWindowAttribute(hwnd, DWMWA_BORDER_COLOR, &def, sizeof(def));
+  }
+
+  // DWM attributes stick (readback works) but the caption often keeps the old
+  // pixels until a non-client rebuild. SWP_FRAMECHANGED + RDW_FRAME refresh
+  // only the chrome - do not resize or RDW_INVALIDATE the client, which
+  // blanks the Flutter surface.
+  SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
+                   SWP_FRAMECHANGED);
+  RedrawWindow(hwnd, nullptr, nullptr, RDW_FRAME | RDW_UPDATENOW);
+
+  // Windows re-reads DWM caption colors on non-client activation (the reason
+  // alt-tab away/back makes the title bar update). Toggle WM_NCACTIVATE so
+  // the new colors paint immediately without leaving the window.
+  const BOOL is_active = (GetForegroundWindow() == hwnd) ? TRUE : FALSE;
+  SendMessage(hwnd, WM_NCACTIVATE, FALSE, 0);
+  SendMessage(hwnd, WM_NCACTIVATE, is_active, 0);
+}
 
 using EnableNonClientDpiScaling = BOOL __stdcall(HWND hwnd);
 
-// Scale helper to convert logical scaler values to physical using passed in
-// scale factor
 int Scale(int source, double scale_factor) {
   return static_cast<int>(source * scale_factor);
 }
 
-// Dynamically loads the |EnableNonClientDpiScaling| from the User32 module.
-// This API is only needed for PerMonitor V1 awareness mode.
 void EnableFullDpiSupportIfAvailable(HWND hwnd) {
   HMODULE user32_module = LoadLibraryA("User32.dll");
   if (!user32_module) {
@@ -54,6 +158,9 @@ void EnableFullDpiSupportIfAvailable(HWND hwnd) {
 }
 
 }  // namespace
+
+bool Win32Window::title_bar_dark_forced_ = false;
+bool Win32Window::title_bar_dark_value_ = false;
 
 // Manages the Win32Window's window class registration.
 class WindowClassRegistrar {
@@ -263,6 +370,12 @@ void Win32Window::SetQuitOnClose(bool quit_on_close) {
   quit_on_close_ = quit_on_close;
 }
 
+void Win32Window::SetTitleBarDark(bool dark) {
+  title_bar_dark_forced_ = true;
+  title_bar_dark_value_ = dark;
+  ApplyTitleBarBrightness(window_handle_, dark);
+}
+
 bool Win32Window::OnCreate() {
   // No-op; provided for subclasses.
   return true;
@@ -273,6 +386,11 @@ void Win32Window::OnDestroy() {
 }
 
 void Win32Window::UpdateTheme(HWND const window) {
+  if (title_bar_dark_forced_) {
+    ApplyTitleBarBrightness(window, title_bar_dark_value_);
+    return;
+  }
+
   DWORD light_mode;
   DWORD light_mode_size = sizeof(light_mode);
   LSTATUS result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
@@ -281,8 +399,6 @@ void Win32Window::UpdateTheme(HWND const window) {
                                &light_mode_size);
 
   if (result == ERROR_SUCCESS) {
-    BOOL enable_dark_mode = light_mode == 0;
-    DwmSetWindowAttribute(window, DWMWA_USE_IMMERSIVE_DARK_MODE,
-                          &enable_dark_mode, sizeof(enable_dark_mode));
+    ApplyTitleBarBrightness(window, light_mode == 0);
   }
 }

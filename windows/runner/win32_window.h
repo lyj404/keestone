@@ -52,6 +52,10 @@ class Win32Window {
   // If true, closing this window will quit the application.
   void SetQuitOnClose(bool quit_on_close);
 
+  // Force the native title bar / caption to dark or light, independent of
+  // the OS AppsUseLightTheme preference. Survives later UpdateTheme calls.
+  void SetTitleBarDark(bool dark);
+
   // Return a RECT representing the bounds of the current client area.
   RECT GetClientArea();
 
@@ -87,10 +91,16 @@ class Win32Window {
   // Retrieves a class instance pointer for |window|
   static Win32Window* GetThisFromHandle(HWND const window) noexcept;
 
-  // Update the window frame's theme to match the system theme.
+  // Update the window frame's theme to match the system theme, unless the
+  // app has forced a title-bar brightness via SetTitleBarDark.
   static void UpdateTheme(HWND const window);
 
   bool quit_on_close_ = false;
+
+  // Forced title-bar brightness set by the Flutter side (app theme).
+  // Unset = follow the OS preference.
+  static bool title_bar_dark_forced_;
+  static bool title_bar_dark_value_;
 
   // window handle for top level window.
   HWND window_handle_ = nullptr;

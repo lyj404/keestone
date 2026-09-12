@@ -1,8 +1,16 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+#include <flutter/standard_method_codec.h>
+
 #include <optional>
+#include <variant>
 
 #include "flutter/generated_plugin_registrant.h"
+
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -27,6 +35,40 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
+  window_theme_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "keestone/window_theme",
+          &flutter::StandardMethodCodec::GetInstance());
+  window_theme_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name().compare("setTitleBarDark") == 0) {
+          const flutter::EncodableValue* args = call.arguments();
+          const bool* dark =
+              args != nullptr ? std::get_if<bool>(args) : nullptr;
+          if (dark == nullptr) {
+            result->Error("bad_args", "Expected a bool argument.");
+            return;
+          }
+          SetTitleBarDark(*dark);
+          HWND hwnd = GetHandle();
+          BOOL readback = FALSE;
+          if (hwnd != nullptr) {
+            DwmGetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE,
+                                  &readback, sizeof(readback));
+          }
+          flutter::EncodableMap reply;
+          reply[flutter::EncodableValue("hwnd")] = flutter::EncodableValue(
+              static_cast<int64_t>(reinterpret_cast<uintptr_t>(hwnd)));
+          reply[flutter::EncodableValue("readback")] =
+              flutter::EncodableValue(readback == TRUE);
+          result->Success(flutter::EncodableValue(reply));
+          return;
+        }
+        result->NotImplemented();
+      });
+
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
   });
@@ -40,6 +82,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  window_theme_channel_.reset();
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
