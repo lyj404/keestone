@@ -1,7 +1,7 @@
 name: keestone
 description: "A KeePass-compatible password manager built with Flutter."
 publish_to: 'none'
-version: 0.8.6+17
+version: 0.8.7+17
 environment:
   sdk: ^3.13.0
 
@@ -31,7 +31,7 @@ dependencies:
   otp: ^3.0.0
 
   # QR code scanning (TOTP setup)
-  mobile_scanner: ^5.2.3
+  mobile_scanner: ^7.4.1
 
   # Platform paths
   path_provider: ^2.1.5

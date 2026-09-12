@@ -106,7 +106,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
             child: MobileScanner(
               controller: _scannerCtrl,
               onDetect: _onDetectBarcode,
-              errorBuilder: (context, error, child) {
+              errorBuilder: (context, error) {
                 return ColoredBox(
                   color: Colors.black,
                   child: Center(

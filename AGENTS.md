@@ -22,8 +22,12 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 - Dart SDK: 3.13.x
 - Android compile/target SDK: Flutter-provided values (currently API 36)
 - Android minimum SDK: Flutter-provided value (currently API 24)
-- Android project toolchain: AGP 8.11.1, Kotlin 2.2.20, Gradle 8.14
-- Android Java compile target: Java 17 (the local machine currently runs Gradle with Java 21)
+- Android project toolchain: AGP 9.0.1, Kotlin 2.3.20, Gradle 9.1.0
+- Android Kotlin: built-in Kotlin enabled (`android.builtInKotlin=true`); app no longer applies `kotlin-android`
+- `android.newDsl=false` remains until Flutter fully migrates off legacy AGP DSL types
+- Android root `build.gradle.kts` forces plugin `compileSdk = 36` (file_picker et al. still ship android-34)
+- `kotlin.incremental=false` is required when pub cache and the project live on different drives
+- Android Java compile target: Java 17 (AGP 9 requires JDK 17+; local vfox Java is 17.0.2)
 - iOS deployment target: iOS 15
 - macOS deployment target: macOS 12
 - Material widgets: `material_ui` 1.x
@@ -31,4 +35,5 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 ### Pending platform work
 
 - Before adopting Xcode 27/iOS 27, migrate the custom UIKit entry point in `ios/Runner/AppDelegate.swift` to the UIScene lifecycle.
-- Android CI or a development machine with Java 17 is required to validate `flutter build appbundle`; AGP 8.x with the installed Java 21 currently fails Android 36 JDK image transformation.
+- When Flutter drops legacy DSL support, remove `android.newDsl=false`.
+- Validate `flutter build appbundle` with AGP 9.0.1 + Java 17 before release.

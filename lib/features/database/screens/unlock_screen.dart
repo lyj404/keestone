@@ -130,184 +130,188 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
           const SizedBox(width: 16),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Clay lock icon
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          ClayColors.primary.withValues(alpha: 0.15),
-                          ClayColors.tertiary.withValues(alpha: 0.1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(22),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ClayColors.primary.withValues(alpha: 0.12),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.lock_rounded,
-                      size: 34,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    _fileName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.isCloud ? l10n.cloudDatabase : widget.filePath,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 32),
-                  PasswordTextField(
-                    controller: _passwordController,
-                    labelText: l10n.masterPassword,
-                    autofocus: true,
-                    validator: (v) => (v == null || v.isEmpty)
-                        ? l10n.pleaseEnterPassword
-                        : null,
-                    onFieldSubmitted: (_) => _unlock(),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildKeyFilePicker(l10n, colorScheme),
-                  if (_error != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: colorScheme.errorContainer.withValues(
-                          alpha: 0.6,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: ClayColors.error.withValues(alpha: 0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Clay lock icon
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              ClayColors.primary.withValues(alpha: 0.15),
+                              ClayColors.tertiary.withValues(alpha: 0.1),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.error_outline_rounded,
-                            size: 18,
-                            color: colorScheme.error,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: colorScheme.onErrorContainer,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  dbState.isLoading
-                      ? Column(
-                          children: [
-                            SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: colorScheme.primary,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              l10n.decryptingFirstTimeSlow,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: ClayColors.primary.withValues(alpha: 0.12),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
                             ),
                           ],
-                        )
-                      : Column(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: ClayColors.primary.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 6),
-                                  ),
-                                ],
-                              ),
-                              child: FilledButton(
-                                onPressed: _unlock,
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                ),
-                                child: Text(l10n.unlock),
-                              ),
+                        ),
+                        child: Icon(
+                          Icons.lock_rounded,
+                          size: 34,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        _fileName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.isCloud ? l10n.cloudDatabase : widget.filePath,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 32),
+                      PasswordTextField(
+                        controller: _passwordController,
+                        labelText: l10n.masterPassword,
+                        autofocus: true,
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? l10n.pleaseEnterPassword
+                            : null,
+                        onFieldSubmitted: (_) => _unlock(),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildKeyFilePicker(l10n, colorScheme),
+                      if (_error != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer.withValues(
+                              alpha: 0.6,
                             ),
-                            if ((Platform.isAndroid || Platform.isIOS) &&
-                                ref.watch(biometricEnabledProvider)) ...[
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                onPressed: _biometricUnlock,
-                                icon: const Icon(
-                                  Icons.fingerprint_rounded,
-                                  size: 24,
-                                ),
-                                label: Text(l10n.unlockWithBiometric),
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(18),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: ClayColors.error.withValues(alpha: 0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline_rounded,
+                                size: 18,
+                                color: colorScheme.error,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(
+                                    color: colorScheme.onErrorContainer,
+                                    fontSize: 13,
                                   ),
                                 ),
                               ),
                             ],
-                          ],
+                          ),
                         ),
-                ],
+                      ],
+                      const SizedBox(height: 24),
+                      dbState.isLoading
+                          ? Column(
+                              children: [
+                                SizedBox(
+                                  width: 28,
+                                  height: 28,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: colorScheme.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  l10n.decryptingFirstTimeSlow,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(18),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: ClayColors.primary.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: FilledButton(
+                                    onPressed: _unlock,
+                                    style: FilledButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                    ),
+                                    child: Text(l10n.unlock),
+                                  ),
+                                ),
+                                if ((Platform.isAndroid || Platform.isIOS) &&
+                                    ref.watch(biometricEnabledProvider)) ...[
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: _biometricUnlock,
+                                    icon: const Icon(
+                                      Icons.fingerprint_rounded,
+                                      size: 24,
+                                    ),
+                                    label: Text(l10n.unlockWithBiometric),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size.fromHeight(50),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
