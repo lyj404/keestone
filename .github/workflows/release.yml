@@ -10,14 +10,39 @@ permissions:
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            msvc_arch: x64
+            # Stable publishes no Windows arm64 archive; master clones the
+            # pinned tag and bootstraps the host's own Dart/engine artifacts.
+            flutter_channel: stable
+          - arch: arm64
+            runner: windows-11-arm
+            msvc_arch: arm64
+            flutter_channel: master
     steps:
+      - name: Setup Rust (Windows ARM64)
+        if: matrix.arch == 'arm64'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://win.rustup.rs/aarch64" -OutFile rustup-init.exe
+          .\rustup-init.exe -y --default-toolchain 1.90.0
+          echo "$env:USERPROFILE\.cargo\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
       - uses: actions/checkout@v7
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
 
       - name: Install Rust
+        if: matrix.arch == 'x64'
         uses: dtolnay/rust-toolchain@1.90.0
 
       - uses: actions/cache@v4
@@ -26,13 +51,16 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/kreepto-rust/target
-          key: windows-cargo-${{ hashFiles('native/kreepto-rust/Cargo.toml') }}
-          restore-keys: windows-cargo-
+          key: windows-${{ matrix.arch }}-cargo-${{ hashFiles('native/kreepto-rust/Cargo.toml') }}
+          restore-keys: windows-${{ matrix.arch }}-cargo-
 
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.2
-          channel: stable
+          channel: ${{ matrix.flutter_channel }}
+          cache: true
+
+      - run: flutter --version
 
       - run: flutter pub get
 
@@ -40,45 +68,92 @@ jobs:
         run: cargo build --release
         working-directory: native/kreepto-rust
 
-      - run: flutter build windows --release
+      - name: Build Flutter Windows app
+        # Windows desktop has no --target-platform flag; arch comes from MSVC.
+        run: flutter build windows --release
 
       - name: Bundle native library
-        run: cp native/kreepto-rust/target/release/kreepto.dll build/windows/x64/runner/Release/
+        shell: pwsh
+        run: |
+          $bundleDir = "build\windows\${{ matrix.arch }}\runner\Release"
+          if (-not (Test-Path $bundleDir)) {
+            Get-ChildItem -Recurse build\windows -ErrorAction SilentlyContinue | Select-Object -First 50 FullName
+            throw "Flutter Windows bundle directory not found: $bundleDir"
+          }
+          Copy-Item "native\kreepto-rust\target\release\kreepto.dll" $bundleDir
 
       - name: Package ZIP
         shell: pwsh
         run: |
           $tag = "${{ github.ref_name }}" -replace '/', '-'
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath "KeeStone-$tag-windows-x64.zip"
+          Compress-Archive -Path "build\windows\${{ matrix.arch }}\runner\Release\*" -DestinationPath "KeeStone-$tag-windows-${{ matrix.arch }}.zip"
 
-      - name: Install Inno Setup
-        run: choco install innosetup -y --no-progress
+      - name: Ensure Inno Setup
+        shell: pwsh
+        run: |
+          $candidates = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+            "${env:LocalAppData}\Programs\Inno Setup 6\ISCC.exe"
+          )
+          if (-not ($candidates | Where-Object { Test-Path $_ } | Select-Object -First 1)) {
+            choco install innosetup -y --no-progress
+          }
 
       - name: Build installer
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}" -replace '^v', ''
-          $sourceDir = "${{ github.workspace }}\build\windows\x64\runner\Release"
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAPP_VERSION=$version" "/DSOURCE_DIR=$sourceDir" windows/inno_setup/keestone.iss
+          $sourceDir = "${{ github.workspace }}\build\windows\${{ matrix.arch }}\runner\Release"
+          $candidates = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+            "${env:LocalAppData}\Programs\Inno Setup 6\ISCC.exe"
+          )
+          $iscc = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) { throw "ISCC.exe not found after Inno Setup install." }
+          $isccArgs = @("/DAPP_VERSION=$version", "/DSOURCE_DIR=$sourceDir")
+          if ("${{ matrix.arch }}" -eq "arm64") {
+            $isccArgs += "/DARM64"
+          }
+          & $iscc @isccArgs windows/inno_setup/keestone.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed with exit code $LASTEXITCODE" }
 
       - name: Verify Windows packages
         shell: pwsh
         run: |
-          $zip = @(Get-ChildItem -Path "KeeStone-*.zip" -File)
-          $installer = @(Get-ChildItem -Path "build/windows/installer" -Filter "KeeStone-*-setup.exe" -File)
-          if ($zip.Count -eq 0) { throw "Windows ZIP was not generated." }
-          if ($installer.Count -eq 0) { throw "Windows installer was not generated." }
+          $zip = @(Get-ChildItem -Path "KeeStone-*-windows-${{ matrix.arch }}.zip" -File)
+          $installer = @(Get-ChildItem -Path "build/windows/installer" -Filter "KeeStone-*-windows-${{ matrix.arch }}-setup.exe" -File)
+          if ($zip.Count -eq 0) { throw "Windows ${{ matrix.arch }} ZIP was not generated." }
+          if ($installer.Count -eq 0) { throw "Windows ${{ matrix.arch }} installer was not generated." }
           $zip | ForEach-Object { Write-Host "Found ZIP: $($_.FullName)" }
           $installer | ForEach-Object { Write-Host "Found installer: $($_.FullName)" }
 
       - uses: actions/upload-artifact@v4
         with:
-          name: windows
+          name: windows-${{ matrix.arch }}
           path: |
-            KeeStone-*.zip
-            build/windows/installer/KeeStone-*-setup.exe
+            KeeStone-*-windows-${{ matrix.arch }}.zip
+            build/windows/installer/KeeStone-*-windows-${{ matrix.arch }}-setup.exe
+
   build-linux:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+            flutter_arch: x64
+            deb_arch: amd64
+            flutter_channel: stable
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            flutter_arch: arm64
+            deb_arch: arm64
+            # Stable publishes no Linux arm64 archive; master clones the
+            # pinned tag and bootstraps the host's own Dart/engine artifacts.
+            flutter_channel: master
     steps:
       - uses: actions/checkout@v7
 
@@ -91,15 +166,19 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             native/kreepto-rust/target
-          key: linux-cargo-${{ hashFiles('native/kreepto-rust/Cargo.toml') }}
-          restore-keys: linux-cargo-
+          key: linux-${{ matrix.arch }}-cargo-${{ hashFiles('native/kreepto-rust/Cargo.toml') }}
+          restore-keys: linux-${{ matrix.arch }}-cargo-
 
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.2
-          channel: stable
+          channel: ${{ matrix.flutter_channel }}
+          cache: true
 
       - run: sudo apt-get update && sudo apt-get install -y ninja-build libgtk-3-dev clang cmake pkg-config libsecret-1-dev libayatana-appindicator3-dev
+
+      - run: flutter --version
+
       - run: flutter pub get
 
       - name: Build kreepto native library
@@ -109,19 +188,23 @@ jobs:
       - run: flutter build linux --release
 
       - name: Bundle native library
-        run: cp native/kreepto-rust/target/release/libkreepto.so build/linux/x64/release/bundle/lib/
+        run: |
+          bundle_dir="build/linux/${{ matrix.flutter_arch }}/release/bundle"
+          test -d "$bundle_dir"
+          cp native/kreepto-rust/target/release/libkreepto.so "$bundle_dir/lib/"
 
       - name: Package tar.gz
         run: |
           tag="${{ github.ref_name }}"
           tag="${tag//\//-}"
-          tar -czf "KeeStone-${tag}-linux-x64.tar.gz" -C build/linux/x64/release/bundle .
+          tar -czf "KeeStone-${tag}-linux-${{ matrix.arch }}.tar.gz" -C "build/linux/${{ matrix.flutter_arch }}/release/bundle" .
 
       - name: Package deb
         run: |
           tag="${{ github.ref_name }}"
           version="${tag#v}"
-          pkg_dir="keestone_${version}_amd64"
+          pkg_dir="keestone_${version}_${{ matrix.deb_arch }}"
+          bundle_dir="build/linux/${{ matrix.flutter_arch }}/release/bundle"
           mkdir -p "$pkg_dir/DEBIAN"
           mkdir -p "$pkg_dir/opt/keestone"
           mkdir -p "$pkg_dir/usr/share/applications"
@@ -129,21 +212,20 @@ jobs:
           mkdir -p "$pkg_dir/usr/bin"
 
           # Control file
-          cat > "$pkg_dir/DEBIAN/control" << 'CTRL'
+          cat > "$pkg_dir/DEBIAN/control" << CTRL
           Package: keestone
-          Version: VERSION_PLACEHOLDER
+          Version: ${version}
           Section: utils
           Priority: optional
-          Architecture: amd64
+          Architecture: ${{ matrix.deb_arch }}
           Maintainer: KeeStone
           Depends: libgtk-3-0, libsecret-1-0, libayatana-appindicator3-1, libdbus-1-3
           Description: A KeePass-compatible password manager
           CTRL
           sed -i 's/^          //' "$pkg_dir/DEBIAN/control"
-          sed -i "s/VERSION_PLACEHOLDER/$version/" "$pkg_dir/DEBIAN/control"
 
           # Copy build files
-          cp -r build/linux/x64/release/bundle/* "$pkg_dir/opt/keestone/"
+          cp -r "$bundle_dir"/* "$pkg_dir/opt/keestone/"
 
           # Symlink to /usr/bin
           ln -s /opt/keestone/keestone "$pkg_dir/usr/bin/keestone"
@@ -169,10 +251,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: linux
+          name: linux-${{ matrix.arch }}
           path: |
-            KeeStone-*.tar.gz
-            keestone_*.deb
+            KeeStone-*-linux-${{ matrix.arch }}.tar.gz
+            keestone_*_${{ matrix.deb_arch }}.deb
 
   build-android:
     runs-on: ubuntu-latest
@@ -333,16 +415,30 @@ jobs:
           sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.version }}/" PKGBUILD
           sed -i "s/pkgrel=.*/pkgrel=1/" PKGBUILD
 
-      - name: Resolve release archive checksum
+      - name: Resolve release archive checksums
         id: archive
         run: |
-          archive="KeeStone-v${{ steps.version.outputs.version }}-linux-x64.tar.gz"
-          curl --fail --location --retry 4 -o "$archive"             "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}/$archive"
-          echo "sha256=$(sha256sum "$archive" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          version="${{ steps.version.outputs.version }}"
+          base_url="https://github.com/${{ github.repository }}/releases/download/v${version}"
+
+          declare -A files=(
+            [x86_64]="KeeStone-v${version}-linux-x64.tar.gz"
+            [aarch64]="KeeStone-v${version}-linux-arm64.tar.gz"
+          )
+
+          for arch in x86_64 aarch64; do
+            file="${files[$arch]}"
+            curl --fail --location --retry 4 -o "$file" "$base_url/$file"
+            sum="$(sha256sum "$file" | cut -d' ' -f1)"
+            echo "sha256_${arch}=${sum}" >> "$GITHUB_OUTPUT"
+            echo "Resolved $file -> $sum"
+          done
 
       - name: Update package metadata
         run: |
-          sed -i "s/sha256sums=.*/sha256sums=('${{ steps.archive.outputs.sha256 }}')/" PKGBUILD
+          sed -i "s/sha256sums_x86_64=.*/sha256sums_x86_64=('${{ steps.archive.outputs.sha256_x86_64 }}')/" PKGBUILD
+          sed -i "s/sha256sums_aarch64=.*/sha256sums_aarch64=('${{ steps.archive.outputs.sha256_aarch64 }}')/" PKGBUILD
           docker run --rm -v "$PWD:/pkg" archlinux:base-devel bash -lc             "cd /pkg && useradd -m builder && chown -R builder:builder /pkg && su builder -c 'makepkg --printsrcinfo > .SRCINFO'"
 
       - name: Publish to AUR

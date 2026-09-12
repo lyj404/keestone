@@ -1,8 +1,18 @@
 ; KeeStone Inno Setup Script
-; Usage: iscc.exe /DAPP_VERSION=0.5.9 /DSOURCE_DIR=..\..\build\windows\x64\runner\Release keestone.iss
+; Usage:
+;   iscc.exe /DAPP_VERSION=0.5.9 keestone.iss
+;   iscc.exe /DAPP_VERSION=0.5.9 /DARM64 keestone.iss
+
+#ifdef ARM64
+  #define TARGET_ARCH "arm64"
+  #define ARCHITECTURES_ALLOWED "arm64"
+#else
+  #define TARGET_ARCH "x64"
+  #define ARCHITECTURES_ALLOWED "x64compatible"
+#endif
 
 #ifndef SOURCE_DIR
-  #define SOURCE_DIR "..\..\build\windows\x64\runner\Release"
+  #define SOURCE_DIR "..\..\build\windows\" + TARGET_ARCH + "\runner\Release"
 #endif
 
 #ifndef APP_VERSION
@@ -25,15 +35,15 @@ DefaultDirName={autopf}\{#APP_NAME}
 DefaultGroupName={#APP_NAME}
 LicenseFile=..\..\LICENSE
 OutputDir=..\..\build\windows\installer
-OutputBaseFilename=KeeStone-v{#APP_VERSION}-windows-x64-setup
+OutputBaseFilename=KeeStone-v{#APP_VERSION}-windows-{#TARGET_ARCH}-setup
 SetupIconFile=..\runner\resources\app_icon.ico
 UninstallDisplayIcon={app}\{#APP_EXE_NAME}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 PrivilegesRequired=lowest
-ArchitecturesAllowed=x64compatible
-ArchitecturesInstallIn64BitMode=x64compatible
+ArchitecturesAllowed={#ARCHITECTURES_ALLOWED}
+ArchitecturesInstallIn64BitMode={#ARCHITECTURES_ALLOWED}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

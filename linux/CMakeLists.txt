@@ -113,7 +113,12 @@ foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
 endforeach(bundled_library)
 
 # Bundle native crypto library (kreepto)
-set(KREEPTO_LIB "${CMAKE_SOURCE_DIR}/../assets/native/linux/x86_64/libkreepto.so")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+  set(KREEPTO_ARCH_DIR "arm64")
+else()
+  set(KREEPTO_ARCH_DIR "x86_64")
+endif()
+set(KREEPTO_LIB "${CMAKE_SOURCE_DIR}/../assets/native/linux/${KREEPTO_ARCH_DIR}/libkreepto.so")
 if(EXISTS "${KREEPTO_LIB}")
   install(FILES "${KREEPTO_LIB}"
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"

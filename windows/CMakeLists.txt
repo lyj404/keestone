@@ -88,7 +88,12 @@ if(PLUGIN_BUNDLED_LIBRARIES)
 endif()
 
 # Bundle native crypto library (kreepto)
-set(KREEPTO_DLL "${CMAKE_SOURCE_DIR}/../assets/native/windows/x86_64/kreepto.dll")
+if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(ARM64|aarch64)$")
+  set(KREEPTO_ARCH_DIR "arm64")
+else()
+  set(KREEPTO_ARCH_DIR "x86_64")
+endif()
+set(KREEPTO_DLL "${CMAKE_SOURCE_DIR}/../assets/native/windows/${KREEPTO_ARCH_DIR}/kreepto.dll")
 if(EXISTS "${KREEPTO_DLL}")
   install(FILES "${KREEPTO_DLL}"
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
