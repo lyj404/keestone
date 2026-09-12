@@ -143,6 +143,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                           retentionAsync.when(
                             data: (count) => DropdownButton<int>(
                               value: count,
+                              focusColor: ClayDecoration.dropdownFocusColor,
                               underline: const SizedBox.shrink(),
                               items: [3, 5, 10, 20]
                                   .map(

@@ -219,6 +219,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<String>(
             value: currentLocale?.languageCode ?? 'system',
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: 'system', child: Text(l10n.followSystem)),
@@ -264,6 +265,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<int>(
             value: ref.watch(autoSaveProvider),
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: 0, child: Text(l10n.disabled)),
@@ -317,6 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<int>(
             value: ref.watch(expirationReminderProvider),
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: 0, child: Text(l10n.disabled)),
@@ -381,6 +384,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<CloseBehavior>(
             value: ref.watch(closeBehaviorProvider),
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: CloseBehavior.ask, child: Text(l10n.askEveryTime)),
@@ -493,6 +497,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<ThemeMode>(
             value: currentThemeMode,
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: ThemeMode.system, child: Text(l10n.followSystem)),
@@ -557,6 +562,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           DropdownButton<int>(
             value: ref.watch(autoLockProvider),
+            focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
               DropdownMenuItem(value: 0, child: Text(l10n.disabled)),

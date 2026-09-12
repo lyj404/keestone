@@ -145,6 +145,11 @@ class ClayDecoration {
 
   static const List<BoxShadow> _noShadow = [];
 
+  /// Plain [DropdownButton] paints [ThemeData.focusColor] (~12% black) as a
+  /// full-area InkWell overlay after the menu closes — that reads as a dirty
+  /// shadow. Surfaces stay flat; outlined fields use focusedBorder instead.
+  static const Color dropdownFocusColor = Colors.transparent;
+
   /// List rows are flat — separation comes from their own hairline border.
   static List<BoxShadow> listShadow(Brightness brightness) => _noShadow;
 
