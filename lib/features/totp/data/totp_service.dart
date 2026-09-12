@@ -98,8 +98,14 @@ class TotpService {
     );
   }
 
+  /// Seconds left in the current TOTP window, in [1, period].
+  ///
+  /// Must use the wall clock — `OTP.remainingSeconds` reads the package's
+  /// static `lastUsedTime`, which only advances when a code is generated,
+  /// so a pure countdown would freeze until the next HMAC.
   int remainingSeconds(TotpConfig config) {
-    return OTP.remainingSeconds(interval: config.period);
+    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return config.period - (nowSec % config.period);
   }
 
   TotpConfig? parseUri(String input) {
