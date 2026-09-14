@@ -9,6 +9,7 @@ import '../../../core/utils/logger.dart';
 import '../../backup/data/backup_service.dart';
 import '../../../core/utils/fuzzy_match.dart';
 import '../../sync/data/sync_service.dart';
+import '../../totp/data/totp_service.dart';
 
 /// Thrown when a KDBX file cannot be parsed due to corruption or bad format.
 class DatabaseCorruptedException implements Exception {
@@ -216,6 +217,21 @@ class DatabaseService {
     _searchIndex = null;
   }
 
+  /// Upgrades TOTP secrets that only exist in this app's legacy customData
+  /// keys into KeePass standard entry fields. Marks dirty so the next save
+  /// persists the migration.
+  void _migrateLegacyTotpFields() {
+    final service = TotpService();
+    var migrated = 0;
+    for (final entry in allEntries) {
+      if (service.migrateLegacyTotp(entry)) migrated++;
+    }
+    if (migrated > 0) {
+      markDirty();
+      log.i('Migrated $migrated legacy TOTP customData entries to fields');
+    }
+  }
+
   void _rebuildSearchIndex() {
     final entries = _allEntriesCache;
     if (entries == null) {
@@ -362,6 +378,7 @@ class DatabaseService {
     markClean();
     _localizeRecycleBin();
     _rebuildEntryCache();
+    _migrateLegacyTotpFields();
     log.i('Database opened, entries: ${_allEntriesCache!.length}');
     return _db!;
   }
@@ -455,6 +472,7 @@ class DatabaseService {
     markDirty();
     _localizeRecycleBin();
     _rebuildEntryCache();
+    _migrateLegacyTotpFields();
     return _db!;
   }
 

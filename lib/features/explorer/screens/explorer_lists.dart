@@ -567,11 +567,14 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
                   itemCount: totpEntries.length,
                   itemBuilder: (context, index) {
                     final entry = totpEntries[index];
-                    return _TotpListTile(
-                      entry: entry,
-                      totpService: widget.totpService,
-                      onTap: () => widget.onEntryOpen(entry),
-                      onDelete: () => _deleteTotpEntry(entry),
+                    return RepaintBoundary(
+                      child: _TotpListTile(
+                        key: ValueKey(entry.uuid),
+                        entry: entry,
+                        totpService: widget.totpService,
+                        onTap: () => widget.onEntryOpen(entry),
+                        onDelete: () => _deleteTotpEntry(entry),
+                      ),
                     );
                   },
                 ),
@@ -588,6 +591,7 @@ class _TotpListTile extends StatefulWidget {
   final VoidCallback onDelete;
 
   const _TotpListTile({
+    super.key,
     required this.entry,
     required this.totpService,
     required this.onTap,
@@ -628,7 +632,11 @@ class _TotpListTileState extends State<_TotpListTile> {
   }
 
   void _loadConfig() {
-    _config = widget.totpService.loadFromEntry(widget.entry);
+    try {
+      _config = widget.totpService.loadFromEntry(widget.entry);
+    } catch (_) {
+      _config = null;
+    }
     if (_config != null) {
       _updateCode(force: true);
       TotpTicker.instance.addListener(_onTick);
@@ -640,13 +648,21 @@ class _TotpListTileState extends State<_TotpListTile> {
   /// Called once per second by the shared ticker. The code only changes when
   /// the period wraps (remaining jumps back up), so the HMAC is recomputed
   /// once per period instead of on every tick.
+  ///
+  /// A bad secret must not throw out of initState/build — that used to leave
+  /// the tile (and sometimes the list below it) as an unpainted gray hole.
   void _updateCode({bool force = false}) {
     final config = _config;
     if (config == null) return;
     final newRemaining = widget.totpService.remainingSeconds(config);
-    final newCode = force || newRemaining > _remaining
-        ? widget.totpService.generateCode(config)
-        : _code;
+    String newCode;
+    try {
+      newCode = force || newRemaining > _remaining
+          ? widget.totpService.generateCode(config)
+          : _code;
+    } catch (_) {
+      newCode = '';
+    }
     if (mounted && (newCode != _code || newRemaining != _remaining)) {
       setState(() {
         _code = newCode;

@@ -49,7 +49,11 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
   }
 
   void _loadConfig() {
-    _config = _totpService.loadFromEntry(widget.entry);
+    try {
+      _config = _totpService.loadFromEntry(widget.entry);
+    } catch (_) {
+      _config = null;
+    }
     if (_config != null) {
       _updateCode(force: true);
       TotpTicker.instance.addListener(_onTick);
@@ -67,9 +71,14 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
     final config = _config;
     if (config == null) return;
     final newRemaining = _totpService.remainingSeconds(config);
-    final newCode = force || newRemaining > _remaining
-        ? _totpService.generateCode(config)
-        : _code;
+    String newCode;
+    try {
+      newCode = force || newRemaining > _remaining
+          ? _totpService.generateCode(config)
+          : _code;
+    } catch (_) {
+      newCode = '';
+    }
     if (mounted && (newCode != _code || newRemaining != _remaining)) {
       setState(() {
         _code = newCode;
