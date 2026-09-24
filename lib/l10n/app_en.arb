@@ -468,5 +468,8 @@
   "discardChangesBody": "This entry has unsaved changes. Discard them and leave?",
   "discardAndLeave": "Discard",
   "keepEditing": "Keep editing",
-  "entryNoLongerExists": "This entry no longer exists in the open database. Your changes were not saved."
+  "entryNoLongerExists": "This entry no longer exists in the open database. Your changes were not saved.",
+  "closeUnsavedTitle": "Unsaved database changes",
+  "closeUnsavedBody": "Some changes could not be written to disk. Discard them and close anyway?",
+  "discardAndClose": "Discard and close"
 }

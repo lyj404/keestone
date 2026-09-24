@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+
 class PasswordGenerator {
   static const defaultUppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   static const defaultLowercase = 'abcdefghijklmnopqrstuvwxyz';
@@ -18,7 +20,9 @@ class PasswordGenerator {
   /// entries (~8 bits/word), 6 words yield ~48 bits of entropy — strong
   /// against online guessing while remaining human-typable. For offline
   /// attacks, prefer 8+ words or fall back to the character generator.
-  static const _passphraseWords = [
+  /// Words must be unique: duplicates silently reduce entropy.
+  @visibleForTesting
+  static const passphraseWords = [
     'apple', 'azure', 'badge', 'balcony', 'banner', 'basket', 'beacon', 'berry',
     'bicycle', 'bison', 'blossom', 'bluebird', 'border', 'bracket', 'branch',
     'bridge', 'bronze', 'bubble', 'bucket', 'cactus', 'candle', 'canyon',
@@ -46,23 +50,23 @@ class PasswordGenerator {
     'trout', 'tulip', 'tundra', 'turtle', 'unicorn', 'valley', 'velvet',
     'vendor', 'violet', 'violin', 'vortex', 'walnut', 'wander', 'willow',
     'winter', 'wolf', 'yarrow', 'zephyr', 'zinnia', 'anchor', 'arrow', 'ash',
-    'attic', 'aurora', 'autumn', 'avocado', 'axiom', 'badge', 'basin', 'beach',
+    'attic', 'aurora', 'autumn', 'avocado', 'axiom', 'basin', 'beach',
     'beam', 'bell', 'bench', 'bloom', 'bolt', 'book', 'brooke', 'buzz',
     'cabal', 'cabin', 'carrot', 'ceiling', 'chalk', 'chord', 'clam', 'cliff',
     'clover', 'cobalt', 'crate', 'dawn', 'dewdrop', 'dill', 'dune', 'elm',
     'falcon', 'fern', 'field', 'finch', 'finland', 'fish', 'flag', 'fleece',
-    'garden', 'gazebo', 'globe', 'grape', 'gull', 'halo', 'hamlet', 'hare',
-    'hedge', 'hill', 'hymn', 'iris', 'island', 'jade', 'jolly', 'kelp', 'kite',
-    'lake', 'lamb', 'lamp', 'leaf', 'lemon', 'lily', 'linnet', 'loon', 'mango',
+    'gazebo', 'globe', 'grape', 'gull', 'halo', 'hamlet', 'hare',
+    'hill', 'hymn', 'iris', 'island', 'jade', 'jolly', 'kelp', 'kite',
+    'lake', 'lamb', 'lamp', 'leaf', 'lily', 'linnet', 'loon', 'mango',
     'mint', 'mole', 'moon', 'moss', 'nest', 'nook', 'oat', 'ochre', 'olive',
-    'opal', 'owl', 'palm', 'pansy', 'pebble', 'penny', 'petal', 'plume', 'pond',
+    'owl', 'palm', 'pansy', 'pebble', 'penny', 'petal', 'plume', 'pond',
     'poppy', 'quill', 'raft', 'rain', 'raven', 'red', 'reed', 'ridge', 'robin',
-    'rose', 'sage', 'sail', 'scent', 'seed', 'shale', 'shark', 'shore',
-    'shrub', 'silence', 'skiff', 'sky', 'slope', 'snail', 'sparrow', 'spire',
+    'rose', 'sage', 'scent', 'seed', 'shale', 'shark', 'shore',
+    'shrub', 'silence', 'skiff', 'sky', 'slope', 'spire',
     'sprout', 'starling', 'stem', 'stork', 'sun', 'swan', 'tap', 'thaw',
     'tide', 'tiger', 'tiller', 'tower', 'town', 'trellis', 'trove', 'tuff',
-    'valley', 'vase', 'vault', 'veil', 'vine', 'waffle', 'wake', 'wave',
-    'wheat', 'whisk', 'wick', 'willow', 'wink', 'wren', 'yew', 'zest',
+    'vase', 'vault', 'veil', 'vine', 'waffle', 'wake', 'wave',
+    'wheat', 'whisk', 'wick', 'wink', 'wren', 'yew', 'zest',
   ];
 
   static String generate({
@@ -131,7 +135,7 @@ class PasswordGenerator {
     final random = Random.secure();
     final words = <String>[];
     for (var i = 0; i < wordCount; i++) {
-      words.add(_passphraseWords[random.nextInt(_passphraseWords.length)]);
+      words.add(passphraseWords[random.nextInt(passphraseWords.length)]);
     }
     var passphrase = words.join(separator);
     if (appendDigit) passphrase += separator + random.nextInt(10).toString();

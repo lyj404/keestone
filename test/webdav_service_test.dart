@@ -34,4 +34,35 @@ void main() {
     expect(migrated.profiles, hasLength(1));
     expect(migrated.profiles.single.password, startsWith('ENC2:'));
   });
+
+  test('upgrades a plaintext profile password to ENC2 on load', () async {
+    FlutterSecureStorage.setMockInitialValues({
+      'webdav_profiles': jsonEncode({
+        'activeProfileId': 'p1',
+        'profiles': [
+          {
+            'id': 'p1',
+            'name': 'Home',
+            'serverUrl': 'https://example.com/dav',
+            'username': 'user',
+            'password': 'plaintext-secret',
+            'remotePath': '/vaults',
+            'remoteFilename': 'vault.kdbx',
+            'enabled': true,
+          },
+        ],
+      }),
+    });
+
+    final state = await WebDavSettingsService()
+        .getProfilesState()
+        .timeout(const Duration(seconds: 1));
+    expect(state.profiles.single.password, 'plaintext-secret');
+
+    const storage = FlutterSecureStorage();
+    final storedJson = await storage.read(key: 'webdav_profiles');
+    final stored = WebDavProfilesState.decode(storedJson!);
+    expect(stored.profiles.single.password, startsWith('ENC2:'));
+    expect(stored.profiles.single.password, isNot(contains('plaintext-secret')));
+  });
 }

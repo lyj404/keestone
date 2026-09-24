@@ -14,7 +14,7 @@ class AutoLockNotifier extends StateNotifier<int> {
   final Ref _ref;
   Timer? _timer;
 
-  AutoLockNotifier(this._ref) : super(0) {
+  AutoLockNotifier(this._ref) : super(5) {
     _load();
   }
 

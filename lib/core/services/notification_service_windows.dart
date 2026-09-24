@@ -1,10 +1,14 @@
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:win32/win32.dart';
 
 /// Windows-specific notification implementation using Win32 Shell_NotifyIcon.
 /// The window class and window are created once and reused for all notifications.
+///
+/// This file is also linked on non-Windows `dart:io` targets via conditional
+/// import; every entry point must no-op unless [Platform.isWindows].
 class WindowsNotificationHelper {
   static final WindowsNotificationHelper _instance =
       WindowsNotificationHelper._();
@@ -19,6 +23,7 @@ class WindowsNotificationHelper {
   Pointer<NativeFunction<WNDPROC>>? _wndProc;
 
   void _ensureInitialized() {
+    if (!Platform.isWindows) return;
     if (_classRegistered) return;
 
     _hInstance = HINSTANCE(GetModuleHandle(null).value);
@@ -55,6 +60,7 @@ class WindowsNotificationHelper {
   }
 
   void showBalloon(String title, String body) {
+    if (!Platform.isWindows) return;
     _ensureInitialized();
 
     if (_hWnd.isNull) return;
@@ -106,6 +112,7 @@ class WindowsNotificationHelper {
   }
 
   void dispose() {
+    if (!Platform.isWindows) return;
     if (!_hWnd.isNull) {
       DestroyWindow(_hWnd);
       _hWnd = HWND(nullptr);

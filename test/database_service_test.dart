@@ -96,5 +96,56 @@ void main() {
         expect(service.isDirty, isFalse);
       },
     );
+
+    test('sync audit masks password and protected field values', () async {
+      await service.createDatabase('Test vault', 'master', databasePath);
+      final entry = service.createEntry(service.db!.root);
+      entry.fields['Title'] = KdbxTextField.fromText(text: 'Secret account');
+      entry.fields['Password'] = KdbxTextField.fromText(
+        text: 'local-super-secret',
+        protected: true,
+      );
+      entry.fields['API Token'] = KdbxTextField.fromText(
+        text: 'local-token-secret',
+        protected: true,
+      );
+      entry.fields['UserName'] = KdbxTextField.fromText(text: 'alice');
+      service.rebuildEntryCache();
+
+      final localBytes = await service.saveToBytes();
+      // Mutate only protected fields on the local copy, then build a remote
+      // database that still has the older values.
+      entry.fields['Password'] = KdbxTextField.fromText(
+        text: 'remote-super-secret',
+        protected: true,
+      );
+      entry.fields['API Token'] = KdbxTextField.fromText(
+        text: 'remote-token-secret',
+        protected: true,
+      );
+      entry.fields['UserName'] = KdbxTextField.fromText(text: 'alice');
+      service.markDirty();
+      service.rebuildEntryCache();
+
+      final report = await service.buildSyncAuditReportFromBytes(localBytes);
+      expect(report.modifiedBoth, hasLength(1));
+      final change = report.modifiedBoth.single;
+      final joined = [
+        ...change.localValues.values,
+        ...change.remoteValues.values,
+      ].join(' ');
+      expect(joined, isNot(contains('local-super-secret')));
+      expect(joined, isNot(contains('remote-super-secret')));
+      expect(joined, isNot(contains('local-token-secret')));
+      expect(joined, isNot(contains('remote-token-secret')));
+      expect(
+        change.localValues['Password'],
+        DatabaseService.maskedAuditValue,
+      );
+      expect(
+        change.remoteValues['Password'],
+        DatabaseService.maskedAuditValue,
+      );
+    });
   });
 }

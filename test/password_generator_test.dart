@@ -131,5 +131,10 @@ void main() {
         }
       }
     });
+
+    test('word list has no duplicates', () {
+      final words = PasswordGenerator.passphraseWords;
+      expect(words.toSet().length, words.length);
+    });
   });
 }

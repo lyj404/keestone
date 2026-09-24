@@ -14,6 +14,7 @@ import 'core/providers/locale_provider.dart';
 import 'core/providers/privacy_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/utils/clipboard_utils.dart';
+import 'core/utils/logger.dart';
 import 'core/utils/window_title_bar.dart';
 import 'features/database/providers/database_provider.dart';
 import 'features/explorer/providers/explorer_provider.dart';
@@ -82,7 +83,7 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
           notifier.save().then(
             (_) {},
             onError: (Object e) {
-              debugPrint('Background save failed: $e');
+              log.w('Background save failed', error: e);
             },
           ),
         );

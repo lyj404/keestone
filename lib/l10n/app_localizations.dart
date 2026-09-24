@@ -2575,6 +2575,24 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'该条目在当前打开的数据库中已不存在，修改未保存。'**
   String get entryNoLongerExists;
+
+  /// No description provided for @closeUnsavedTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据库有未保存更改'**
+  String get closeUnsavedTitle;
+
+  /// No description provided for @closeUnsavedBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'部分更改未能写入磁盘。确定放弃这些更改并关闭吗？'**
+  String get closeUnsavedBody;
+
+  /// No description provided for @discardAndClose.
+  ///
+  /// In zh, this message translates to:
+  /// **'放弃并关闭'**
+  String get discardAndClose;
 }
 
 class _AppLocalizationsDelegate

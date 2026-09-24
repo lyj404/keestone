@@ -1329,4 +1329,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get entryNoLongerExists =>
       'This entry no longer exists in the open database. Your changes were not saved.';
+
+  @override
+  String get closeUnsavedTitle => 'Unsaved database changes';
+
+  @override
+  String get closeUnsavedBody =>
+      'Some changes could not be written to disk. Discard them and close anyway?';
+
+  @override
+  String get discardAndClose => 'Discard and close';
 }

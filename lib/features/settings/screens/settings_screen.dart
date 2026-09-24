@@ -1060,8 +1060,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<bool> _confirmInsecureHttp() async {
-    final uri = Uri.tryParse(_urlController.text.trim());
-    if (uri?.scheme != 'http') return true;
+    final config = WebDavConfig(
+      id: _selectedProfileId ?? 'tmp',
+      name: _profileNameController.text.trim(),
+      serverUrl: _urlController.text.trim(),
+    );
+    bool insecure;
+    try {
+      insecure = config.usesInsecureHttp;
+    } on FormatException {
+      return false;
+    }
+    if (!insecure) return true;
     final l10n = AppLocalizations.of(context)!;
     return await showDialog<bool>(
           context: context,

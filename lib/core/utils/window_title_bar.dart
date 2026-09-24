@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
+
+import 'logger.dart';
 
 /// Keeps the native window chrome in sync with the in-app theme.
 ///
@@ -37,12 +37,12 @@ class WindowTitleBar {
         _lastDark = dark;
         final hwnd = reply?['hwnd'];
         final readback = reply?['readback'];
-        debugPrint(
+        log.d(
           'WindowTitleBar: applied dark=$dark hwnd=0x'
           '${(hwnd is int ? hwnd : 0).toRadixString(16)} readback=$readback',
         );
       } catch (e) {
-        debugPrint('WindowTitleBar: setTitleBarDark failed: $e');
+        log.w('WindowTitleBar: setTitleBarDark failed', error: e);
       }
       return;
     }

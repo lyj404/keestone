@@ -964,7 +964,29 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
   }
 
   Future<void> _closeAsync(BuildContext context, WidgetRef ref) async {
-    await ref.read(databaseProvider.notifier).close();
+    final notifier = ref.read(databaseProvider.notifier);
+    if (notifier.isDirty) {
+      final l10n = AppLocalizations.of(context)!;
+      final discard = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.closeUnsavedTitle),
+          content: Text(l10n.closeUnsavedBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.discardAndClose),
+            ),
+          ],
+        ),
+      );
+      if (discard != true || !context.mounted) return;
+    }
+    await notifier.close();
     if (context.mounted) context.go('/welcome');
   }
 

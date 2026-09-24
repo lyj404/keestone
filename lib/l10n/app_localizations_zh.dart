@@ -1295,4 +1295,13 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get entryNoLongerExists => '该条目在当前打开的数据库中已不存在，修改未保存。';
+
+  @override
+  String get closeUnsavedTitle => '数据库有未保存更改';
+
+  @override
+  String get closeUnsavedBody => '部分更改未能写入磁盘。确定放弃这些更改并关闭吗？';
+
+  @override
+  String get discardAndClose => '放弃并关闭';
 }

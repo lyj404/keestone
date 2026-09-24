@@ -39,11 +39,14 @@ class WebDavSettingsService {
     if (json != null) {
       final stored = WebDavProfilesState.decode(json);
       final decrypted = await _decryptProfilesState(stored);
-      // Migrate legacy XOR-encrypted passwords to AES-GCM in storage.
-      final hasLegacy = stored.profiles.any(
-        (p) => _encryptor.isLegacyEncrypted(p.password),
+      // Migrate legacy XOR-encrypted passwords and any still-plaintext
+      // passwords to AES-GCM in storage.
+      final needsUpgrade = stored.profiles.any(
+        (p) =>
+            p.password.isNotEmpty &&
+            !_encryptor.isEncrypted(p.password),
       );
-      if (hasLegacy) {
+      if (needsUpgrade) {
         await _persistState(decrypted);
       }
       return decrypted;

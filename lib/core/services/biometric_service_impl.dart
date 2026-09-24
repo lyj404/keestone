@@ -34,7 +34,9 @@ Future<bool> authenticate(String reason) async {
       ],
       options: const AuthenticationOptions(
         stickyAuth: true,
-        biometricOnly: false,
+        // Device PIN/pattern must not unlock a vault that stores the master
+        // password; require an actual biometric factor.
+        biometricOnly: true,
       ),
     );
     log.d('Biometric: authenticate result=$result');

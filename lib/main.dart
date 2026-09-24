@@ -124,9 +124,9 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
     } catch (_) {}
   }
 
-  Future<void> _persistDirtyDatabase() async {
+  Future<bool> _persistDirtyDatabase() async {
     final db = ref.read(databaseProvider).value;
-    if (db == null) return;
+    if (db == null) return true;
     final notifier = ref.read(databaseProvider.notifier);
 
     try {
@@ -153,12 +153,49 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
         stackTrace: st,
       );
     }
+    return !notifier.isDirty;
+  }
+
+  Future<bool> _confirmDiscardUnsaved() async {
+    final navContext = rootNavigatorKey.currentContext;
+    if (navContext == null) return true;
+    final l10n = AppLocalizations.of(navContext);
+    final result = await showDialog<bool>(
+      context: navContext,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n?.closeUnsavedTitle ?? 'Unsaved database changes'),
+        content: Text(
+          l10n?.closeUnsavedBody ??
+              'Some changes could not be written to disk. Discard them and close anyway?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n?.cancel ?? 'Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n?.discardAndClose ?? 'Discard and close'),
+          ),
+        ],
+      ),
+    );
+    return result == true;
   }
 
   Future<void> _terminateApp() async {
     _quitting = true;
     try {
-      await _persistDirtyDatabase();
+      final saved = await _persistDirtyDatabase();
+      if (!saved) {
+        final discard = await _confirmDiscardUnsaved();
+        if (!discard) {
+          _quitting = false;
+          _closing = false;
+          return;
+        }
+      }
       await clearClipboardIfCopied();
       try {
         await TrayService().dispose();
@@ -168,7 +205,9 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
       } catch (_) {}
       await windowManager.setPreventClose(false);
       await windowManager.close();
-    } catch (_) {}
+    } catch (_) {
+      _quitting = false;
+    }
   }
 
   Future<void> _exitApp() async {

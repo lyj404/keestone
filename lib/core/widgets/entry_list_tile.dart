@@ -156,8 +156,7 @@ class _EntryListTileState extends State<EntryListTile> {
         ),
       );
     }
-    final hasTotp =
-        widget.entry.customData?.map['TimeOtp-Secret']?.value != null;
+    final hasTotp = EntryListTile._totpService.hasTotp(widget.entry);
     if (hasTotp) {
       items.add(
         PopupMenuItem(

@@ -256,6 +256,9 @@ class SyncService {
     await client.mkdirAll(encodeDavPath(config.remotePath));
   }
 
+  /// Returns null only when the remote file does not exist (404). Any other
+  /// failure (auth, network, server) is thrown so callers cannot mistake an
+  /// unreachable server for "no database on the cloud".
   Future<Uint8List?> downloadDatabase(WebDavConfig config) async {
     log.i('Downloading from: ${config.remoteFilePath}');
     final client = _buildClient(config);
@@ -267,8 +270,10 @@ class SyncService {
       log.i('Downloaded ${bytes.length} bytes');
       return Uint8List.fromList(bytes);
     } catch (e) {
-      log.e('Download failed', error: e);
-      return null;
+      final typed = _asSyncException(e);
+      if (typed.type == SyncErrorType.notFound) return null;
+      log.e('Download failed', error: typed);
+      throw typed;
     }
   }
 

@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-// Conditional import - only import Windows-specific code on Windows
+// Conditional import keeps the win32 helper out of pure-web builds. On other
+// `dart:io` targets the helper is linked but no-ops unless Platform.isWindows
+// (see notification_service_windows.dart).
 import 'notification_service_stub.dart'
     if (dart.library.io) 'notification_service_windows.dart'
     as windows;

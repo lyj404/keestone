@@ -14,7 +14,7 @@ class AutoSaveNotifier extends StateNotifier<int> {
   Timer? _idleTimer;
   Timer? _maxTimer;
 
-  AutoSaveNotifier(this._ref) : super(0) {
+  AutoSaveNotifier(this._ref) : super(30) {
     _load();
   }
 

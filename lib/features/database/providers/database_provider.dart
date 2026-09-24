@@ -442,7 +442,10 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     await _service.saveAs(newPath);
   }
 
-  Future<void> close() async {
+  /// Closes the database after best-effort save.
+  /// Returns true when dirty mutations could not be persisted and were
+  /// discarded (callers that can show UI should confirm with the user first).
+  Future<bool> close() async {
     if (_service.isOpen) {
       try {
         // A save that was already in flight may have serialized before the
@@ -455,6 +458,8 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
             log.w(
               'Database saved locally before close, but cloud sync reported a conflict.',
             );
+            // Local save may still have cleared the dirty flag; only a
+            // remaining dirty state means mutations were lost.
             break;
           }
         }
@@ -462,7 +467,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         log.e('Failed to save database before close', error: e, stackTrace: st);
       }
     }
+    final discardedDirty = _service.isOpen && _service.isDirty;
     _finishClose();
+    return discardedDirty;
   }
 
   /// Locks immediately from the UI's perspective, then persists locally.

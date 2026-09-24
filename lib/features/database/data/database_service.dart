@@ -757,6 +757,14 @@ class DatabaseService {
     );
   }
 
+  /// Placeholder shown in sync-audit UI instead of secret field values.
+  /// Never put plaintext protected values into [SyncAuditChange].
+  static const maskedAuditValue = '••••••';
+
+  static bool _isSensitiveField(String key, KdbxTextField? field) {
+    return key == 'Password' || field is ProtectedTextField;
+  }
+
   ({
     List<String> details,
     Map<String, String> localValues,
@@ -769,12 +777,21 @@ class DatabaseService {
     final keys = <String>{...local.fields.keys, ...remote.fields.keys}.toList()
       ..sort();
     for (final key in keys) {
-      final localValue = local.fields[key]?.text ?? '';
-      final remoteValue = remote.fields[key]?.text ?? '';
+      final localField = local.fields[key];
+      final remoteField = remote.fields[key];
+      final localValue = localField?.text ?? '';
+      final remoteValue = remoteField?.text ?? '';
       if (localValue != remoteValue) {
         details.add('Field:$key');
-        localValues[key] = localValue;
-        remoteValues[key] = remoteValue;
+        final sensitive =
+            _isSensitiveField(key, localField) ||
+            _isSensitiveField(key, remoteField);
+        localValues[key] = sensitive
+            ? (localValue.isEmpty ? '' : maskedAuditValue)
+            : localValue;
+        remoteValues[key] = sensitive
+            ? (remoteValue.isEmpty ? '' : maskedAuditValue)
+            : remoteValue;
       }
     }
 
@@ -817,6 +834,19 @@ class DatabaseService {
     );
   }
 
+  static bool _constantTimeEquals(String a, String b) {
+    final aBytes = a.codeUnits;
+    final bBytes = b.codeUnits;
+    var difference = aBytes.length ^ bBytes.length;
+    final maxLen = aBytes.length > bBytes.length ? aBytes.length : bBytes.length;
+    for (var i = 0; i < maxLen; i++) {
+      final av = i < aBytes.length ? aBytes[i] : 0;
+      final bv = i < bBytes.length ? bBytes[i] : 0;
+      difference |= av ^ bv;
+    }
+    return difference == 0;
+  }
+
   /// Changes the master password of the currently open database.
   /// Throws [InvalidCredentialsError] if [oldPassword] is incorrect.
   /// Does NOT save to disk — caller should invoke save() afterwards.
@@ -829,7 +859,7 @@ class DatabaseService {
     Uint8List? newKeyData,
   }) {
     if (_db == null) throw Exception('database_not_open');
-    if (_password != oldPassword) {
+    if (!_constantTimeEquals(_password ?? '', oldPassword)) {
       throw const InvalidCredentialsError('invalid key');
     }
     final keyData = updateKeyFile ? newKeyData : _keyData;

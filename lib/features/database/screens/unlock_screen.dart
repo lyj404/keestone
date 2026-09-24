@@ -9,6 +9,7 @@ import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../core/utils/logger.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../backup/data/backup_service.dart';
 import '../data/atomic_file_store.dart';
@@ -50,7 +51,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     unawaited(
       ref.read(databaseProvider.notifier).preloadFile(widget.filePath).catchError(
         (Object e) {
-          debugPrint('Preload failed for ${widget.filePath}: $e');
+          log.w('Preload failed for ${widget.filePath}', error: e);
         },
       ),
     );

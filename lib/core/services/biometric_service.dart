@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../utils/fnv_hash.dart';
 import '../utils/logger.dart';
+import '../utils/password_encryptor.dart';
 import '../utils/secure_storage_helper.dart';
 
 // Conditional import - only import on Android
@@ -84,10 +85,17 @@ class BiometricService {
   }
 
   Future<String?> getStoredPassword(String databasePath) async {
-    final key = '$_storedPasswordPrefix${_hashPath(databasePath)}';
-    return await _secureStorage.read(key: key);
+    final credentials = await getStoredCredentials(databasePath);
+    return credentials?.password;
   }
 
+  /// Stores unlock credentials for biometric convenience unlock.
+  ///
+  /// The master password is stored so the vault can be reopened after a
+  /// successful biometric prompt. Values are AES-GCM encrypted with a
+  /// device-bound key before being written to the OS secure store (same
+  /// scheme as WebDAV credentials). Enabling this feature is an explicit
+  /// trust decision for the device secure store.
   Future<void> storeCredentials(
     String databasePath,
     String password, {
@@ -95,13 +103,16 @@ class BiometricService {
     String? keyFileName,
   }) async {
     final pathHash = _hashPath(databasePath);
+    final encryptor = PasswordEncryptor();
     await _secureStorage.write(
       key: '$_storedPasswordPrefix$pathHash',
-      value: password,
+      value: await encryptor.encrypt(password),
     );
     await _secureStorage.write(
       key: '$_storedKeyDataPrefix$pathHash',
-      value: keyData != null ? base64Encode(keyData) : null,
+      value: keyData != null
+          ? await encryptor.encrypt(base64Encode(keyData))
+          : null,
     );
     await _secureStorage.write(
       key: '$_storedKeyFileNamePrefix$pathHash',
@@ -113,10 +124,20 @@ class BiometricService {
     String databasePath,
   ) async {
     final pathHash = _hashPath(databasePath);
-    final password = await _secureStorage.read(
+    final storedPassword = await _secureStorage.read(
       key: '$_storedPasswordPrefix$pathHash',
     );
-    if (password == null || password.isEmpty) return null;
+    if (storedPassword == null || storedPassword.isEmpty) return null;
+
+    final encryptor = PasswordEncryptor();
+    String password;
+    try {
+      password = await encryptor.decrypt(storedPassword);
+    } catch (e) {
+      log.e('BiometricService: failed to decrypt stored password', error: e);
+      return null;
+    }
+    if (password.isEmpty) return null;
 
     final keyDataEncoded = await _secureStorage.read(
       key: '$_storedKeyDataPrefix$pathHash',
@@ -128,7 +149,8 @@ class BiometricService {
     Uint8List? keyData;
     if (keyDataEncoded != null && keyDataEncoded.isNotEmpty) {
       try {
-        keyData = Uint8List.fromList(base64Decode(keyDataEncoded));
+        final clear = await encryptor.decrypt(keyDataEncoded);
+        keyData = Uint8List.fromList(base64Decode(clear));
       } catch (e) {
         log.w('BiometricService: failed to decode stored key data: $e');
       }
