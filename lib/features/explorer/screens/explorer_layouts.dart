@@ -291,6 +291,8 @@ class _WideLayout extends StatelessWidget {
                                 onExportCsv?.call();
                               case 'export_kdbx':
                                 onExportKdbx?.call();
+                              case 'password_audit':
+                                context.push('/audit');
                               case 'settings':
                                 context.push('/settings');
                               case 'about':
@@ -352,6 +354,17 @@ class _WideLayout extends StatelessWidget {
                               child: ListTile(
                                 leading: const Icon(Icons.save_as_rounded),
                                 title: Text(l10n.exportKdbx),
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                            ),
+                            PopupMenuItem(
+                              value: 'password_audit',
+                              child: ListTile(
+                                leading: const Icon(
+                                  Icons.health_and_safety_outlined,
+                                ),
+                                title: Text(l10n.passwordHealth),
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -958,6 +971,8 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
                 widget.onExportCsv?.call();
               case 'export_kdbx':
                 widget.onExportKdbx?.call();
+              case 'password_audit':
+                context.push('/audit');
               case 'batch_select':
                 widget.onToggleMultiSelect();
             }
@@ -1007,6 +1022,15 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
               child: ListTile(
                 leading: const Icon(Icons.save_as_rounded),
                 title: Text(l10n.exportKdbx),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            PopupMenuItem(
+              value: 'password_audit',
+              child: ListTile(
+                leading: const Icon(Icons.health_and_safety_outlined),
+                title: Text(l10n.passwordHealth),
                 dense: true,
                 contentPadding: EdgeInsets.zero,
               ),

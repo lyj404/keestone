@@ -13,6 +13,7 @@ import '../../features/group/screens/group_edit_screen.dart';
 import '../../features/search/screens/search_screen.dart';
 import '../../features/settings/screens/settings_screen.dart';
 import '../../features/backup/screens/backup_screen.dart';
+import '../../features/audit/screens/password_audit_screen.dart';
 import '../../features/about/screens/about_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -33,6 +34,7 @@ GoRouter createAppRouter(Ref ref) => GoRouter(
       '/group/',
       '/search',
       '/backup',
+      '/audit',
     ];
     final protected = protectedPrefixes.any(
       (prefix) => state.uri.path.startsWith(prefix),
@@ -107,6 +109,10 @@ GoRouter createAppRouter(Ref ref) => GoRouter(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(path: '/backup', builder: (context, state) => const BackupScreen()),
+    GoRoute(
+      path: '/audit',
+      builder: (context, state) => const PasswordAuditScreen(),
+    ),
     GoRoute(path: '/about', builder: (context, state) => const AboutScreen()),
   ],
 );

@@ -19,6 +19,7 @@ A cross-platform KeePass-compatible password manager built with Flutter.
 - CSV / KDBX import & export (Chrome, 1Password, LastPass, Bitwarden, etc.)
 - File attachments, entry history, custom fields, tags & groups
 - Password generator, auto-lock/save, clipboard auto-clear, expiry reminders
+- Local password health audit (weak / reused / expired passwords; no network)
 - System tray, keyboard shortcuts, light/dark theme, Chinese/English
 
 ## Install
@@ -46,6 +47,20 @@ flutter run -d windows    # or linux / android
 ## Tech Stack
 
 [Flutter](https://flutter.dev) · [Riverpod](https://pub.dev/packages/flutter_riverpod) · [go_router](https://pub.dev/packages/go_router) · [kpasslib](https://pub.dev/packages/kpasslib) · [WebDAV](https://pub.dev/packages/webdav_client) · [local_auth](https://pub.dev/packages/local_auth)
+
+## Password Health
+
+Open **Password Health** from Tools, the overflow menu, or Settings (available on desktop and mobile). The scan is fully local — nothing leaves the device.
+
+| Check | Description |
+| ----- | ----------- |
+| Empty password | Entry has no password |
+| Weak / fair password | Strength score is weak or fair |
+| Reused password | The same password is used by two or more entries |
+| Expired | Expiry date is in the past |
+| Expiring soon | Expires within 7 days |
+
+Results are ranked by severity. Tap a finding to open the entry and fix it. The report never includes plaintext passwords.
 
 ## Friendly Links
 

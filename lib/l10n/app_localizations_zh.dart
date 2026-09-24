@@ -1313,4 +1313,61 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get discardAndClose => '放弃并关闭';
+
+  @override
+  String get passwordHealth => '密码健康';
+
+  @override
+  String get passwordHealthSubtitle => '扫描弱密码、重复密码与过期项';
+
+  @override
+  String get auditHealthScore => '健康度';
+
+  @override
+  String auditEntryCounts(Object healthy, Object total) {
+    return '$healthy 条健康 / 共 $total 条';
+  }
+
+  @override
+  String get auditAll => '全部';
+
+  @override
+  String get auditIssueEmpty => '空密码';
+
+  @override
+  String get auditIssueWeak => '弱密码';
+
+  @override
+  String get auditIssueFair => '一般密码';
+
+  @override
+  String get auditIssueReused => '重复密码';
+
+  @override
+  String get auditIssueExpired => '已过期';
+
+  @override
+  String get auditIssueExpiringSoon => '即将过期';
+
+  @override
+  String get auditNoIssues => '未发现密码问题';
+
+  @override
+  String get auditRescan => '重新扫描';
+
+  @override
+  String auditSharedCount(Object count) {
+    return '被 $count 条共用';
+  }
+
+  @override
+  String auditExpiresOn(Object date) {
+    return '过期 $date';
+  }
+
+  @override
+  String get auditStrength => '强度';
+
+  @override
+  String get auditOpenDatabaseFirst => '请先打开密码库再进行健康扫描';
 }

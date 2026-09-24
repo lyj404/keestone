@@ -2611,6 +2611,108 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'放弃并关闭'**
   String get discardAndClose;
+
+  /// No description provided for @passwordHealth.
+  ///
+  /// In zh, this message translates to:
+  /// **'密码健康'**
+  String get passwordHealth;
+
+  /// No description provided for @passwordHealthSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'扫描弱密码、重复密码与过期项'**
+  String get passwordHealthSubtitle;
+
+  /// No description provided for @auditHealthScore.
+  ///
+  /// In zh, this message translates to:
+  /// **'健康度'**
+  String get auditHealthScore;
+
+  /// No description provided for @auditEntryCounts.
+  ///
+  /// In zh, this message translates to:
+  /// **'{healthy} 条健康 / 共 {total} 条'**
+  String auditEntryCounts(Object healthy, Object total);
+
+  /// No description provided for @auditAll.
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get auditAll;
+
+  /// No description provided for @auditIssueEmpty.
+  ///
+  /// In zh, this message translates to:
+  /// **'空密码'**
+  String get auditIssueEmpty;
+
+  /// No description provided for @auditIssueWeak.
+  ///
+  /// In zh, this message translates to:
+  /// **'弱密码'**
+  String get auditIssueWeak;
+
+  /// No description provided for @auditIssueFair.
+  ///
+  /// In zh, this message translates to:
+  /// **'一般密码'**
+  String get auditIssueFair;
+
+  /// No description provided for @auditIssueReused.
+  ///
+  /// In zh, this message translates to:
+  /// **'重复密码'**
+  String get auditIssueReused;
+
+  /// No description provided for @auditIssueExpired.
+  ///
+  /// In zh, this message translates to:
+  /// **'已过期'**
+  String get auditIssueExpired;
+
+  /// No description provided for @auditIssueExpiringSoon.
+  ///
+  /// In zh, this message translates to:
+  /// **'即将过期'**
+  String get auditIssueExpiringSoon;
+
+  /// No description provided for @auditNoIssues.
+  ///
+  /// In zh, this message translates to:
+  /// **'未发现密码问题'**
+  String get auditNoIssues;
+
+  /// No description provided for @auditRescan.
+  ///
+  /// In zh, this message translates to:
+  /// **'重新扫描'**
+  String get auditRescan;
+
+  /// No description provided for @auditSharedCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'被 {count} 条共用'**
+  String auditSharedCount(Object count);
+
+  /// No description provided for @auditExpiresOn.
+  ///
+  /// In zh, this message translates to:
+  /// **'过期 {date}'**
+  String auditExpiresOn(Object date);
+
+  /// No description provided for @auditStrength.
+  ///
+  /// In zh, this message translates to:
+  /// **'强度'**
+  String get auditStrength;
+
+  /// No description provided for @auditOpenDatabaseFirst.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先打开密码库再进行健康扫描'**
+  String get auditOpenDatabaseFirst;
 }
 
 class _AppLocalizationsDelegate

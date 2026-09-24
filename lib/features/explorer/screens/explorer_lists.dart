@@ -979,6 +979,21 @@ class _MobileToolsPanel extends StatelessWidget {
           const SizedBox(height: 16),
           _ToolsSection(
             brightness: brightness,
+            title: l10n.passwordHealth,
+            children: [
+              _ToolTile(
+                icon: Icons.health_and_safety_outlined,
+                iconBg: colorScheme.surfaceContainerLow,
+                iconColor: colorScheme.onSurfaceVariant,
+                title: l10n.passwordHealth,
+                subtitle: l10n.passwordHealthSubtitle,
+                onTap: () => context.push('/audit'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _ToolsSection(
+            brightness: brightness,
             title: l10n.settings,
             children: [
               _ToolTile(
@@ -1071,6 +1086,7 @@ class _ToolTile extends StatelessWidget {
   final Color iconBg;
   final Color iconColor;
   final String title;
+  final String? subtitle;
   final VoidCallback? onTap;
 
   const _ToolTile({
@@ -1078,6 +1094,7 @@ class _ToolTile extends StatelessWidget {
     required this.iconBg,
     required this.iconColor,
     required this.title,
+    this.subtitle,
     this.onTap,
   });
 
@@ -1116,6 +1133,16 @@ class _ToolTile extends StatelessWidget {
                         color: colorScheme.onSurface,
                       ),
                     ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

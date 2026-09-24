@@ -519,5 +519,22 @@
   "entryNoLongerExists": "该条目在当前打开的数据库中已不存在，修改未保存。",
   "closeUnsavedTitle": "数据库有未保存更改",
   "closeUnsavedBody": "部分更改未能写入磁盘。确定放弃这些更改并关闭吗？",
-  "discardAndClose": "放弃并关闭"
+  "discardAndClose": "放弃并关闭",
+  "passwordHealth": "密码健康",
+  "passwordHealthSubtitle": "扫描弱密码、重复密码与过期项",
+  "auditHealthScore": "健康度",
+  "auditEntryCounts": "{healthy} 条健康 / 共 {total} 条",
+  "auditAll": "全部",
+  "auditIssueEmpty": "空密码",
+  "auditIssueWeak": "弱密码",
+  "auditIssueFair": "一般密码",
+  "auditIssueReused": "重复密码",
+  "auditIssueExpired": "已过期",
+  "auditIssueExpiringSoon": "即将过期",
+  "auditNoIssues": "未发现密码问题",
+  "auditRescan": "重新扫描",
+  "auditSharedCount": "被 {count} 条共用",
+  "auditExpiresOn": "过期 {date}",
+  "auditStrength": "强度",
+  "auditOpenDatabaseFirst": "请先打开密码库再进行健康扫描"
 }

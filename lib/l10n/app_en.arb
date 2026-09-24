@@ -474,5 +474,22 @@
   "entryNoLongerExists": "This entry no longer exists in the open database. Your changes were not saved.",
   "closeUnsavedTitle": "Unsaved database changes",
   "closeUnsavedBody": "Some changes could not be written to disk. Discard them and close anyway?",
-  "discardAndClose": "Discard and close"
+  "discardAndClose": "Discard and close",
+  "passwordHealth": "Password Health",
+  "passwordHealthSubtitle": "Scan weak, reused, and expiring passwords",
+  "auditHealthScore": "Health score",
+  "auditEntryCounts": "{healthy} healthy / {total} entries",
+  "auditAll": "All",
+  "auditIssueEmpty": "Empty password",
+  "auditIssueWeak": "Weak password",
+  "auditIssueFair": "Fair password",
+  "auditIssueReused": "Reused password",
+  "auditIssueExpired": "Expired",
+  "auditIssueExpiringSoon": "Expiring soon",
+  "auditNoIssues": "No password issues found",
+  "auditRescan": "Rescan",
+  "auditSharedCount": "Used by {count} entries",
+  "auditExpiresOn": "Expires {date}",
+  "auditStrength": "Strength",
+  "auditOpenDatabaseFirst": "Open a database to run a password health scan"
 }

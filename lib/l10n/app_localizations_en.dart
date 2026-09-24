@@ -1350,4 +1350,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discardAndClose => 'Discard and close';
+
+  @override
+  String get passwordHealth => 'Password Health';
+
+  @override
+  String get passwordHealthSubtitle =>
+      'Scan weak, reused, and expiring passwords';
+
+  @override
+  String get auditHealthScore => 'Health score';
+
+  @override
+  String auditEntryCounts(Object healthy, Object total) {
+    return '$healthy healthy / $total entries';
+  }
+
+  @override
+  String get auditAll => 'All';
+
+  @override
+  String get auditIssueEmpty => 'Empty password';
+
+  @override
+  String get auditIssueWeak => 'Weak password';
+
+  @override
+  String get auditIssueFair => 'Fair password';
+
+  @override
+  String get auditIssueReused => 'Reused password';
+
+  @override
+  String get auditIssueExpired => 'Expired';
+
+  @override
+  String get auditIssueExpiringSoon => 'Expiring soon';
+
+  @override
+  String get auditNoIssues => 'No password issues found';
+
+  @override
+  String get auditRescan => 'Rescan';
+
+  @override
+  String auditSharedCount(Object count) {
+    return 'Used by $count entries';
+  }
+
+  @override
+  String auditExpiresOn(Object date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get auditStrength => 'Strength';
+
+  @override
+  String get auditOpenDatabaseFirst =>
+      'Open a database to run a password health scan';
 }

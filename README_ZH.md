@@ -19,6 +19,7 @@
 - CSV / KDBX 导入导出，兼容 Chrome、1Password、LastPass、Bitwarden 等
 - 文件附件、条目历史、自定义字段、标签与分组
 - 密码生成器、自动锁定/保存、剪贴板自动清除、过期提醒
+- 本地密码健康审计（弱/重复/过期密码，不联网）
 - 系统托盘、键盘快捷键、亮暗主题、中英文
 
 ## 安装
@@ -46,6 +47,20 @@ flutter run -d windows    # 或 linux / android
 ## 技术栈
 
 [Flutter](https://flutter.dev) · [Riverpod](https://pub.dev/packages/flutter_riverpod) · [go_router](https://pub.dev/packages/go_router) · [kpasslib](https://pub.dev/packages/kpasslib) · [WebDAV](https://pub.dev/packages/webdav_client) · [local_auth](https://pub.dev/packages/local_auth)
+
+## 密码健康
+
+在**工具**、更多菜单或**设置**中打开「密码健康」（桌面端与移动端均可）。扫描完全在本地进行，不会上传任何数据。
+
+| 检查项 | 说明 |
+| ------ | ---- |
+| 空密码 | 条目未设置密码 |
+| 弱 / 一般密码 | 强度评分为弱或一般 |
+| 重复密码 | 同一密码被两条及以上条目共用 |
+| 已过期 | 过期时间已过 |
+| 即将过期 | 7 天内过期 |
+
+结果按严重度排序，点击可直接打开条目修改。报告中不会出现明文密码。
 
 ## 友链
 

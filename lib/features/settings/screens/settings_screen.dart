@@ -948,7 +948,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<Widget> _databaseCards() {
     final l10n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
-    return [_changePasswordCard(brightness, l10n), _backupCard(brightness, l10n)];
+    return [
+      _changePasswordCard(brightness, l10n),
+      _passwordHealthCard(brightness, l10n),
+      _backupCard(brightness, l10n),
+    ];
+  }
+
+  Widget _passwordHealthCard(Brightness brightness, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return _SectionCard(
+      brightness: brightness,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: ClayDecoration.iconContainer(brightness: brightness),
+            child: Icon(
+              Icons.health_and_safety_outlined,
+              size: 20,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.passwordHealth,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  l10n.passwordHealthSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () => context.push('/audit'),
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _changePasswordCard(Brightness brightness, AppLocalizations l10n) {
