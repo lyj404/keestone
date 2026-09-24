@@ -67,12 +67,15 @@ dependencies:
   # AES-GCM encryption for stored WebDAV passwords
   cryptography: ^2.7.0
   material_ui: ^1.1.0
+  image: ^4.10.1
+  zxing_lib: ^1.1.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
+  qr: ^4.0.0
 
 # system_tray is unmaintained and pins uuid ^3; riverpod 3 needs uuid ^4.
 # system_tray only uses Uuid().v4(), which remains compatible.

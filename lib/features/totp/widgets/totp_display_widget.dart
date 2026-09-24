@@ -31,21 +31,20 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
   @override
   void didUpdateWidget(covariant TotpDisplayWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reload when the underlying entry instance changes (e.g. after cloud
-    // sync replaces the whole database) or when a different entry is passed.
-    if (!identical(widget.entry, oldWidget.entry)) {
-      TotpTicker.instance.removeListener(_onTick);
-      _config = null;
-      _code = '';
-      _remaining = 0;
-      _loadConfig();
-    }
+    // Save mutates the same KdbxEntry instance in place, so identity is not a
+    // reliable change signal. Always re-read TOTP fields from the entry.
+    _reload();
   }
 
   @override
   void dispose() {
     TotpTicker.instance.removeListener(_onTick);
     super.dispose();
+  }
+
+  void _reload() {
+    TotpTicker.instance.removeListener(_onTick);
+    _loadConfig();
   }
 
   void _loadConfig() {
@@ -57,6 +56,13 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
     if (_config != null) {
       _updateCode(force: true);
       TotpTicker.instance.addListener(_onTick);
+    } else if (_code.isNotEmpty || _remaining != 0) {
+      if (mounted) {
+        setState(() {
+          _code = '';
+          _remaining = 0;
+        });
+      }
     }
   }
 

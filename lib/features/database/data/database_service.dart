@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 import 'package:kpasslib/kpasslib.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/crypto/crypto_service.dart';
 import 'atomic_file_store.dart';
 import '../../../core/utils/logger.dart';
@@ -93,15 +94,7 @@ class _SearchRecord {
       url = (entry.fields['URL']?.text ?? '').toLowerCase(),
       notes = (entry.fields['Notes']?.text ?? '').toLowerCase(),
       customFields = entry.fields.entries
-          .where(
-            (e) => ![
-              'Title',
-              'UserName',
-              'Password',
-              'URL',
-              'Notes',
-            ].contains(e.key),
-          )
+          .where((e) => !AppConstants.isInternalField(e.key))
           .map((e) => e.value.text.toLowerCase())
           .toList(),
       tags = (entry.tags ?? []).map((t) => t.toLowerCase()).toList();

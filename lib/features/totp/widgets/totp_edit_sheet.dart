@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import '../../../l10n/app_localizations.dart';
@@ -136,13 +135,21 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
           ),
           const SizedBox(height: 16),
           if (_isUriMode) ...[
-            if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) ...[
+            if (!kIsWeb) ...[
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _scanQrCode,
-                  icon: const Icon(Icons.qr_code_scanner_rounded),
-                  label: Text(l10n.scanQrCode),
+                  icon: Icon(
+                    useMobileQrScanner
+                        ? Icons.qr_code_scanner_rounded
+                        : Icons.qr_code_2_rounded,
+                  ),
+                  label: Text(
+                    useMobileQrScanner
+                        ? l10n.scanQrCode
+                        : l10n.scanQrFromImage,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

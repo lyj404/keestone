@@ -238,7 +238,7 @@ class CsvService {
       // Custom fields
       final totpService = TotpService();
       for (final e in csv.customFields.entries) {
-        if (!AppConstants.standardKeys.contains(e.key) && e.value.isNotEmpty) {
+        if (!AppConstants.isInternalField(e.key) && e.value.isNotEmpty) {
           if (e.key == 'TOTP') {
             final config = totpService.parseUri(e.value);
             if (config != null) {
@@ -265,7 +265,7 @@ class CsvService {
 
     for (final entry in entries) {
       for (final key in entry.fields.keys) {
-        if (!AppConstants.standardKeys.contains(key) && key != 'TOTP') {
+        if (!AppConstants.isInternalField(key)) {
           customHeaders.add(key);
         }
       }

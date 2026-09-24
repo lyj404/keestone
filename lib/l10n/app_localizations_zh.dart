@@ -1037,6 +1037,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get scanQrCode => '扫描二维码';
 
   @override
+  String get scanQrFromImage => '从图片识别二维码';
+
+  @override
+  String get totpQrNoCode => '未识别到二维码，请换一张更清晰的图片';
+
+  @override
+  String get totpQrNotOtpAuth => '二维码内容不是有效的 otpauth:// TOTP 配置';
+
+  @override
   String get scanQrHint => '将摄像头对准 TOTP 二维码';
 
   @override

@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/attachments_section.dart';
@@ -29,6 +30,9 @@ class EntryDetailScreen extends ConsumerWidget {
     // Watch databaseProvider so this screen rebuilds after cloud sync (reloadFromCloud)
     // which replaces the entire KdbxDatabase instance.
     ref.watch(databaseProvider);
+    // Mutations (e.g. edit → save) bump this revision; without it the detail
+    // page would keep showing the pre-edit snapshot until re-entered.
+    ref.watch(explorerListRevisionProvider);
     final service = ref.read(databaseServiceProvider);
     final l10n = AppLocalizations.of(context)!;
 
@@ -191,18 +195,10 @@ class EntryDetailScreen extends ConsumerWidget {
                 _ExpirationRow(expiryDate: matchedEntry.times.expiry.time!),
               ],
             ),
-          // Custom fields
+          // Custom fields (TOTP internals like TimeOtp-* stay in the TOTP card)
           ...() {
             final custom = matchedEntry.fields.entries
-                .where(
-                  (e) => ![
-                    'Title',
-                    'UserName',
-                    'Password',
-                    'URL',
-                    'Notes',
-                  ].contains(e.key),
-                )
+                .where((e) => !AppConstants.isInternalField(e.key))
                 .toList();
             if (custom.isEmpty) return <Widget>[];
             return [

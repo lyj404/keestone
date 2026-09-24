@@ -1054,6 +1054,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scanQrCode => 'Scan QR Code';
 
   @override
+  String get scanQrFromImage => 'Decode QR from image';
+
+  @override
+  String get totpQrNoCode =>
+      'No QR code found in the image. Try a clearer screenshot.';
+
+  @override
+  String get totpQrNotOtpAuth =>
+      'The QR code is not a valid otpauth:// TOTP configuration.';
+
+  @override
   String get scanQrHint => 'Point camera at a TOTP QR code';
 
   @override

@@ -169,7 +169,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
 
   void _loadCustomFields(KdbxEntry entry) {
     for (final e in entry.fields.entries) {
-      if (AppConstants.standardKeys.contains(e.key)) continue;
+      if (AppConstants.isInternalField(e.key)) continue;
       final field = _CustomFieldData(
         originalKey: e.key,
         name: e.key,
@@ -796,7 +796,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
         showToast(context, l10n.fieldNameEmpty, isError: true);
         return;
       }
-      if (AppConstants.standardKeys.contains(name)) {
+      if (AppConstants.isInternalField(name)) {
         showToast(context, l10n.fieldNameReserved(name), isError: true);
         return;
       }
@@ -846,10 +846,13 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     entry.fields['URL'] = KdbxTextField.fromText(text: _urlCtrl.text);
     entry.fields['Notes'] = KdbxTextField.fromText(text: _notesCtrl.text);
 
-    // Save custom fields
+    // Save custom fields. TOTP internals (TimeOtp-*) are owned by TotpService
+    // and must survive this cleanup.
     final currentKeys = names;
     final keysToRemove = entry.fields.keys
-        .where((k) => !AppConstants.standardKeys.contains(k) && !currentKeys.contains(k))
+        .where(
+          (k) => !AppConstants.isInternalField(k) && !currentKeys.contains(k),
+        )
         .toList();
     for (final key in keysToRemove) {
       entry.fields.remove(key);

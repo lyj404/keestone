@@ -2072,6 +2072,24 @@ abstract class AppLocalizations {
   /// **'扫描二维码'**
   String get scanQrCode;
 
+  /// No description provided for @scanQrFromImage.
+  ///
+  /// In zh, this message translates to:
+  /// **'从图片识别二维码'**
+  String get scanQrFromImage;
+
+  /// No description provided for @totpQrNoCode.
+  ///
+  /// In zh, this message translates to:
+  /// **'未识别到二维码，请换一张更清晰的图片'**
+  String get totpQrNoCode;
+
+  /// No description provided for @totpQrNotOtpAuth.
+  ///
+  /// In zh, this message translates to:
+  /// **'二维码内容不是有效的 otpauth:// TOTP 配置'**
+  String get totpQrNotOtpAuth;
+
   /// No description provided for @scanQrHint.
   ///
   /// In zh, this message translates to:

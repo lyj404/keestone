@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-// Stub for platforms without camera support (Linux, Windows, Web)
+/// Web / non-IO stub. Camera and file-based QR decode are desktop+mobile only.
+bool get useMobileQrScanner => false;
+
 class QrScanScreen extends StatelessWidget {
   const QrScanScreen({super.key});
 
@@ -9,3 +11,5 @@ class QrScanScreen extends StatelessWidget {
 }
 
 Future<String?> openQrScanner(BuildContext context) async => null;
+
+Future<String?> openQrImageFromFilePicker(BuildContext context) async => null;
