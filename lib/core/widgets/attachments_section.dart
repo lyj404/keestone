@@ -7,6 +7,7 @@ import '../utils/format_utils.dart';
 import '../utils/logger.dart';
 import '../../l10n/app_localizations.dart';
 import '../../features/database/data/database_service.dart';
+import 'button_label.dart';
 import 'toast.dart';
 
 /// Displays entry attachments with optional add/delete/download actions.
@@ -76,7 +77,7 @@ class AttachmentsSection extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _addAttachment(context),
                 icon: const Icon(Icons.attach_file_rounded, size: 18),
-                label: Text(l10n.addAttachment),
+                label: ButtonLabel(l10n.addAttachment),
                 style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                 ),
@@ -144,7 +145,7 @@ class AttachmentsSection extends StatelessWidget {
         title: Text(l10n.deleteAttachment),
         content: Text(l10n.deleteAttachmentConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
@@ -158,7 +159,7 @@ class AttachmentsSection extends StatelessWidget {
               if (context.mounted) showToast(context, l10n.attachmentDeleted);
               onChanged?.call();
             },
-            child: Text(l10n.delete),
+            child: ButtonLabel(l10n.delete),
           ),
         ],
       ),

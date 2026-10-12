@@ -9,6 +9,7 @@ import '../../../core/widgets/attachments_section.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/move_to_group_dialog.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
@@ -245,7 +246,7 @@ class EntryDetailScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -262,7 +263,7 @@ class EntryDetailScreen extends ConsumerWidget {
                 context.pop();
               }
             },
-            child: Text(l10n.delete),
+            child: ButtonLabel(l10n.delete),
           ),
         ],
       ),
@@ -283,7 +284,7 @@ class EntryDetailScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -302,7 +303,7 @@ class EntryDetailScreen extends ConsumerWidget {
                 context.pop();
               }
             },
-            child: Text(l10n.delete),
+            child: ButtonLabel(l10n.delete),
           ),
         ],
       ),

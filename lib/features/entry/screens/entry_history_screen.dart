@@ -5,6 +5,7 @@ import 'package:kpasslib/kpasslib.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/toast.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
@@ -197,7 +198,7 @@ class EntryHistoryScreen extends ConsumerWidget {
                           );
                         },
                         icon: const Icon(Icons.restore_rounded, size: 16),
-                        label: Text(l10n.restoreVersion),
+                        label: ButtonLabel(l10n.restoreVersion),
                       ),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
@@ -269,7 +270,7 @@ class EntryHistoryScreen extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -280,7 +281,7 @@ class EntryHistoryScreen extends ConsumerWidget {
                 Navigator.pop(context); // Go back to detail screen
               }
             },
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),

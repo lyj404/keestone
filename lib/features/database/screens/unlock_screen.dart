@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/logger.dart';
@@ -287,7 +288,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                                         borderRadius: BorderRadius.circular(18),
                                       ),
                                     ),
-                                    child: Text(l10n.unlock),
+                                    child: ButtonLabel(l10n.unlock),
                                   ),
                                 ),
                                 if ((Platform.isAndroid || Platform.isIOS) &&
@@ -299,7 +300,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                                       Icons.fingerprint_rounded,
                                       size: 24,
                                     ),
-                                    label: Text(l10n.unlockWithBiometric),
+                                    label: ButtonLabel(l10n.unlockWithBiometric),
                                     style: OutlinedButton.styleFrom(
                                       minimumSize: const Size.fromHeight(50),
                                       shape: RoundedRectangleBorder(
@@ -423,11 +424,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.restoreFromBackup),
+            child: ButtonLabel(l10n.restoreFromBackup),
           ),
         ],
       ),

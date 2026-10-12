@@ -11,6 +11,7 @@ import '../../../core/widgets/attachments_section.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../../../core/widgets/password_generator_dialog.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
@@ -281,7 +282,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                       }
                     },
                     icon: const Icon(Icons.casino_outlined, size: 16),
-                    label: Text(l10n.generatePassword),
+                    label: ButtonLabel(l10n.generatePassword),
                     style: TextButton.styleFrom(
                       visualDensity: VisualDensity.compact,
                     ),
@@ -521,7 +522,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
             FilledButton(
               onPressed: () {
                 final tag = ctrl.text.trim();
@@ -530,7 +531,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                 }
                 Navigator.pop(ctx);
               },
-              child: Text(l10n.confirm),
+              child: ButtonLabel(l10n.confirm),
             ),
           ],
         );
@@ -562,14 +563,14 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                       title: Text(l10n.deleteTotp),
                       content: Text(l10n.deleteTotpConfirm),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: ButtonLabel(l10n.cancel)),
                         FilledButton(
                           style: FilledButton.styleFrom(
                             backgroundColor: Theme.of(ctx).colorScheme.error,
                             foregroundColor: Theme.of(ctx).colorScheme.onError,
                           ),
                           onPressed: () => Navigator.pop(ctx, true),
-                          child: Text(l10n.delete),
+                          child: ButtonLabel(l10n.delete),
                         ),
                       ],
                     ),
@@ -626,7 +627,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                   if (result != null) setState(() => _totpConfig = result.config); _onFormChanged();
                 },
                 icon: const Icon(Icons.add_rounded, size: 16),
-                label: Text(l10n.setupTotp),
+                label: ButtonLabel(l10n.setupTotp),
                 style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
               ),
             ),
@@ -650,7 +651,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
           child: TextButton.icon(
             onPressed: _addCustomField,
             icon: const Icon(Icons.add_rounded, size: 16),
-            label: Text(l10n.addCustomField),
+            label: ButtonLabel(l10n.addCustomField),
             style: TextButton.styleFrom(
               visualDensity: VisualDensity.compact,
             ),
@@ -762,14 +763,14 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
           title: Text(l10n.delete),
           content: Text(l10n.deleteCustomFieldConfirm(field.nameCtrl.text)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: ButtonLabel(l10n.cancel)),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(ctx).colorScheme.error,
                 foregroundColor: Theme.of(ctx).colorScheme.onError,
               ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.delete),
+              child: ButtonLabel(l10n.delete),
             ),
           ],
         ),

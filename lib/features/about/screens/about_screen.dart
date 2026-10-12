@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import '../../../core/services/external_url_service.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -200,7 +201,7 @@ class _AboutScreenState extends State<AboutScreen> {
                     onPressed: () =>
                         _openUrl(context, '$_githubUrl/releases/latest'),
                     icon: const Icon(Icons.system_update_rounded, size: 18),
-                    label: Text(l10n.update),
+                    label: ButtonLabel(l10n.update),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,

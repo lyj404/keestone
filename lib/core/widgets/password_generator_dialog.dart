@@ -3,6 +3,7 @@ import '../theme/app_theme.dart';
 import '../utils/password_generator.dart';
 import '../utils/clipboard_utils.dart';
 import '../../l10n/app_localizations.dart';
+import 'button_label.dart';
 import 'toast.dart';
 
 /// Shows a password generator dialog and returns the generated password, or null if cancelled.
@@ -153,7 +154,7 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
                         showToast(context, l10n.copiedPassword);
                       },
                       icon: const Icon(Icons.copy_rounded, size: 16),
-                      label: Text(l10n.copied),
+                      label: ButtonLabel(l10n.copied),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -166,7 +167,7 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
                     child: OutlinedButton.icon(
                       onPressed: _regenerate,
                       icon: const Icon(Icons.refresh_rounded, size: 16),
-                      label: Text(l10n.regenerate),
+                      label: ButtonLabel(l10n.regenerate),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -389,7 +390,7 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
+          child: ButtonLabel(l10n.cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, _password),
@@ -398,7 +399,7 @@ class _PasswordGeneratorDialogState extends State<_PasswordGeneratorDialog> {
             textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, height: 1.0),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
-          child: Text(l10n.useThisPassword),
+          child: ButtonLabel(l10n.useThisPassword),
         ),
       ],
     );

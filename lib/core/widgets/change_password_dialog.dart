@@ -5,6 +5,7 @@ import 'package:kpasslib/kpasslib.dart';
 import 'package:file_picker/file_picker.dart';
 import '../theme/app_theme.dart';
 import 'password_text_field.dart';
+import 'button_label.dart';
 import 'toast.dart';
 import '../../l10n/app_localizations.dart';
 import '../../features/database/providers/database_provider.dart';
@@ -116,13 +117,13 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: Text(l10n.cancel),
+          child: ButtonLabel(l10n.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _submit,
           child: _saving
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(l10n.confirm),
+              : ButtonLabel(l10n.confirm),
         ),
       ],
     );
@@ -274,7 +275,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     return OutlinedButton.icon(
       onPressed: _pickNewKeyFile,
       icon: const Icon(Icons.vpn_key_rounded, size: 18),
-      label: Text(l10n.selectKeyFile),
+      label: ButtonLabel(l10n.selectKeyFile),
       style: OutlinedButton.styleFrom(
         minimumSize: const Size.fromHeight(44),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),

@@ -184,7 +184,7 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                     child: TextButton.icon(
                       onPressed: () => _showAddTagDialog(l10n),
                       icon: const Icon(Icons.add_rounded, size: 16),
-                      label: Text(l10n.addTag),
+                      label: ButtonLabel(l10n.addTag),
                       style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
                     ),
                   ),
@@ -258,7 +258,7 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
             FilledButton(
               onPressed: () {
                 final tag = ctrl.text.trim();
@@ -267,7 +267,7 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                 }
                 Navigator.pop(ctx);
               },
-              child: Text(l10n.confirm),
+              child: ButtonLabel(l10n.confirm),
             ),
           ],
         );

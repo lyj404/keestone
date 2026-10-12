@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:material_ui/material_ui.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../l10n/app_localizations.dart';
+import 'button_label.dart';
 
 /// A reusable key file picker widget.
 class KeyFilePicker extends StatelessWidget {
@@ -67,7 +68,7 @@ class KeyFilePicker extends StatelessWidget {
         : OutlinedButton.icon(
             onPressed: _pickKeyFile,
             icon: const Icon(Icons.vpn_key_rounded, size: 18),
-            label: Text(l10n.selectKeyFile),
+            label: ButtonLabel(l10n.selectKeyFile),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(44),
               shape: RoundedRectangleBorder(

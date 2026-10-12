@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:kpasslib/kpasslib.dart';
 import '../../l10n/app_localizations.dart';
+import 'button_label.dart';
 
 /// Shows a dialog to pick a target group from the group tree.
 /// Returns the selected [KdbxGroup] on confirm, or null if cancelled.
@@ -47,13 +48,13 @@ class _MoveToGroupDialogState extends State<_MoveToGroupDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(l10n.cancel),
+          child: ButtonLabel(l10n.cancel),
         ),
         FilledButton(
           onPressed: _selected != null
               ? () => Navigator.pop(context, _selected)
               : null,
-          child: Text(l10n.move),
+          child: ButtonLabel(l10n.move),
         ),
       ],
     );

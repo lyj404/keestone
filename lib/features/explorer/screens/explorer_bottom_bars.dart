@@ -331,14 +331,14 @@ void _showSyncToCloudConflictDialog(BuildContext context) {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx),
-          child: Text(l10n.cancel),
+          child: ButtonLabel(l10n.cancel),
         ),
         OutlinedButton(
           onPressed: () {
             Navigator.pop(ctx);
             _syncFromCloud(context);
           },
-          child: Text(l10n.downloadCloudVersion),
+          child: ButtonLabel(l10n.downloadCloudVersion),
         ),
         FilledButton(
           onPressed: () async {
@@ -353,7 +353,7 @@ void _showSyncToCloudConflictDialog(BuildContext context) {
               }
             }
           },
-          child: Text(l10n.overwriteCloud),
+          child: ButtonLabel(l10n.overwriteCloud),
         ),
       ],
     ),

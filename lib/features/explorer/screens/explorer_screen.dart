@@ -12,6 +12,7 @@ import 'package:kpasslib/kpasslib.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/widgets/confirm_dialogs.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/password_generator_dialog.dart';
 import '../../../core/widgets/entry_list_tile.dart';
 import '../../../core/widgets/empty_state.dart';
@@ -398,14 +399,14 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _syncFromCloud(context);
             },
-            child: Text(l10n.syncFromCloud),
+            child: ButtonLabel(l10n.syncFromCloud),
           ),
         ],
       ),
@@ -552,7 +553,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -575,7 +576,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
               refreshExplorerLists(ref);
               Navigator.pop(ctx);
             },
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),
@@ -633,28 +634,28 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           OutlinedButton(
             onPressed: () {
               Navigator.pop(ctx);
               _showSyncAuditDialog(context, ref);
             },
-            child: Text(l10n.more),
+            child: ButtonLabel(l10n.more),
           ),
           OutlinedButton(
             onPressed: () {
               Navigator.pop(ctx);
               _syncFromCloud(context);
             },
-            child: Text(l10n.downloadCloudVersion),
+            child: ButtonLabel(l10n.downloadCloudVersion),
           ),
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
               _forceUpload(context, ref);
             },
-            child: Text(l10n.overwriteCloud),
+            child: ButtonLabel(l10n.overwriteCloud),
           ),
         ],
       ),
@@ -713,21 +714,21 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           OutlinedButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _syncFromCloud(context);
             },
-             child: Text(l10n.downloadCloudVersion),
+             child: ButtonLabel(l10n.downloadCloudVersion),
            ),
            FilledButton(
              onPressed: () {
                Navigator.of(ctx).pop();
                _forceUpload(context, ref);
              },
-             child: Text(l10n.overwriteCloud),
+             child: ButtonLabel(l10n.overwriteCloud),
            ),
          ],
        ),
@@ -983,11 +984,11 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(l10n.cancel),
+              child: ButtonLabel(l10n.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(l10n.discardAndClose),
+              child: ButtonLabel(l10n.discardAndClose),
             ),
           ],
         ),
@@ -1085,11 +1086,11 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),
@@ -1241,11 +1242,11 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, tagController.text.trim()),
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),

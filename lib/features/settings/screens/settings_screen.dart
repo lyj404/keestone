@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../core/widgets/change_password_dialog.dart';
 import '../../../core/providers/locale_provider.dart';
@@ -873,7 +874,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.wifi_find_rounded, size: 18),
-              label: Text(_testing ? l10n.testing : l10n.testConnection),
+              label: ButtonLabel(_testing ? l10n.testing : l10n.testConnection),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(48),
                 shape: RoundedRectangleBorder(
@@ -937,7 +938,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               borderRadius: BorderRadius.circular(18),
             ),
           ),
-          child: Text(l10n.save),
+          child: ButtonLabel(l10n.save),
         ),
       ),
     ];
@@ -1145,11 +1146,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(l10n.cancel),
+                child: ButtonLabel(l10n.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(l10n.confirm),
+                child: ButtonLabel(l10n.confirm),
               ),
             ],
           ),
@@ -1240,12 +1241,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextButton(
             onPressed: () =>
                 Navigator.of(dialogContext).pop(_PathNotExistChoice.reenter),
-            child: Text(l10n.reenterPath),
+            child: ButtonLabel(l10n.reenterPath),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.of(dialogContext).pop(_PathNotExistChoice.create),
-            child: Text(l10n.createPath),
+            child: ButtonLabel(l10n.createPath),
           ),
         ],
       ),
@@ -1411,11 +1412,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.delete),
+            child: ButtonLabel(l10n.delete),
           ),
         ],
       ),

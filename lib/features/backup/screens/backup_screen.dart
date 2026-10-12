@@ -6,6 +6,7 @@ import 'package:kpasslib/kpasslib.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format_utils.dart';
 import '../../../core/widgets/toast.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
 import '../data/backup_service.dart';
@@ -185,7 +186,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       child: FilledButton.icon(
                         onPressed: _createManualBackup,
                         icon: const Icon(Icons.backup_rounded, size: 20),
-                        label: Text(l10n.createBackupNow),
+                        label: ButtonLabel(l10n.createBackupNow),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(
@@ -281,11 +282,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),
@@ -391,11 +392,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),
@@ -412,11 +413,11 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.confirm),
+            child: ButtonLabel(l10n.confirm),
           ),
         ],
       ),

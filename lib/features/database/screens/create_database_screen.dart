@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../providers/database_provider.dart';
@@ -124,11 +125,10 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                       OutlinedButton.icon(
                         onPressed: _pickSaveLocation,
                         icon: Icon(_savePath != null ? Icons.check_circle_outline_rounded : Icons.save_as_rounded, size: 18),
-                        label: Text(
+                        label: ButtonLabel(
                           _savePath == null
                               ? l10n.selectSaveLocation
                               : _savePath!.split('/').last.split('\\').last,
-                          overflow: TextOverflow.ellipsis,
                         ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
@@ -162,7 +162,7 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                                   minimumSize: const Size.fromHeight(50),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                                 ),
-                                child: Text(l10n.create),
+                                child: ButtonLabel(l10n.create),
                               ),
                             ),
                     ],

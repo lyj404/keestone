@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/totp_service.dart';
 import 'qr_scan.dart';
@@ -145,7 +146,7 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                         ? Icons.qr_code_scanner_rounded
                         : Icons.qr_code_2_rounded,
                   ),
-                  label: Text(
+                  label: ButtonLabel(
                     useMobileQrScanner
                         ? l10n.scanQrCode
                         : l10n.scanQrFromImage,
@@ -281,7 +282,7 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
-                    child: Text(l10n.cancel),
+                    child: ButtonLabel(l10n.cancel),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -292,7 +293,7 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                             _titleCtrl.text.trim().isEmpty
                         ? null
                         : _submit,
-                    child: Text(l10n.confirm),
+                    child: ButtonLabel(l10n.confirm),
                   ),
                 ),
               ],

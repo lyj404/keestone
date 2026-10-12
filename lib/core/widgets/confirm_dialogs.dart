@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import '../../l10n/app_localizations.dart';
+import 'button_label.dart';
 
 /// Shows a confirmation dialog for delete operations.
 /// Returns true if confirmed, false if cancelled.
@@ -20,7 +21,7 @@ Future<bool> showConfirmDeleteDialog({
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(ctx, false),
-          child: Text(l10n.cancel),
+          child: ButtonLabel(l10n.cancel),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -29,7 +30,7 @@ Future<bool> showConfirmDeleteDialog({
             visualDensity: VisualDensity.compact,
           ),
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(isPermanent ? l10n.permanentDelete : l10n.delete),
+          child: ButtonLabel(isPermanent ? l10n.permanentDelete : l10n.delete),
         ),
       ],
     ),

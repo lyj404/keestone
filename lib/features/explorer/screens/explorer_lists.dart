@@ -476,7 +476,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -484,7 +484,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
               foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             ),
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(l10n.delete),
+            child: ButtonLabel(l10n.delete),
           ),
         ],
       ),

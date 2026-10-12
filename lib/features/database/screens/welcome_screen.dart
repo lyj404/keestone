@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../sync/data/sync_service.dart'
@@ -289,7 +290,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       child: FilledButton.icon(
                         onPressed: () => _openFile(context),
                         icon: const Icon(Icons.folder_open_rounded, size: 20),
-                        label: Text(l10n.openLocalDatabase),
+                        label: ButtonLabel(l10n.openLocalDatabase),
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(52),
                           shape: RoundedRectangleBorder(
@@ -303,7 +304,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     OutlinedButton.icon(
                       onPressed: () => context.push('/create'),
                       icon: const Icon(Icons.add_rounded, size: 20),
-                      label: Text(l10n.createNewDatabase),
+                      label: ButtonLabel(l10n.createNewDatabase),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
@@ -316,7 +317,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     OutlinedButton.icon(
                       onPressed: () => _downloadFromWebDav(context),
                       icon: const Icon(Icons.cloud_download_rounded, size: 20),
-                      label: Text(l10n.openCloudDatabase),
+                      label: ButtonLabel(l10n.openCloudDatabase),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(
@@ -831,14 +832,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               FilledButton(
                 onPressed: () =>
                     Navigator.of(ctx).pop(_CloudOpenAction.downloadLatest),
-                child: Text(l10n.downloadFromCloud),
+                child: ButtonLabel(l10n.downloadFromCloud),
               ),
               const SizedBox(height: 8),
               if (hasLocalCache)
                 OutlinedButton(
                   onPressed: () =>
                       Navigator.of(ctx).pop(_CloudOpenAction.useCache),
-                  child: Text(l10n.openLocalDatabase),
+                  child: ButtonLabel(l10n.openLocalDatabase),
                 ),
               if (hasLocalCache) const SizedBox(height: 8),
               TextButton(
