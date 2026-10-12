@@ -879,6 +879,7 @@ class _MobileSearchTab extends ConsumerWidget {
 
 class _MobileToolsPanel extends StatelessWidget {
   final bool isOpenedFromCloud;
+  final bool canSyncToCloud;
   final bool isCloudOfflineMode;
   final String? cloudOfflineReason;
   final VoidCallback onClose;
@@ -888,6 +889,7 @@ class _MobileToolsPanel extends StatelessWidget {
 
   const _MobileToolsPanel({
     required this.isOpenedFromCloud,
+    required this.canSyncToCloud,
     required this.isCloudOfflineMode,
     this.cloudOfflineReason,
     required this.onClose,
@@ -922,7 +924,7 @@ class _MobileToolsPanel extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          if (isOpenedFromCloud) ...[
+          if (canSyncToCloud) ...[
             const SizedBox(height: 16),
             _ToolsSection(
               brightness: brightness,
@@ -935,13 +937,14 @@ class _MobileToolsPanel extends StatelessWidget {
                   title: l10n.syncToCloud,
                   onTap: () => _syncToCloud(context),
                 ),
-                _ToolTile(
-                  icon: Icons.cloud_download_rounded,
-                  iconBg: colorScheme.surfaceContainerLow,
-                  iconColor: colorScheme.onSurfaceVariant,
-                  title: l10n.syncFromCloud,
-                  onTap: () => _syncFromCloud(context),
-                ),
+                if (isOpenedFromCloud)
+                  _ToolTile(
+                    icon: Icons.cloud_download_rounded,
+                    iconBg: colorScheme.surfaceContainerLow,
+                    iconColor: colorScheme.onSurfaceVariant,
+                    title: l10n.syncFromCloud,
+                    onTap: () => _syncFromCloud(context),
+                  ),
               ],
             ),
           ],

@@ -424,6 +424,120 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     }
   }
 
+  /// Links an already-open LOCAL database to the active WebDAV profile and
+  /// uploads it. Used when the user opened a plain local file first and only
+  /// configured cloud sync afterwards (so [openedFromCloudProvider] is still
+  /// false and [_currentWebDavProfileId] is null).
+  ///
+  /// Upload is conditional: a never-seen remote uses If-None-Match so an
+  /// existing remote database is never silently overwritten. When the remote
+  /// path already holds a database, this reports a conflict (via
+  /// [syncStateProvider] == [SyncState.conflict] and [lastSyncAuditReport])
+  /// and leaves resolution to the caller (download cloud version via
+  /// [reloadFromCloud], or overwrite via [forceUpload]). On success the
+  /// database becomes a cloud database for the rest of the session so normal
+  /// saves keep syncing.
+  ///
+  /// Throws when no usable WebDAV profile is configured so the caller can
+  /// guide the user to settings.
+  Future<void> syncLocalToCloud() async {
+    final config = await _ref.read(webDavSettingsServiceProvider).getConfig();
+    if (config == null || !config.enabled) {
+      throw Exception('please_configure_webdav');
+    }
+    if (!_service.isOpen || _service.filePath == null) {
+      throw StateError('No database is open');
+    }
+
+    _ref.read(syncStateProvider.notifier).state = SyncState.syncing;
+    try {
+      // Wait out any in-flight save so its upload cannot race this one.
+      while (_saveInFlight != null) {
+        final inFlight = _saveInFlight!;
+        await inFlight.catchError((_) => false);
+      }
+      if (!_service.isOpen) {
+        _ref.read(syncStateProvider.notifier).state = SyncState.error;
+        return;
+      }
+      final bytes = await _service.save();
+
+      final syncService = _ref.read(syncServiceProvider);
+      await syncService.ensureRemoteDirectory(config);
+
+      // Probe the remote so an existing database is treated as a conflict
+      // instead of being overwritten by this freshly linked local file.
+      final RemoteFileInfo? remoteInfo =
+          await syncService.getRemoteFileInfo(config);
+
+      // Associate the open database with this profile up-front so conflict
+      // resolution helpers (reloadFromCloud / forceUpload) can run.
+      _currentWebDavProfileId = config.id;
+
+      if (remoteInfo != null) {
+        // Remote already has a database — do not overwrite. Surface the diff
+        // and let the user choose download or overwrite.
+        _service.setLastSyncedRemoteInfo(remoteInfo);
+        _ref.read(openedFromCloudProvider.notifier).state = true;
+        try {
+          _lastSyncAuditReport = await inspectCloudDiff();
+        } catch (diffError) {
+          log.e('Failed to inspect cloud diff while linking local database',
+              error: diffError);
+        }
+        _lastSyncError = SyncException(
+          SyncErrorType.conflict,
+          'Remote database already exists at ${config.remoteFilePath}',
+        );
+        _ref.read(syncStateProvider.notifier).state = SyncState.conflict;
+        return;
+      }
+
+      // Remote is empty: safe conditional upload (If-None-Match: *).
+      final newInfo = await syncService.uploadDatabase(config, bytes);
+      _service.setLastSyncedRemoteInfo(newInfo);
+      _ref.read(openedFromCloudProvider.notifier).state = true;
+
+      final recentSvc = _ref.read(recentFilesServiceProvider);
+      await Future.wait([
+        recentSvc.addRecentFile(
+          _service.filePath!,
+          isCloud: true,
+          remotePath: config.remoteFilePath,
+          webDavProfileId: _currentWebDavProfileId,
+          lastSyncedETag: newInfo.eTag,
+          lastSyncedMTime: newInfo.mTime,
+          pendingUpload: false,
+        ),
+        recentSvc.setLastOpenedFile(
+          _service.filePath!,
+          isCloud: true,
+          remotePath: config.remoteFilePath,
+          webDavProfileId: _currentWebDavProfileId,
+          lastSyncedETag: newInfo.eTag,
+          lastSyncedMTime: newInfo.mTime,
+          pendingUpload: false,
+        ),
+      ]);
+      _ref.invalidate(recentFilesProvider);
+      _ref.read(syncStateProvider.notifier).state = SyncState.success;
+      _lastSyncError = null;
+      _lastSyncAuditReport = null;
+    } catch (e) {
+      log.e('Linking local database to cloud failed', error: e);
+      // Do not leave the database half-linked on a transient failure: a later
+      // retry re-probes the remote from a clean state.
+      _currentWebDavProfileId = null;
+      _ref.read(openedFromCloudProvider.notifier).state = false;
+      if (e is SyncException && e.type == SyncErrorType.conflict) {
+        _ref.read(syncStateProvider.notifier).state = SyncState.conflict;
+      } else {
+        _ref.read(syncStateProvider.notifier).state = SyncState.error;
+      }
+      _lastSyncError = e;
+    }
+  }
+
   Future<bool> restoreBackupBytes(Uint8List bytes, {String? password}) async {
     final db = await _service.reloadFromBytes(bytes, password: password);
     final savedBytes = await _service.save();

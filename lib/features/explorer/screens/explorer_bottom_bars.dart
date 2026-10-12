@@ -233,12 +233,20 @@ class _KeyChip extends StatelessWidget {
 Future<void> _syncToCloud(BuildContext context) async {
   final container = ProviderScope.containerOf(context);
   final l10n = AppLocalizations.of(context)!;
-  final recent = await container
-      .read(recentFilesServiceProvider)
-      .getLastOpenedFile();
-  final config = await container
-      .read(webDavSettingsServiceProvider)
-      .getConfigById(recent?.webDavProfileId);
+  final notifier = container.read(databaseProvider.notifier);
+  final isCloud = container.read(openedFromCloudProvider);
+
+  // A local database must first be linked to the active WebDAV profile.
+  // getConfigById(null) resolves the active profile when no profile is bound
+  // yet, so this also validates that cloud sync is actually configured.
+  final config = isCloud
+      ? await container
+            .read(webDavSettingsServiceProvider)
+            .getConfigById(
+              (await container.read(recentFilesServiceProvider).getLastOpenedFile())
+                  ?.webDavProfileId,
+            )
+      : await container.read(webDavSettingsServiceProvider).getConfig();
   if (config == null || !config.enabled) {
     if (context.mounted) {
       showToast(context, l10n.pleaseConfigureWebDAV, isError: true);
@@ -277,12 +285,20 @@ Future<void> _syncToCloud(BuildContext context) async {
     ),
   );
   try {
-    await container.read(databaseProvider.notifier).forceUpload();
+    if (isCloud) {
+      await notifier.forceUpload();
+    } else {
+      // Links the open local database to the cloud and uploads it, reporting
+      // a conflict if the remote path already holds a database.
+      await notifier.syncLocalToCloud();
+    }
     if (context.mounted) {
       Navigator.of(context).pop();
       final syncState = container.read(syncStateProvider);
       if (syncState == SyncState.success) {
         showToast(context, l10n.syncedToCloud);
+      } else if (syncState == SyncState.conflict) {
+        _showSyncToCloudConflictDialog(context);
       } else {
         final error = container.read(databaseProvider.notifier).lastSyncError;
         if (context.mounted) {
@@ -299,6 +315,49 @@ Future<void> _syncToCloud(BuildContext context) async {
       _showSyncErrorDialog(context, _translateSyncError(e, l10n));
     }
   }
+}
+
+/// Shown when linking a local database to the cloud finds an existing remote
+/// database. The user chooses to pull the cloud version down (discarding local
+/// changes) or to overwrite the cloud copy with the local one.
+void _showSyncToCloudConflictDialog(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  final container = ProviderScope.containerOf(context);
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.syncConflict),
+      content: Text(l10n.syncConflictMessage),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: Text(l10n.cancel),
+        ),
+        OutlinedButton(
+          onPressed: () {
+            Navigator.pop(ctx);
+            _syncFromCloud(context);
+          },
+          child: Text(l10n.downloadCloudVersion),
+        ),
+        FilledButton(
+          onPressed: () async {
+            Navigator.pop(ctx);
+            await container.read(databaseProvider.notifier).forceUpload();
+            if (context.mounted) {
+              final syncState = container.read(syncStateProvider);
+              if (syncState == SyncState.success) {
+                showToast(context, l10n.overwrittenToCloud);
+              } else {
+                showToast(context, l10n.syncFailed, isError: true);
+              }
+            }
+          },
+          child: Text(l10n.overwriteCloud),
+        ),
+      ],
+    ),
+  );
 }
 
 Future<void> _syncFromCloud(BuildContext context) async {

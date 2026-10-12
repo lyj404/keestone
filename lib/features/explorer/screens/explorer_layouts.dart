@@ -7,6 +7,7 @@ class _WideLayout extends StatelessWidget {
   final KdbxEntry? selectedEntry;
   final bool isRecycleBin;
   final bool isOpenedFromCloud;
+  final bool canSyncToCloud;
   final bool isCloudOfflineMode;
   final String? cloudOfflineReason;
   final bool isDirty;
@@ -50,6 +51,7 @@ class _WideLayout extends StatelessWidget {
     this.selectedEntry,
     required this.isRecycleBin,
     required this.isOpenedFromCloud,
+    required this.canSyncToCloud,
     required this.isCloudOfflineMode,
     required this.cloudOfflineReason,
     required this.isDirty,
@@ -304,7 +306,7 @@ class _WideLayout extends StatelessWidget {
                             }
                           },
                           itemBuilder: (_) => [
-                            if (isOpenedFromCloud) ...[
+                            if (canSyncToCloud)
                               PopupMenuItem(
                                 value: 'sync_up',
                                 child: ListTile(
@@ -316,6 +318,7 @@ class _WideLayout extends StatelessWidget {
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
+                            if (isOpenedFromCloud)
                               PopupMenuItem(
                                 value: 'sync_down',
                                 child: ListTile(
@@ -327,7 +330,6 @@ class _WideLayout extends StatelessWidget {
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
-                            ],
                             const PopupMenuDivider(),
                             PopupMenuItem(
                               value: 'import_csv',
@@ -655,6 +657,7 @@ class _NarrowLayout extends ConsumerStatefulWidget {
   final KdbxEntry? selectedEntry;
   final bool isRecycleBin;
   final bool isOpenedFromCloud;
+  final bool canSyncToCloud;
   final bool isCloudOfflineMode;
   final String? cloudOfflineReason;
   final bool isDirty;
@@ -697,6 +700,7 @@ class _NarrowLayout extends ConsumerStatefulWidget {
     this.selectedEntry,
     required this.isRecycleBin,
     required this.isOpenedFromCloud,
+    required this.canSyncToCloud,
     required this.isCloudOfflineMode,
     required this.cloudOfflineReason,
     required this.isDirty,
@@ -978,7 +982,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
             }
           },
           itemBuilder: (_) => [
-            if (widget.isOpenedFromCloud) ...[
+            if (widget.canSyncToCloud)
               PopupMenuItem(
                 value: 'sync_up',
                 child: ListTile(
@@ -988,6 +992,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
+            if (widget.isOpenedFromCloud)
               PopupMenuItem(
                 value: 'sync_down',
                 child: ListTile(
@@ -997,7 +1002,6 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-            ],
             const PopupMenuDivider(),
             PopupMenuItem(
               value: 'import_csv',
@@ -1110,6 +1114,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
       case 3:
         return _MobileToolsPanel(
           isOpenedFromCloud: widget.isOpenedFromCloud,
+          canSyncToCloud: widget.canSyncToCloud,
           isCloudOfflineMode: widget.isCloudOfflineMode,
           cloudOfflineReason: widget.cloudOfflineReason,
           onClose: widget.onClose,

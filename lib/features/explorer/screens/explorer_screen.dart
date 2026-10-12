@@ -175,6 +175,12 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     final service = ref.read(databaseServiceProvider);
     final isRecycleBin = ref.watch(isRecycleBinProvider);
     final isOpenedFromCloud = ref.watch(openedFromCloudProvider);
+    // A local database can also be uploaded once WebDAV is configured and
+    // enabled, by linking it to the active profile. The sync-up affordance is
+    // therefore shown whenever cloud is already active OR a profile is ready.
+    final webDavConfig = ref.watch(webDavConfigProvider).asData?.value;
+    final canSyncToCloud =
+        isOpenedFromCloud || (webDavConfig?.enabled ?? false);
     final isDirty = ref.watch(isDirtyProvider);
     final isSaving = ref.watch(isSavingProvider);
     final selectedEntry = ref.watch(selectedEntryProvider);
@@ -221,6 +227,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
           selectedEntry: selectedEntry,
           isRecycleBin: isRecycleBin,
           isOpenedFromCloud: isOpenedFromCloud,
+          canSyncToCloud: canSyncToCloud,
           isCloudOfflineMode: isCloudOfflineMode,
           cloudOfflineReason: cloudOfflineReason,
           isDirty: isDirty,
@@ -319,6 +326,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         selectedEntry: selectedEntry,
         isRecycleBin: isRecycleBin,
         isOpenedFromCloud: isOpenedFromCloud,
+        canSyncToCloud: canSyncToCloud,
         isCloudOfflineMode: isCloudOfflineMode,
         cloudOfflineReason: cloudOfflineReason,
         isDirty: isDirty,
