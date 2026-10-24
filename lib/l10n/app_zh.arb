@@ -536,5 +536,17 @@
   "auditSharedCount": "被 {count} 条共用",
   "auditExpiresOn": "过期 {date}",
   "auditStrength": "强度",
-  "auditOpenDatabaseFirst": "请先打开密码库再进行健康扫描"
+  "auditOpenDatabaseFirst": "请先打开密码库再进行健康扫描",
+  "syncBackend": "同步后端",
+  "syncBackendWebdav": "WebDAV",
+  "syncBackendGit": "Git",
+  "gitRepoUrl": "站点地址",
+  "gitSiteUrlHelper": "选填——仅自建 GitLab 需要填写自己的域名",
+  "gitGistId": "Gist/Snippet ID",
+  "gitGistIdHelper": "首次同步时自动创建，请勿手动修改",
+  "gitToken": "访问令牌",
+  "gitTokenHelper": "需要 Gist/代码片段读写权限的个人访问令牌",
+  "gitProvider": "Git 平台",
+  "gitRepoNotFound": "仓库不存在——请检查地址与令牌权限",
+  "pleaseConfigureSync": "请先在设置中配置 WebDAV 或 Git 同步"
 }

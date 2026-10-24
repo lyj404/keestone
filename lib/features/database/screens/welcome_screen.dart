@@ -74,9 +74,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
   Future<void> _tryAutoOpen() async {
     if (_autoOpened) return;
-    // Only auto-open when there's exactly one recent file
+    // Auto-open only when exactly one recent file exists AND it is still
+    // the last-opened file. A manual close clears the last-opened marker
+    // (lock keeps it), so returning to the welcome screen after explicitly
+    // closing a database must not re-open it.
     final files = await ref.read(recentFilesServiceProvider).getRecentFiles();
     if (files.length != 1) return;
+    final lastOpened = await ref
+        .read(recentFilesServiceProvider)
+        .getLastOpenedFile();
+    if (lastOpened == null || lastOpened.path != files.first.path) return;
     if (!mounted) return;
 
     var file = files.first;
@@ -101,17 +108,15 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       return;
     }
 
-    final config = await ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(file.webDavProfileId);
-    if (config == null || !config.enabled) {
+    final cloud = await _resolveCloudTarget(file.webDavProfileId);
+    if (cloud == null) {
       if (exists) {
-        // Local file exists but WebDAV not configured — open as local file.
+        // Local file exists but no sync backend configured — open as local.
         if (mounted) {
           unawaited(context.push('/unlock?path=${Uri.encodeComponent(file.path)}'));
         }
       } else {
-        // Local cache missing and no WebDAV config — remove stale record.
+        // Local cache missing and no backend configured — remove stale record.
         await ref.read(recentFilesServiceProvider).removeRecentFile(file.path);
         ref.invalidate(recentFilesProvider);
         if (mounted) {
@@ -124,10 +129,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     if (!exists) {
       // Local cache missing but WebDAV is configured — fall through to download.
     }
-    final syncService = ref.read(syncServiceProvider);
     RemoteFileInfo? remoteInfo;
     try {
-      remoteInfo = await syncService.getRemoteFileInfo(config);
+      remoteInfo = await cloud.info();
     } catch (e) {
       // Unreachable server is not the same as "no cloud database"; fall back
       // to the local cache instead of pretending the remote is gone.
@@ -199,23 +203,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             return;
           }
         }
-        final downloaded = await syncService.downloadToLocal(config);
+        final downloaded = await cloud.downloadToLocal();
         final localPath = downloaded.path;
         final downloadedInfo = downloaded.info;
         final recentService = ref.read(recentFilesServiceProvider);
         await recentService.addRecentFile(
           localPath,
           isCloud: true,
-          remotePath: config.remoteFilePath,
-          webDavProfileId: config.id,
+          remotePath: cloud.remotePath,
+          webDavProfileId: cloud.profileId,
           lastSyncedETag: downloadedInfo.eTag ?? remoteInfo.eTag,
           lastSyncedMTime: downloadedInfo.mTime ?? remoteInfo.mTime,
         );
         await recentService.setLastOpenedFile(
           localPath,
           isCloud: true,
-          remotePath: config.remoteFilePath,
-          webDavProfileId: config.id,
+          remotePath: cloud.remotePath,
+          webDavProfileId: cloud.profileId,
           lastSyncedETag: downloadedInfo.eTag ?? remoteInfo.eTag,
           lastSyncedMTime: downloadedInfo.mTime ?? remoteInfo.mTime,
         );
@@ -230,7 +234,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 downloadedInfo.eTag != null || downloadedInfo.mTime != null
                     ? downloadedInfo
                     : remoteInfo,
-                config.id,
+                cloud.profileId,
               ),
             ),
           );
@@ -485,26 +489,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     RecentFile? recentFile,
   }) async {
     final l10n = AppLocalizations.of(context)!;
-    final config = await ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(recentFile?.webDavProfileId);
-    if (config == null) {
+    final cloud = await _resolveCloudTarget(recentFile?.webDavProfileId);
+    if (cloud == null) {
       if (context.mounted) {
-        _showErrorDialog(context, l10n.pleaseConfigureWebDAV);
-      }
-      return;
-    }
-    if (!config.enabled) {
-      if (context.mounted) {
-        _showCloudDisabledDialog(context, l10n);
+        _showErrorDialog(context, l10n.pleaseConfigureSync);
       }
       return;
     }
     if (!context.mounted) return;
-    final syncService = ref.read(syncServiceProvider);
     RemoteFileInfo? remoteInfo;
     try {
-      remoteInfo = await syncService.getRemoteFileInfo(config);
+      remoteInfo = await cloud.info();
     } catch (e) {
       // Auth/network failure must not be presented as "cloud has no database"
       // — that would guide the user into creating/overwriting a real one.
@@ -526,7 +521,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         .read(recentFilesServiceProvider)
         .getRecentFiles();
     var cachedFile = recentFiles
-        .where((f) => f.isCloud && f.remotePath == config.remoteFilePath)
+        .where((f) => f.isCloud && f.remotePath == cloud.remotePath)
         .firstOrNull;
     if (cachedFile != null && cachedFile.isCloud) {
       final localFile = File(cachedFile.path);
@@ -564,18 +559,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       loadingVisible = false;
       Navigator.of(context).pop();
     }
-
-  // A pendingUpload marker means the local cache may hold changes that never
-  // reached the server — this file can be the only copy of them. Downloading
-  // over it would silently destroy them, so snapshot it into the backup
-  // directory first. Best-effort: failure only skips the safety net.
-  if (cachedFile?.pendingUpload ?? false) {
-    try {
-      await BackupService().createBackup(cachedFile!.path);
-    } catch (e) {
-      log.w('Pre-download backup of pending cache failed', error: e);
-    }
-  }
 
     try {
       final cachedExists = cachedFile != null
@@ -621,23 +604,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           log.w('Pre-download backup of pending cache failed', error: e);
         }
       }
-      final downloaded = await syncService.downloadToLocal(config);
+      final downloaded = await cloud.downloadToLocal();
       final localPath = downloaded.path;
       final downloadedInfo = downloaded.info;
       final recentService = ref.read(recentFilesServiceProvider);
       await recentService.addRecentFile(
         localPath,
         isCloud: true,
-        remotePath: config.remoteFilePath,
-        webDavProfileId: config.id,
+        remotePath: cloud.remotePath,
+        webDavProfileId: cloud.profileId,
         lastSyncedETag: downloadedInfo.eTag ?? remoteInfo.eTag,
         lastSyncedMTime: downloadedInfo.mTime ?? remoteInfo.mTime,
       );
       await recentService.setLastOpenedFile(
         localPath,
         isCloud: true,
-        remotePath: config.remoteFilePath,
-        webDavProfileId: config.id,
+        remotePath: cloud.remotePath,
+        webDavProfileId: cloud.profileId,
         lastSyncedETag: downloadedInfo.eTag ?? remoteInfo.eTag,
         lastSyncedMTime: downloadedInfo.mTime ?? remoteInfo.mTime,
       );
@@ -653,7 +636,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               downloadedInfo.eTag != null || downloadedInfo.mTime != null
                   ? downloadedInfo
                   : remoteInfo,
-              config.id,
+              cloud.profileId,
             ),
           ),
         );
@@ -699,6 +682,38 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     return false;
   }
 
+  /// Resolves the cloud backend for [profileId] via the shared resolver in
+  /// sync_provider.dart (Git first for null ids). Returns null when nothing
+  /// is configured.
+  Future<_CloudTarget?> _resolveCloudTarget(String? profileId) async {
+    final resolved = await resolveSyncBackend(
+      (id) => ref.read(gitSettingsServiceProvider).getConfigById(id),
+      (id) => ref.read(webDavSettingsServiceProvider).getConfigById(id),
+      profileId,
+    );
+    if (resolved.hasGit) {
+      final config = resolved.git!;
+      final service = ref.read(gitSyncServiceProvider);
+      return _CloudTarget(
+        profileId: config.id,
+        remotePath: config.filePath,
+        info: () => service.getRemoteFileInfo(config),
+        downloadToLocal: () => service.downloadToLocal(config),
+      );
+    }
+    if (resolved.hasWebdav) {
+      final webdav = resolved.webdav!;
+      final service = ref.read(syncServiceProvider);
+      return _CloudTarget(
+        profileId: webdav.id,
+        remotePath: webdav.remoteFilePath,
+        info: () => service.getRemoteFileInfo(webdav),
+        downloadToLocal: () => service.downloadToLocal(webdav),
+      );
+    }
+    return null;
+  }
+
   String _buildCloudUnlockQuery(
     String path,
     RemoteFileInfo? remoteInfo,
@@ -737,37 +752,6 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(l10n.cancel),
-            ),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              context.push('/settings');
-            },
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: Text(l10n.goToSettings),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCloudDisabledDialog(BuildContext context, AppLocalizations l10n) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        content: Text(l10n.cloudSyncDisabled),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
@@ -902,6 +886,23 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       ),
     );
   }
+}
+
+/// Backend-agnostic view of a cloud destination for the welcome screen's
+/// open-from-cloud flows.
+class _CloudTarget {
+  final String profileId;
+  final String remotePath;
+  final Future<RemoteFileInfo?> Function() info;
+  final Future<({String path, RemoteFileInfo info})> Function()
+  downloadToLocal;
+
+  const _CloudTarget({
+    required this.profileId,
+    required this.remotePath,
+    required this.info,
+    required this.downloadToLocal,
+  });
 }
 
 enum _CloudOpenAction { downloadLatest, useCache, cancel }

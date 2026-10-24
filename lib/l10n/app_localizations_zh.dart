@@ -1370,4 +1370,40 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get auditOpenDatabaseFirst => '请先打开密码库再进行健康扫描';
+
+  @override
+  String get syncBackend => '同步后端';
+
+  @override
+  String get syncBackendWebdav => 'WebDAV';
+
+  @override
+  String get syncBackendGit => 'Git';
+
+  @override
+  String get gitRepoUrl => '站点地址';
+
+  @override
+  String get gitSiteUrlHelper => '选填——仅自建 GitLab 需要填写自己的域名';
+
+  @override
+  String get gitGistId => 'Gist/Snippet ID';
+
+  @override
+  String get gitGistIdHelper => '首次同步时自动创建，请勿手动修改';
+
+  @override
+  String get gitToken => '访问令牌';
+
+  @override
+  String get gitTokenHelper => '需要 Gist/代码片段读写权限的个人访问令牌';
+
+  @override
+  String get gitProvider => 'Git 平台';
+
+  @override
+  String get gitRepoNotFound => '仓库不存在——请检查地址与令牌权限';
+
+  @override
+  String get pleaseConfigureSync => '请先在设置中配置 WebDAV 或 Git 同步';
 }

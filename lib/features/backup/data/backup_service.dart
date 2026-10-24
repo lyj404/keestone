@@ -8,6 +8,11 @@ import '../../../core/utils/logger.dart';
 
 enum BackupIntegrityStatus { valid, legacy, missing, invalid, corrupted }
 
+/// Last path segment regardless of separator style; recent-file records can
+/// mix `\` and `/` (paths written on other platforms or older builds).
+String _baseName(String path) =>
+    path.split(Platform.pathSeparator).last.split('/').last;
+
 class BackupVerificationResult {
   final BackupIntegrityStatus status;
   final Uint8List? bytes;
@@ -74,7 +79,24 @@ class BackupService {
 
   Future<BackupInfo?> createBackup(String filePath) async {
     try {
-      final file = File(filePath);
+      // Recent-file records can carry relative paths (e.g. a cloud cache
+      // path stored on another platform). Backups must resolve them against
+      // the documents directory instead of nesting them under the backup
+      // folder, where the parent directories do not exist.
+      var resolvedPath = filePath;
+      if (!File(resolvedPath).existsSync()) {
+        final docs = await getApplicationDocumentsDirectory();
+        final candidate = File(
+          filePath.startsWith('/')
+              ? '${docs.path}$filePath'
+              : '${docs.path}/$filePath',
+        );
+        if (candidate.existsSync()) {
+          resolvedPath = candidate.path;
+          log.i('Backup resolved relative source path: $resolvedPath');
+        }
+      }
+      final file = File(resolvedPath);
       if (!await file.exists()) return null;
       final bytes = await file.readAsBytes();
       final dir = await _backupDir();
@@ -88,10 +110,7 @@ class BackupService {
           '${now.second.toString().padLeft(2, '0')}_'
           '${now.millisecond.toString().padLeft(3, '0')}'
           '${now.microsecond.toString().padLeft(3, '0')}';
-      final dbName = filePath
-          .split(Platform.pathSeparator)
-          .last
-          .replaceAll('.kdbx', '');
+      final dbName = _baseName(resolvedPath).replaceAll('.kdbx', '');
       var filename = '${dbName}_$ts.kdbx';
       var backupFile = File('${dir.path}/$filename');
       var counter = 1;
@@ -151,7 +170,7 @@ class BackupService {
   }
 
   Future<List<BackupInfo>> listBackupsFor(String filePath) async {
-    final fileName = filePath.split(Platform.pathSeparator).last;
+    final fileName = _baseName(filePath);
     final backups = await listBackups();
     return backups.where((backup) {
       if (backup.sourcePath == filePath) return true;

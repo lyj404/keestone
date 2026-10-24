@@ -1409,4 +1409,45 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get auditOpenDatabaseFirst =>
       'Open a database to run a password health scan';
+
+  @override
+  String get syncBackend => 'Sync Backend';
+
+  @override
+  String get syncBackendWebdav => 'WebDAV';
+
+  @override
+  String get syncBackendGit => 'Git';
+
+  @override
+  String get gitRepoUrl => 'Site URL';
+
+  @override
+  String get gitSiteUrlHelper =>
+      'Optional — only a self-hosted GitLab needs its own address';
+
+  @override
+  String get gitGistId => 'Gist/Snippet ID';
+
+  @override
+  String get gitGistIdHelper =>
+      'Created automatically on the first sync; do not edit';
+
+  @override
+  String get gitToken => 'Access Token';
+
+  @override
+  String get gitTokenHelper =>
+      'Personal access token with gist/snippet write permission';
+
+  @override
+  String get gitProvider => 'Git Provider';
+
+  @override
+  String get gitRepoNotFound =>
+      'Repository not found — check the URL and token permissions';
+
+  @override
+  String get pleaseConfigureSync =>
+      'Please configure WebDAV or Git sync in settings first';
 }

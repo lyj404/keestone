@@ -236,20 +236,22 @@ Future<void> _syncToCloud(BuildContext context) async {
   final notifier = container.read(databaseProvider.notifier);
   final isCloud = container.read(openedFromCloudProvider);
 
-  // A local database must first be linked to the active WebDAV profile.
-  // getConfigById(null) resolves the active profile when no profile is bound
-  // yet, so this also validates that cloud sync is actually configured.
-  final config = isCloud
-      ? await container
-            .read(webDavSettingsServiceProvider)
-            .getConfigById(
-              (await container.read(recentFilesServiceProvider).getLastOpenedFile())
-                  ?.webDavProfileId,
-            )
-      : await container.read(webDavSettingsServiceProvider).getConfig();
-  if (config == null || !config.enabled) {
+  // Validate via the shared backend resolver so this entry point cannot
+  // disagree with DatabaseNotifier about which backend is in play.
+  final profileId = isCloud
+      ? (await container
+            .read(recentFilesServiceProvider)
+            .getLastOpenedFile())
+          ?.webDavProfileId
+      : null;
+  final backend = await resolveSyncBackend(
+    (id) => container.read(gitSettingsServiceProvider).getConfigById(id),
+    (id) => container.read(webDavSettingsServiceProvider).getConfigById(id),
+    profileId,
+  );
+  if (!backend.hasEnabled) {
     if (context.mounted) {
-      showToast(context, l10n.pleaseConfigureWebDAV, isError: true);
+      showToast(context, l10n.pleaseConfigureSync, isError: true);
       unawaited(context.push('/settings'));
     }
     return;
@@ -366,34 +368,44 @@ Future<void> _syncFromCloud(BuildContext context) async {
   final recent = await container
       .read(recentFilesServiceProvider)
       .getLastOpenedFile();
-  final config = await container
-      .read(webDavSettingsServiceProvider)
-      .getConfigById(recent?.webDavProfileId);
-  if (config == null || !config.enabled) {
+  final backend = await resolveSyncBackend(
+    (id) => container.read(gitSettingsServiceProvider).getConfigById(id),
+    (id) => container.read(webDavSettingsServiceProvider).getConfigById(id),
+    recent?.webDavProfileId,
+  );
+  // An enabled Git config wins over WebDAV, matching DatabaseNotifier.
+  final useGit = backend.hasGit;
+  if (!backend.hasEnabled) {
     if (context.mounted) {
-      _showSyncErrorDialog(context, l10n.pleaseConfigureWebDAV);
+      _showSyncErrorDialog(context, l10n.pleaseConfigureSync);
     }
     return;
   }
   if (!context.mounted) return;
-  final syncService = container.read(syncServiceProvider);
-  final bool exists;
-  try {
-    exists = await syncService.remoteFileExists(config);
-  } catch (e) {
-    // Auth/network failure must not be presented as "cloud has no database"
-    // — that would guide the user into creating/overwriting a real one.
-    log.e('Remote file probe failed before sync', error: e);
-    if (context.mounted) {
-      _showSyncErrorDialog(context, l10n.syncFailed);
+  // Git targets handle "no remote database yet" inside reloadFromCloud and
+  // report it through the standard sync error dialog; only WebDAV needs the
+  // upfront remoteFileExists probe to avoid clobbering an absent path.
+  if (!useGit) {
+    final bool exists;
+    try {
+      exists = await container
+          .read(syncServiceProvider)
+          .remoteFileExists(backend.webdav!);
+    } catch (e) {
+      // Auth/network failure must not be presented as "cloud has no
+      // database" — that would guide the user into overwriting a real one.
+      log.e('Remote file probe failed before sync', error: e);
+      if (context.mounted) {
+        _showSyncErrorDialog(context, l10n.syncFailed);
+      }
+      return;
     }
-    return;
-  }
-  if (!exists) {
-    if (context.mounted) {
-      _showSyncErrorDialog(context, l10n.cloudNoDatabaseSaveFirst);
+    if (!exists) {
+      if (context.mounted) {
+        _showSyncErrorDialog(context, l10n.cloudNoDatabaseSaveFirst);
+      }
+      return;
     }
-    return;
   }
   if (!context.mounted) return;
   unawaited(
@@ -461,7 +473,7 @@ String _translateSyncError(Object e, AppLocalizations l10n) {
     }
   }
   final msg = e.toString().replaceFirst('Exception: ', '');
-  if (msg == 'please_configure_webdav') return l10n.pleaseConfigureWebDAVFirst;
+  if (msg == 'please_configure_sync') return l10n.pleaseConfigureSync;
   if (msg == 'cloud_database_not_exist') return l10n.cloudDatabaseNotExist;
   if (msg == 'remote_database_not_exist') return l10n.remoteDatabaseNotExist;
   return l10n.syncFailedWithError(msg);

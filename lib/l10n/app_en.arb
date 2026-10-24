@@ -491,5 +491,17 @@
   "auditSharedCount": "Used by {count} entries",
   "auditExpiresOn": "Expires {date}",
   "auditStrength": "Strength",
-  "auditOpenDatabaseFirst": "Open a database to run a password health scan"
+  "auditOpenDatabaseFirst": "Open a database to run a password health scan",
+  "syncBackend": "Sync Backend",
+  "syncBackendWebdav": "WebDAV",
+  "syncBackendGit": "Git",
+  "gitRepoUrl": "Site URL",
+  "gitSiteUrlHelper": "Optional — only a self-hosted GitLab needs its own address",
+  "gitGistId": "Gist/Snippet ID",
+  "gitGistIdHelper": "Created automatically on the first sync; do not edit",
+  "gitToken": "Access Token",
+  "gitTokenHelper": "Personal access token with gist/snippet write permission",
+  "gitProvider": "Git Provider",
+  "gitRepoNotFound": "Repository not found — check the URL and token permissions",
+  "pleaseConfigureSync": "Please configure WebDAV or Git sync in settings first"
 }

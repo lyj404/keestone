@@ -20,9 +20,11 @@ import '../../../core/providers/expiration_reminder_provider.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../sync/data/git_config.dart';
 import '../data/webdav_config.dart';
 import '../providers/settings_provider.dart';
 import '../../sync/providers/sync_provider.dart';
+
 
 part 'settings_layouts.dart';
 
@@ -44,8 +46,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _passwordController = TextEditingController();
   final _pathController = TextEditingController();
   final _filenameController = TextEditingController(text: 'database.kdbx');
+  // Git sync form controllers.
+  final _gitRepoController = TextEditingController();
+  final _gitTokenController = TextEditingController();
+  final _gitFileController = TextEditingController(text: 'database.kdbx');
+  /// Gist/snippet id of the loaded profile, shown read-only after the first
+  /// sync creates the remote store.
+  String? _gitGistId;
   List<WebDavConfig> _profiles = const [];
   String? _selectedProfileId;
+  String? _selectedGitProfileId;
+  String _gitProvider = 'github';
+  /// Which sync backend the sync cards currently edit.
+  String _syncMode = 'webdav'; // 'webdav' | 'git'
   bool _enabled = false;
   bool _testing = false;
   bool? _connectionOk;
@@ -61,11 +74,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final state = await ref
         .read(webDavSettingsServiceProvider)
         .getProfilesState();
+    final gitProfiles = await ref
+        .read(gitSettingsServiceProvider)
+        .getProfiles();
     if (!mounted) return;
+    // Default the backend switch to whichever sync backend is actually
+    // enabled; re-entering settings must not reset an explicit choice.
+    final gitEnabled = gitProfiles.any((p) => p.enabled);
     setState(() {
       _profiles = state.profiles;
       _selectedProfileId = state.activeProfile?.id;
       _applyConfigToForm(state.activeProfile);
+      _selectedGitProfileId = gitProfiles.isEmpty ? null : gitProfiles.first.id;
+      _applyGitConfigToForm(gitProfiles.isEmpty ? null : gitProfiles.first);
+      _syncMode = gitEnabled ? 'git' : 'webdav';
       _connectionOk = null;
       _connectionError = null;
     });
@@ -79,6 +101,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _passwordController.dispose();
     _pathController.dispose();
     _filenameController.dispose();
+    _gitRepoController.dispose();
+    _gitTokenController.dispose();
+    _gitFileController.dispose();
     super.dispose();
   }
 
@@ -681,10 +706,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
     final cards = <Widget>[
-      _webdavToggleCard(brightness, l10n),
-      if (_enabled) ...[
-        _webdavConfigCard(brightness, l10n),
-        ..._webdavActions(l10n),
+      _syncModeCard(brightness, l10n),
+      if (_syncMode == 'webdav') ...[
+        _webdavToggleCard(brightness, l10n),
+        if (_enabled) ...[
+          _webdavConfigCard(brightness, l10n),
+          ..._webdavActions(l10n),
+        ],
+      ] else ...[
+        _gitConfigCard(brightness, l10n),
       ],
     ];
     return [
@@ -696,6 +726,273 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     ];
+  }
+
+  /// Backend switch shown above the sync forms.
+  Widget _syncModeCard(Brightness brightness, AppLocalizations l10n) {
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                child: Icon(
+                  Icons.cloud_upload_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.syncBackend,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      l10n.autoSyncOnSave,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SegmentedButton<String>(
+            segments: [
+              ButtonSegment(
+                value: 'webdav',
+                label: Text(l10n.syncBackendWebdav),
+                icon: const Icon(Icons.dns_rounded, size: 18),
+              ),
+              ButtonSegment(
+                value: 'git',
+                label: Text(l10n.syncBackendGit),
+                icon: const Icon(Icons.merge_rounded, size: 18),
+              ),
+            ],
+            selected: {_syncMode},
+            onSelectionChanged: (selection) {
+              if (selection.isEmpty) return;
+              setState(() {
+                _syncMode = selection.first;
+                _connectionOk = null;
+                _connectionError = null;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Git sync ----------------------------------------------------------
+
+  Widget _gitConfigCard(Brightness brightness, AppLocalizations l10n) {
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        children: [
+          DropdownButtonFormField<String>(
+            initialValue: _gitProvider,
+            decoration: InputDecoration(labelText: l10n.gitProvider),
+            items: [
+              for (final p in GitSyncConfig.supportedProviders)
+                DropdownMenuItem<String>(
+                  value: p,
+                  child: Text(switch (p) {
+                    'github' => 'GitHub',
+                    'gitee' => 'Gitee (码云)',
+                    _ => 'GitLab',
+                  }),
+                ),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _gitProvider = value);
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _gitRepoController,
+            decoration: InputDecoration(
+              labelText: l10n.gitRepoUrl,
+              helperText: l10n.gitSiteUrlHelper,
+            ),
+            validator: (v) {
+              final value = v?.trim() ?? '';
+              // GitHub/Gitee have fixed API bases, so the site URL is
+              // optional there; a self-hosted GitLab must provide its host.
+              if (value.isEmpty) {
+                if (_gitProvider == 'gitlab') {
+                  return l10n.pleaseEnterServerAddress;
+                }
+                return null;
+              }
+              if (GitSyncConfig(
+                id: 'validation',
+                name: 'validation',
+                provider: _gitProvider,
+                repoUrl: value,
+              ).parsedRepo == null) {
+                return l10n.webDavInvalidUrl;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          if (_gitGistId != null && _gitGistId!.isNotEmpty)
+            TextFormField(
+              initialValue: _gitGistId,
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: l10n.gitGistId,
+                helperText: l10n.gitGistIdHelper,
+              ),
+            ),
+          if (_gitGistId != null && _gitGistId!.isNotEmpty)
+            const SizedBox(height: 12),
+          PasswordTextField(
+            controller: _gitTokenController,
+            labelText: l10n.gitToken,
+            showPrefixIcon: false,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterPassword : null,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.gitTokenHelper,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _gitFileController,
+            decoration: InputDecoration(
+              labelText: l10n.filename,
+              hintText: 'database.kdbx',
+            ),
+            validator: (v) => (v == null || v.isEmpty)
+                ? l10n.pleaseEnterName
+                : null,
+          ),
+          const SizedBox(height: 12),
+          // Save button for the Git profile (independent of the WebDAV one).
+          FilledButton.icon(
+            onPressed: _saveGit,
+            icon: const Icon(Icons.save_rounded, size: 18),
+            label: ButtonLabel(l10n.save),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  GitSyncConfig _gitConfigFromForm({bool enabled = true}) => GitSyncConfig(
+      id: _selectedGitProfileId ?? _generateGitProfileId(),
+      name: 'Git',
+      provider: _gitProvider,
+      repoUrl: _gitRepoController.text.trim(),
+      gistId: _gitGistId ?? '',
+      token: _gitTokenController.text,
+      remoteFilename: _gitFileController.text.trim(),
+      enabled: enabled,
+    );
+
+  /// Persists the form, merging it into the stored profile instead of
+  /// replacing it: the gistId (and anything else the form does not edit)
+  /// survives, so saving settings can never orphan an existing snippet.
+  Future<void> _saveGit() async {
+    log.i('[GitSync] Save button clicked');
+    try {
+      if (!_formKey.currentState!.validate()) return;
+      final profileId = _selectedGitProfileId ?? _generateGitProfileId();
+      final existing = await ref
+          .read(gitSettingsServiceProvider)
+          .getConfigById(profileId);
+      final config = _gitConfigFromForm(
+        enabled: existing?.enabled ?? true,
+      ).copyWith(
+        id: profileId,
+        // The form has no gistId field; keep the stored one.
+        gistId: existing?.gistId ?? '',
+      );
+      await ref.read(gitSettingsServiceProvider).saveConfig(config);
+      if (config.enabled) {
+        // The two sync backends are mutually exclusive: enabling Git
+        // disables WebDAV so no entry point can ever pick the wrong one.
+        await _disableAllWebDavProfiles();
+      }
+      if (!mounted) return;
+      await _loadConfig();
+      if (!mounted) return;
+      _selectedGitProfileId = profileId;
+      setState(() {
+        _connectionOk = null;
+        _connectionError = null;
+      });
+      final l10n = AppLocalizations.of(context)!;
+      showToast(context, l10n.saved);
+    } catch (e, st) {
+      log.e('[GitSync] Save failed', error: e, stackTrace: st);
+      if (mounted) {
+        showToast(context, e.toString(), isError: true);
+      }
+    }
+  }
+
+  void _applyGitConfigToForm(GitSyncConfig? config) {
+    if (config == null) {
+      _gitProvider = 'github';
+      _gitRepoController.text = '';
+      _gitGistId = null;
+      _gitTokenController.text = '';
+      _gitFileController.text = 'database.kdbx';
+      return;
+    }
+    _gitProvider = GitSyncConfig.supportedProviders.contains(config.provider)
+        ? config.provider
+        : 'github';
+    _gitRepoController.text = config.repoUrl;
+    _gitGistId = config.gistId;
+    _gitTokenController.text = config.token;
+    _gitFileController.text = config.remoteFilename;
+  }
+
+  /// Disables every WebDAV profile. Used to enforce the mutual exclusion of
+  /// the two sync backends when a Git profile is enabled.
+  Future<void> _disableAllWebDavProfiles() async {
+    final service = ref.read(webDavSettingsServiceProvider);
+    final state = await service.getProfilesState();
+    for (final profile in state.profiles) {
+      if (!profile.enabled) continue;
+      await service.saveConfig(profile.copyWith(enabled: false));
+    }
+  }
+
+  /// Disables every Git profile. Used to enforce the mutual exclusion of the
+  /// two sync backends when WebDAV is enabled.
+  Future<void> _disableGitProfiles() async {
+    final service = ref.read(gitSettingsServiceProvider);
+    for (final profile in await service.getProfiles()) {
+      if (!profile.enabled) continue;
+      await service.saveConfig(profile.copyWith(enabled: false));
+    }
+  }
+
+  String _generateGitProfileId() {
+    return 'git_${DateTime.now().microsecondsSinceEpoch}';
   }
 
   Widget _webdavToggleCard(Brightness brightness, AppLocalizations l10n) {
@@ -1125,6 +1422,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Future<bool> _confirmInsecureHttp() async {
+    // The Git backend form does not use this confirmation.
+    if (_syncMode == 'git') return true;
     final config = WebDavConfig(
       id: _selectedProfileId ?? 'tmp',
       name: _profileNameController.text.trim(),
@@ -1303,6 +1602,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
       await ref.read(webDavSettingsServiceProvider).saveConfig(config);
       await ref.read(webDavSettingsServiceProvider).setActiveProfile(profileId);
+      if (_enabled) {
+        // The two sync backends are mutually exclusive: enabling WebDAV
+        // disables Git so no entry point can ever pick the wrong one.
+        await _disableGitProfiles();
+      }
       _selectedProfileId = profileId;
       await _loadConfig();
       ref.invalidate(webDavConfigProvider);

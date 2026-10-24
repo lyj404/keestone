@@ -2713,6 +2713,78 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'请先打开密码库再进行健康扫描'**
   String get auditOpenDatabaseFirst;
+
+  /// No description provided for @syncBackend.
+  ///
+  /// In zh, this message translates to:
+  /// **'同步后端'**
+  String get syncBackend;
+
+  /// No description provided for @syncBackendWebdav.
+  ///
+  /// In zh, this message translates to:
+  /// **'WebDAV'**
+  String get syncBackendWebdav;
+
+  /// No description provided for @syncBackendGit.
+  ///
+  /// In zh, this message translates to:
+  /// **'Git'**
+  String get syncBackendGit;
+
+  /// No description provided for @gitRepoUrl.
+  ///
+  /// In zh, this message translates to:
+  /// **'站点地址'**
+  String get gitRepoUrl;
+
+  /// No description provided for @gitSiteUrlHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'选填——仅自建 GitLab 需要填写自己的域名'**
+  String get gitSiteUrlHelper;
+
+  /// No description provided for @gitGistId.
+  ///
+  /// In zh, this message translates to:
+  /// **'Gist/Snippet ID'**
+  String get gitGistId;
+
+  /// No description provided for @gitGistIdHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'首次同步时自动创建，请勿手动修改'**
+  String get gitGistIdHelper;
+
+  /// No description provided for @gitToken.
+  ///
+  /// In zh, this message translates to:
+  /// **'访问令牌'**
+  String get gitToken;
+
+  /// No description provided for @gitTokenHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'需要 Gist/代码片段读写权限的个人访问令牌'**
+  String get gitTokenHelper;
+
+  /// No description provided for @gitProvider.
+  ///
+  /// In zh, this message translates to:
+  /// **'Git 平台'**
+  String get gitProvider;
+
+  /// No description provided for @gitRepoNotFound.
+  ///
+  /// In zh, this message translates to:
+  /// **'仓库不存在——请检查地址与令牌权限'**
+  String get gitRepoNotFound;
+
+  /// No description provided for @pleaseConfigureSync.
+  ///
+  /// In zh, this message translates to:
+  /// **'请先在设置中配置 WebDAV 或 Git 同步'**
+  String get pleaseConfigureSync;
 }
 
 class _AppLocalizationsDelegate

@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
+
 import '../../../core/utils/fnv_hash.dart';
 import '../../../core/utils/logger.dart';
 import '../../database/data/atomic_file_store.dart';
@@ -20,7 +22,7 @@ String? normalizeETag(String? raw) {
   if (value.isEmpty) return null;
   if (value.length >= 2 &&
       (value.codeUnitAt(0) | 0x20) == 0x77 /* w */ &&
-      value.codeUnitAt(1) == 0x2f /* / */) {
+      value.codeUnitAt(1) == 0x2f /* / */ ) {
     value = value.substring(2).trim();
   }
   return value.isEmpty ? null : value;
@@ -70,10 +72,12 @@ String encodeDavPath(String path) {
   if (normalized.isEmpty) return '';
   final encoded = normalized
       .split('/')
-      .map((segment) => segment.replaceAllMapped(
-            RegExp(r"""[^A-Za-z0-9\-._~!$&'()*+,;=:@%]"""),
-            (m) => Uri.encodeComponent(m[0]!),
-          ))
+      .map(
+        (segment) => segment.replaceAllMapped(
+          RegExp(r"""[^A-Za-z0-9\-._~!$&'()*+,;=:@%]"""),
+          (m) => Uri.encodeComponent(m[0]!),
+        ),
+      )
       .join('/');
   // Root path stays a bare slash.
   return encoded.isEmpty ? '/' : encoded;
@@ -97,7 +101,10 @@ class SyncException implements Exception {
   SyncException(this.type, this.message, [this.original]);
 
   @override
-  String toString() => 'SyncException($type): $message';
+  // User-facing messages show this directly (e.g. "Sync failed: ..."), so
+  // name the operation family, not the transport: the Git backend throws the
+  // same exception type.
+  String toString() => '同步操作失败: $message';
 }
 
 /// Classifies a transport failure into a [SyncErrorType] using typed Dio
@@ -208,7 +215,9 @@ class SyncService {
     log.i('Testing WebDAV connection: ${config.serverUrl}');
     try {
       final client = _buildClient(config);
-      final remotePath = config.remotePath.isEmpty ? '/' : encodeDavPath(config.remotePath);
+      final remotePath = config.remotePath.isEmpty
+          ? '/'
+          : encodeDavPath(config.remotePath);
       try {
         await client.readDir(remotePath);
       } catch (e) {

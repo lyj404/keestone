@@ -17,9 +17,14 @@ import '../../explorer/providers/explorer_provider.dart'
     show activeEntryProvider;
 import '../../settings/data/webdav_config.dart';
 import '../../settings/providers/settings_provider.dart';
+import '../../sync/data/git_config.dart';
 import '../../sync/data/sync_service.dart'
     show RemoteFileInfo, SyncErrorType, SyncException, normalizeETag;
 import '../../sync/providers/sync_provider.dart';
+
+/// Which remote backend the current session syncs against. Git is the newer
+/// API-based backend; WebDAV remains the default for existing setups.
+enum SyncBackend { webdav, git }
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   return DatabaseService();
@@ -56,6 +61,23 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
 
   DatabaseService get _service => _ref.read(databaseServiceProvider);
 
+  /// Resolves the sync target for [profileId]. Git profile ids carry a
+  /// `git_` prefix; a null id falls back to whichever backend has an enabled
+  /// config (Git first, so configuring Git overrides a leftover/incomplete
+  /// WebDAV profile). Delegates to the shared resolver in sync_provider.dart
+  /// so all entry points agree on backend selection.
+  Future<_SyncTarget?> _resolveProfileById(String? profileId) async {
+    final resolved = await resolveSyncBackend(
+      (id) => _ref.read(gitSettingsServiceProvider).getConfigById(id),
+      (id) =>
+          _ref.read(webDavSettingsServiceProvider).getConfigById(id),
+      profileId,
+    );
+    if (resolved.hasGit) return _SyncTarget.git(resolved.git!);
+    if (resolved.hasWebdav) return _SyncTarget.webdav(resolved.webdav!);
+    return null;
+  }
+
   /// The last sync error, if any. Used by UI to show user-friendly messages.
   Object? get lastSyncError => _lastSyncError;
   SyncAuditReport? get lastSyncAuditReport => _lastSyncAuditReport;
@@ -77,21 +99,17 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       String? eTag = syncedETag;
       DateTime? remoteMTime;
       if (isCloud) {
-        final config = await _ref
-            .read(webDavSettingsServiceProvider)
-            .getConfigById(webDavProfileId);
-        if (config != null && config.enabled) {
-          _currentWebDavProfileId = config.id;
-          remotePath = config.remoteFilePath;
+        final target = await _resolveProfileById(webDavProfileId);
+        if (target != null) {
+          _currentWebDavProfileId = target.profileId;
+          remotePath = target.remotePath;
           if (syncedETag != null) {
             // Welcome screen already verified eTag, reuse it directly
             _service.setLastSyncedRemoteInfo(RemoteFileInfo(eTag: syncedETag));
           } else {
             RemoteFileInfo? info;
             try {
-              info = await _ref
-                  .read(syncServiceProvider)
-                  .getRemoteFileInfo(config);
+              info = await _remoteFileInfo(target);
             } catch (e) {
               // Unreachable server must not block opening the database.
               // Leaving the remote info unset makes the first upload use
@@ -158,24 +176,23 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       );
       final recentSvc = _ref.read(recentFilesServiceProvider);
 
-      // If WebDAV is enabled, link this new database to cloud so it syncs on save.
-      final config = await _ref.read(webDavSettingsServiceProvider).getConfig();
-      final bool isCloud = config != null && config.enabled;
+      // If a sync backend is enabled, link this new database to cloud so it
+      // syncs on save.
+      final target = await _resolveProfileById(null);
+      final bool isCloud = target != null;
       String? remotePath;
       String? eTag;
       DateTime? remoteMTime;
       if (isCloud) {
-        _currentWebDavProfileId = config.id;
-        remotePath = config.remoteFilePath;
+        _currentWebDavProfileId = target.profileId;
+        remotePath = target.remotePath;
         _ref.read(openedFromCloudProvider.notifier).state = true;
         // Upload the newly created database to the cloud immediately. The
         // upload is conditional (If-None-Match: *) so an existing remote
         // database is never silently overwritten by a fresh local one.
-        final syncService = _ref.read(syncServiceProvider);
         try {
-          await syncService.ensureRemoteDirectory(config);
           final bytes = await _service.save();
-          final newInfo = await syncService.uploadDatabase(config, bytes);
+          final newInfo = await _upload(target, bytes);
           _service.setLastSyncedRemoteInfo(newInfo);
           eTag = newInfo.eTag;
           remoteMTime = newInfo.mTime;
@@ -254,30 +271,24 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       return false;
     }
     if (session != _session || !_service.isOpen) return false;
-    final WebDavConfig? config;
+    final _SyncTarget? target;
     try {
-      config = await _ref
-          .read(webDavSettingsServiceProvider)
-          .getConfigById(_currentWebDavProfileId);
+      target = await _resolveProfileById(_currentWebDavProfileId);
     } catch (e) {
-      log.e('Failed to read WebDAV config', error: e);
+      log.e('Failed to read sync config', error: e);
       return false;
     }
     // Only sync to cloud if the current database was opened from or created as a cloud database
     if (session != _session || !_service.isOpen) return false;
-    if (config != null &&
-        config.enabled &&
-        _ref.read(openedFromCloudProvider)) {
+    if (target != null && _ref.read(openedFromCloudProvider)) {
       _ref.read(syncStateProvider.notifier).state = SyncState.syncing;
       try {
-        final syncService = _ref.read(syncServiceProvider);
         // Skip upload if local content hasn't changed since last save
         if (!wasDirty) {
           log.i('Content unchanged, skipping upload');
           _ref.read(syncStateProvider.notifier).state = SyncState.success;
           return true;
         }
-        await syncService.ensureRemoteDirectory(config);
         if (session != _session || !_service.isOpen) {
           // Aborted mid-sync (lock/close): never leave the state machine
           // stuck on "syncing".
@@ -290,11 +301,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         // PROPFIND before every save. On a 412 the server rejects the upload
         // and we fall back to the diff dialog below.
         final lastInfo = _service.lastSyncedRemoteInfo;
-        final newInfo = await syncService.uploadDatabase(
-          config,
-          bytes,
-          expected: lastInfo,
-        );
+        final newInfo = await _upload(target, bytes, expected: lastInfo);
         if (session != _session) {
           // The database was locked/closed while this upload was in flight.
           // Record the revision (the service is still open at this point) and
@@ -315,7 +322,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
             recentSvc.addRecentFile(
               _service.filePath!,
               isCloud: wasCloud,
-              remotePath: config.remoteFilePath,
+              remotePath: target.remotePath,
               webDavProfileId: _currentWebDavProfileId,
               lastSyncedETag: newInfo.eTag,
               lastSyncedMTime: newInfo.mTime,
@@ -324,7 +331,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
             recentSvc.setLastOpenedFile(
               _service.filePath!,
               isCloud: wasCloud,
-              remotePath: config.remoteFilePath,
+              remotePath: target.remotePath,
               webDavProfileId: _currentWebDavProfileId,
               lastSyncedETag: newInfo.eTag,
               lastSyncedMTime: newInfo.mTime,
@@ -361,10 +368,8 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   /// avoid a redundant serialization/disk write.
   Future<void> forceUpload({Uint8List? savedBytes}) async {
     final session = _session;
-    final config = await _ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(_currentWebDavProfileId);
-    if (config == null || !config.enabled) return;
+    final target = await _resolveProfileById(_currentWebDavProfileId);
+    if (target == null) return;
     _ref.read(syncStateProvider.notifier).state = SyncState.syncing;
     try {
       final Uint8List bytes;
@@ -393,13 +398,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         _ref.read(syncStateProvider.notifier).state = SyncState.error;
         return;
       }
-      final syncService = _ref.read(syncServiceProvider);
-      await syncService.ensureRemoteDirectory(config);
-      final newInfo = await syncService.uploadDatabase(
-        config,
-        bytes,
-        force: true,
-      );
+      final newInfo = await _upload(target, bytes, force: true);
       if (session != _session) return;
       _service.setLastSyncedRemoteInfo(newInfo);
       if (_service.filePath != null) {
@@ -408,7 +407,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
           recentSvc.addRecentFile(
             _service.filePath!,
             isCloud: true,
-            remotePath: config.remoteFilePath,
+            remotePath: target.remotePath,
             webDavProfileId: _currentWebDavProfileId,
             lastSyncedETag: newInfo.eTag,
             lastSyncedMTime: newInfo.mTime,
@@ -417,7 +416,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
           recentSvc.setLastOpenedFile(
             _service.filePath!,
             isCloud: true,
-            remotePath: config.remoteFilePath,
+            remotePath: target.remotePath,
             webDavProfileId: _currentWebDavProfileId,
             lastSyncedETag: newInfo.eTag,
             lastSyncedMTime: newInfo.mTime,
@@ -434,10 +433,11 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     }
   }
 
-  /// Links an already-open LOCAL database to the active WebDAV profile and
-  /// uploads it. Used when the user opened a plain local file first and only
-  /// configured cloud sync afterwards (so [openedFromCloudProvider] is still
-  /// false and [_currentWebDavProfileId] is null).
+  /// Links an already-open LOCAL database to the active sync profile and
+  /// uploads it (WebDAV or Git). Used when the user opened a plain local file
+  /// first and only configured cloud sync afterwards (so
+  /// [openedFromCloudProvider] is still false and [_currentWebDavProfileId]
+  /// is null).
   ///
   /// Upload is conditional: a never-seen remote uses If-None-Match so an
   /// existing remote database is never silently overwritten. When the remote
@@ -448,13 +448,13 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   /// database becomes a cloud database for the rest of the session so normal
   /// saves keep syncing.
   ///
-  /// Throws when no usable WebDAV profile is configured so the caller can
+  /// Throws when no usable sync profile is configured so the caller can
   /// guide the user to settings.
   Future<void> syncLocalToCloud() async {
     final session = _session;
-    final config = await _ref.read(webDavSettingsServiceProvider).getConfig();
-    if (config == null || !config.enabled) {
-      throw Exception('please_configure_webdav');
+    final target = await _resolveProfileById(null);
+    if (target == null) {
+      throw Exception('please_configure_sync');
     }
     if (!_service.isOpen || _service.filePath == null) {
       throw StateError('No database is open');
@@ -479,17 +479,13 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         return;
       }
 
-      final syncService = _ref.read(syncServiceProvider);
-      await syncService.ensureRemoteDirectory(config);
-
       // Probe the remote so an existing database is treated as a conflict
       // instead of being overwritten by this freshly linked local file.
-      final RemoteFileInfo? remoteInfo =
-          await syncService.getRemoteFileInfo(config);
+      final RemoteFileInfo? remoteInfo = await _remoteFileInfo(target);
 
       // Associate the open database with this profile up-front so conflict
       // resolution helpers (reloadFromCloud / forceUpload) can run.
-      _currentWebDavProfileId = config.id;
+      _currentWebDavProfileId = target.profileId;
 
       if (remoteInfo != null) {
         // Remote already has a database — do not overwrite. Surface the diff
@@ -504,14 +500,14 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         }
         _lastSyncError = SyncException(
           SyncErrorType.conflict,
-          'Remote database already exists at ${config.remoteFilePath}',
+          'Remote database already exists at ${target.remotePath}',
         );
         _ref.read(syncStateProvider.notifier).state = SyncState.conflict;
         return;
       }
 
       // Remote is empty: safe conditional upload (If-None-Match: *).
-      final newInfo = await syncService.uploadDatabase(config, bytes);
+      final newInfo = await _upload(target, bytes);
       if (session != _session) return;
       _service.setLastSyncedRemoteInfo(newInfo);
       _ref.read(openedFromCloudProvider.notifier).state = true;
@@ -521,7 +517,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         recentSvc.addRecentFile(
           _service.filePath!,
           isCloud: true,
-          remotePath: config.remoteFilePath,
+          remotePath: target.remotePath,
           webDavProfileId: _currentWebDavProfileId,
           lastSyncedETag: newInfo.eTag,
           lastSyncedMTime: newInfo.mTime,
@@ -530,7 +526,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         recentSvc.setLastOpenedFile(
           _service.filePath!,
           isCloud: true,
-          remotePath: config.remoteFilePath,
+          remotePath: target.remotePath,
           webDavProfileId: _currentWebDavProfileId,
           lastSyncedETag: newInfo.eTag,
           lastSyncedMTime: newInfo.mTime,
@@ -653,17 +649,15 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     }
 
     if (lockSession != _session) return;
-    WebDavConfig? config;
+    _SyncTarget? target;
     if (isCloud && path != null && bytes.isNotEmpty) {
       try {
-        config = await _ref
-            .read(webDavSettingsServiceProvider)
-            .getConfigById(profileId);
+        target = await _resolveProfileById(profileId);
         if (lockSession != _session) return;
-        if (config != null && config.enabled) {
+        if (target != null) {
           await _markPendingUpload(
             path,
-            config.remoteFilePath,
+            target.remotePath,
             profileId,
             lastInfo,
           );
@@ -673,18 +667,18 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         // prevent the lock from closing the database and clearing the master
         // password / key file from memory. The local save already succeeded, so
         // data is safe on disk; the upload can resume on next open. We null the
-        // config so the background upload below is skipped for this attempt.
+        // target so the background upload below is skipped for this attempt.
         log.e('Failed to mark pending upload during lock', error: e, stackTrace: st);
-        config = null;
+        target = null;
       }
     }
 
     _finishClose(clearLastOpened: false);
-    if (config != null && config.enabled && path != null && bytes.isNotEmpty) {
+    if (target != null && path != null && bytes.isNotEmpty) {
       unawaited(
         _uploadEncryptedBytes(
           bytes: bytes,
-          config: config,
+          target: target,
           path: path,
           profileId: profileId,
           expected: lastInfo,
@@ -701,14 +695,12 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     if (!file.pendingUpload) return true;
     try {
       if (!file.isCloud || !await File(file.path).exists()) return false;
-      final config = await _ref
-          .read(webDavSettingsServiceProvider)
-          .getConfigById(file.webDavProfileId);
-      if (config == null || !config.enabled) return false;
+      final target = await _resolveProfileById(file.webDavProfileId);
+      if (target == null) return false;
       final bytes = await File(file.path).readAsBytes();
       return await _uploadEncryptedBytes(
         bytes: bytes,
-        config: config,
+        target: target,
         path: file.path,
         profileId: file.webDavProfileId,
         expected: RemoteFileInfo(
@@ -725,18 +717,16 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
 
   Future<bool> _uploadEncryptedBytes({
     required Uint8List bytes,
-    required WebDavConfig config,
+    required _SyncTarget target,
     required String path,
     required String? profileId,
     required RemoteFileInfo? expected,
   }) async {
     try {
-      final sync = _ref.read(syncServiceProvider);
-      await sync.ensureRemoteDirectory(config);
-      final info = await sync.uploadDatabase(config, bytes, expected: expected);
+      final info = await _upload(target, bytes, expected: expected);
       await _persistCloudRevision(
         path: path,
-        remotePath: config.remoteFilePath,
+        remotePath: target.remotePath,
         profileId: profileId,
         info: info,
         pendingUpload: false,
@@ -815,14 +805,11 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   }
 
   Future<void> reloadFromCloud() async {
-    final config = await _ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(_currentWebDavProfileId);
-    if (config == null || !config.enabled) {
-      throw Exception('please_configure_webdav');
+    final target = await _resolveProfileById(_currentWebDavProfileId);
+    if (target == null) {
+      throw Exception('please_configure_sync');
     }
-    final syncService = _ref.read(syncServiceProvider);
-    final result = await syncService.downloadWithInfo(config);
+    final result = await _downloadWithInfo(target);
     if (result == null) throw Exception('cloud_database_not_exist');
     final db = await _service.reloadFromBytes(result.bytes);
     // Persist downloaded bytes so local cache matches what is now open in memory.
@@ -840,7 +827,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         recentSvc.addRecentFile(
           _service.filePath!,
           isCloud: wasCloud,
-          remotePath: config.remoteFilePath,
+          remotePath: target.remotePath,
           webDavProfileId: _currentWebDavProfileId,
           lastSyncedETag: result.info.eTag,
           lastSyncedMTime: result.info.mTime,
@@ -849,7 +836,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         recentSvc.setLastOpenedFile(
           _service.filePath!,
           isCloud: wasCloud,
-          remotePath: config.remoteFilePath,
+          remotePath: target.remotePath,
           webDavProfileId: _currentWebDavProfileId,
           lastSyncedETag: result.info.eTag,
           lastSyncedMTime: result.info.mTime,
@@ -862,25 +849,19 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   /// Checks if the remote file has changed since last sync.
   /// Returns true if remote has newer changes (conflict).
   Future<bool> checkRemoteChanges() async {
-    final config = await _ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(_currentWebDavProfileId);
-    if (config == null || !config.enabled) return false;
-    final syncService = _ref.read(syncServiceProvider);
-    final remoteInfo = await syncService.getRemoteFileInfo(config);
+    final target = await _resolveProfileById(_currentWebDavProfileId);
+    if (target == null) return false;
+    final remoteInfo = await _remoteFileInfo(target);
     final lastInfo = _service.lastSyncedRemoteInfo;
     if (remoteInfo == null || lastInfo == null) return false;
     return _hasRemoteChanged(remoteInfo, lastInfo);
   }
 
   Future<SyncAuditReport?> inspectCloudDiff() async {
-    final config = await _ref
-        .read(webDavSettingsServiceProvider)
-        .getConfigById(_currentWebDavProfileId);
-    if (config == null || !config.enabled || _service.db == null) return null;
+    final target = await _resolveProfileById(_currentWebDavProfileId);
+    if (target == null || _service.db == null) return null;
 
-    final syncService = _ref.read(syncServiceProvider);
-    final result = await syncService.downloadWithInfo(config);
+    final result = await _downloadWithInfo(target);
     if (result == null) return null;
 
     final report = await _service.buildSyncAuditReportFromBytes(result.bytes);
@@ -920,13 +901,90 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   void markDirty() => _service.markDirty();
   bool get isDirty => _service.isDirty;
   bool get hasKeyFile => _service.hasKeyFile;
+
+  Future<RemoteFileInfo?> _remoteFileInfo(_SyncTarget target) =>
+      switch (target) {
+        _WebDavTarget(:final config) => _ref
+            .read(syncServiceProvider)
+            .getRemoteFileInfo(config),
+        _GitTarget(:final config) => _ref
+            .read(gitSyncServiceProvider)
+            .getRemoteFileInfo(config),
+      };
+
+  Future<({Uint8List bytes, RemoteFileInfo info})?> _downloadWithInfo(
+    _SyncTarget target,
+  ) => switch (target) {
+    _WebDavTarget(:final config) =>
+      _ref.read(syncServiceProvider).downloadWithInfo(config),
+    _GitTarget(:final config) =>
+      _ref.read(gitSyncServiceProvider).downloadWithInfo(config),
+  };
+
+  Future<RemoteFileInfo> _upload(
+    _SyncTarget target,
+    Uint8List bytes, {
+    RemoteFileInfo? expected,
+    bool force = false,
+  }) => switch (target) {
+    _WebDavTarget(:final config) => () async {
+      final sync = _ref.read(syncServiceProvider);
+      await sync.ensureRemoteDirectory(config);
+      return sync.uploadDatabase(config, bytes, expected: expected, force: force);
+    }(),
+    _GitTarget(:final config) => () async {
+      final git = _ref.read(gitSyncServiceProvider);
+      // First push creates the gist/snippet; persist the returned id on the
+      // profile so later syncs update it instead of creating duplicates.
+      git.onGistIdCreated = (updated) => _ref
+          .read(gitSettingsServiceProvider)
+          .saveConfig(updated);
+      return git.uploadDatabase(config, bytes, expected: expected, force: force);
+    }(),
+  };
+}
+
+/// The remote sync destination resolved for the current session. All sync
+/// operations in [DatabaseNotifier] go through these dispatch helpers so the
+/// conflict/pendingUpload machinery stays backend-agnostic.
+sealed class _SyncTarget {
+  String get profileId;
+  String get remotePath;
+
+  const _SyncTarget();
+
+  factory _SyncTarget.webdav(WebDavConfig config) = _WebDavTarget;
+  factory _SyncTarget.git(GitSyncConfig config) = _GitTarget;
+}
+
+class _WebDavTarget extends _SyncTarget {
+  final WebDavConfig config;
+  const _WebDavTarget(this.config);
+
+  @override
+  String get profileId => config.id;
+
+  @override
+  String get remotePath => config.remoteFilePath;
+}
+
+class _GitTarget extends _SyncTarget {
+  final GitSyncConfig config;
+  const _GitTarget(this.config);
+
+  @override
+  String get profileId => config.id;
+
+  @override
+  String get remotePath => config.filePath;
 }
 
 final recentFilesProvider = FutureProvider<List<RecentFile>>((ref) async {
   return ref.read(recentFilesServiceProvider).getRecentFiles();
 });
 
-/// Whether the current database was opened from WebDAV (cloud).
+/// Whether the current database was opened from a cloud backend
+/// (WebDAV or Git).
 final openedFromCloudProvider = StateProvider<bool>((ref) => false);
 
 final cloudOfflineModeProvider = StateProvider<bool>((ref) => false);

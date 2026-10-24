@@ -15,7 +15,8 @@ A cross-platform KeePass-compatible password manager built with Flutter.
 ## Features
 
 - Full KDBX 3.x / 4.x compatibility (read/write, merge sync)
-- WebDAV cloud sync, TOTP, fingerprint unlock, key file dual-factor auth
+- Cloud sync via WebDAV or Git (GitHub / Gitee / GitLab), TOTP, fingerprint
+  unlock, key file dual-factor auth
 - CSV / KDBX import & export (Chrome, 1Password, LastPass, Bitwarden, etc.)
 - File attachments, entry history, custom fields, tags & groups
 - Password generator, auto-lock/save, clipboard auto-clear, expiry reminders
@@ -61,6 +62,20 @@ Open **Password Health** from Tools, the overflow menu, or Settings (available o
 | Expiring soon | Expires within 7 days |
 
 Results are ranked by severity. Tap a finding to open the entry and fix it. The report never includes plaintext passwords.
+
+## Cloud Sync
+
+KeeStone supports two mutually exclusive sync backends; enabling one disables
+the other.
+
+- **WebDAV** — any standards-compliant server (Nextcloud, Jianguoyun, etc.).
+- **Git** — stores the database in a private Gist (GitHub / Gitee) or
+  Snippet (GitLab, including self-hosted). No repository needed: the first
+  sync creates the gist/snippet automatically and later syncs update it.
+  Requires a personal access token with gist/snippet write permission.
+  Conflict detection works the same as WebDAV: when the remote copy changed
+  since the last sync, a diff dialog lets you choose to download the cloud
+  version or overwrite it.
 
 ## Friendly Links
 

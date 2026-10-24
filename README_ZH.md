@@ -15,7 +15,7 @@
 ## 功能
 
 - KDBX 3.x / 4.x 全兼容（读写、合并同步）
-- WebDAV 云同步、TOTP、指纹解锁、Key File 双因素认证
+- WebDAV / Git 云同步（GitHub、Gitee、GitLab）、TOTP、指纹解锁、Key File 双因素认证
 - CSV / KDBX 导入导出，兼容 Chrome、1Password、LastPass、Bitwarden 等
 - 文件附件、条目历史、自定义字段、标签与分组
 - 密码生成器、自动锁定/保存、剪贴板自动清除、过期提醒
@@ -61,6 +61,16 @@ flutter run -d windows    # 或 linux / android
 | 即将过期 | 7 天内过期 |
 
 结果按严重度排序，点击可直接打开条目修改。报告中不会出现明文密码。
+
+## 云同步
+
+KeeStone 支持两种互斥的同步后端，启用其一将自动停用另一种。
+
+- **WebDAV** — 任意标准服务器（Nextcloud、坚果云等）。
+- **Git** — 数据库存储为私密代码片段：GitHub / Gitee 走 Gist，GitLab（含自建）走
+  Snippet。无需创建仓库：首次同步自动创建片段，之后的同步都是更新它。需要具备
+  Gist/代码片段读写权限的个人访问令牌。冲突检测与 WebDAV 一致：若云端在上次同步
+  后有变动，会弹出差异对话框，可选择下载云端版本或用本地覆盖。
 
 ## 友链
 
