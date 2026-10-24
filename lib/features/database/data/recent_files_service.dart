@@ -48,6 +48,12 @@ class RecentFile {
 class RecentFilesService {
   static const _key = 'recent_files';
   static const _lastOpenedKey = 'last_opened_file';
+  // Crash-safety snapshot: written with the previous generation before the
+  // main key is overwritten. flutter_secure_storage has no atomic replace,
+  // and on Windows all values live in one DPAPI file — an interrupted write
+  // would otherwise corrupt the only copy, losing every record including the
+  // pendingUpload markers and last-synced ETags that guard cloud uploads.
+  static const _backupKey = 'recent_files_backup';
   final _storage = const SecureStorageHelper();
 
   /// Serializes read-modify-write cycles across instances. Concurrent
@@ -64,17 +70,39 @@ class RecentFilesService {
   }
 
   Future<List<RecentFile>> getRecentFiles() async {
-    final data = await _storage.read(key: _key);
-    if (data == null) return [];
-    try {
-      final list = jsonDecode(data) as List;
-      return list.map((e) {
-        if (e is String) return RecentFile(path: e);
-        return RecentFile.fromJson(e as Map<String, dynamic>);
-      }).toList();
-    } catch (_) {
-      return [];
+    return await _readStoredList() ?? [];
+  }
+
+  /// Reads the list, falling back to the previous generation when the main
+  /// payload is missing or unreadable (crash mid-write / DPAPI corruption).
+  Future<List<RecentFile>?> _readStoredList() async {
+    for (final key in [_key, _backupKey]) {
+      final data = await _storage.read(key: key);
+      if (data == null) continue;
+      try {
+        final list = jsonDecode(data) as List;
+        return list.map((e) {
+          if (e is String) return RecentFile(path: e);
+          return RecentFile.fromJson(e as Map<String, dynamic>);
+        }).toList();
+      } catch (_) {
+        continue;
+      }
     }
+    return null;
+  }
+
+  /// Writes [files] with a rollback copy: the current payload is preserved
+  /// under the backup key before the main key is replaced.
+  Future<void> _writeStoredList(List<RecentFile> files) async {
+    final current = await _storage.read(key: _key);
+    if (current != null) {
+      await _storage.write(key: _backupKey, value: current);
+    }
+    await _storage.write(
+      key: _key,
+      value: jsonEncode(files.map((f) => f.toJson()).toList()),
+    );
   }
 
   Future<void> addRecentFile(
@@ -104,10 +132,7 @@ class RecentFilesService {
       if (files.length > AppConstants.maxRecentFiles) {
         files.removeRange(AppConstants.maxRecentFiles, files.length);
       }
-      await _storage.write(
-        key: _key,
-        value: jsonEncode(files.map((f) => f.toJson()).toList()),
-      );
+      await _writeStoredList(files);
     });
   }
 
@@ -115,10 +140,7 @@ class RecentFilesService {
     return _serialized(() async {
       final files = await getRecentFiles();
       files.removeWhere((f) => f.path == filePath);
-      await _storage.write(
-        key: _key,
-        value: jsonEncode(files.map((f) => f.toJson()).toList()),
-      );
+      await _writeStoredList(files);
     });
   }
 

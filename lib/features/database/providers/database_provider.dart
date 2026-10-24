@@ -360,6 +360,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   /// Pass [savedBytes] when the caller has already persisted the database to
   /// avoid a redundant serialization/disk write.
   Future<void> forceUpload({Uint8List? savedBytes}) async {
+    final session = _session;
     final config = await _ref
         .read(webDavSettingsServiceProvider)
         .getConfigById(_currentWebDavProfileId);
@@ -375,6 +376,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         while (_saveInFlight != null) {
           final inFlight = _saveInFlight!;
           await inFlight.catchError((_) => false);
+          if (session != _session) return;
         }
         if (!_service.isOpen) {
           _ref.read(syncStateProvider.notifier).state = SyncState.error;
@@ -384,6 +386,13 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         // after overwrite cannot leave local cache behind cloud.
         bytes = await _service.save();
       }
+      // A superseding lock/close already reset the sync state; touching it
+      // here would wrongly flip the UI back to an error.
+      if (session != _session) return;
+      if (!_service.isOpen) {
+        _ref.read(syncStateProvider.notifier).state = SyncState.error;
+        return;
+      }
       final syncService = _ref.read(syncServiceProvider);
       await syncService.ensureRemoteDirectory(config);
       final newInfo = await syncService.uploadDatabase(
@@ -391,6 +400,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         bytes,
         force: true,
       );
+      if (session != _session) return;
       _service.setLastSyncedRemoteInfo(newInfo);
       if (_service.filePath != null) {
         final recentSvc = _ref.read(recentFilesServiceProvider);
@@ -441,6 +451,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   /// Throws when no usable WebDAV profile is configured so the caller can
   /// guide the user to settings.
   Future<void> syncLocalToCloud() async {
+    final session = _session;
     final config = await _ref.read(webDavSettingsServiceProvider).getConfig();
     if (config == null || !config.enabled) {
       throw Exception('please_configure_webdav');
@@ -455,12 +466,18 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       while (_saveInFlight != null) {
         final inFlight = _saveInFlight!;
         await inFlight.catchError((_) => false);
+        if (session != _session) return;
       }
       if (!_service.isOpen) {
         _ref.read(syncStateProvider.notifier).state = SyncState.error;
         return;
       }
       final bytes = await _service.save();
+      if (session != _session) return;
+      if (!_service.isOpen) {
+        _ref.read(syncStateProvider.notifier).state = SyncState.error;
+        return;
+      }
 
       final syncService = _ref.read(syncServiceProvider);
       await syncService.ensureRemoteDirectory(config);
@@ -495,6 +512,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
 
       // Remote is empty: safe conditional upload (If-None-Match: *).
       final newInfo = await syncService.uploadDatabase(config, bytes);
+      if (session != _session) return;
       _service.setLastSyncedRemoteInfo(newInfo);
       _ref.read(openedFromCloudProvider.notifier).state = true;
 
@@ -553,7 +571,14 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   }
 
   Future<void> saveAs(String newPath) async {
+    final previousPath = _service.filePath;
     await _service.saveAs(newPath);
+    // After a real path switch the old session's cloud metadata is invalid;
+    // closing (instead of keeping a half-linked session) makes the next open
+    // re-establish sync state cleanly.
+    if (previousPath != null && previousPath != newPath && _service.isOpen) {
+      _finishClose();
+    }
   }
 
   /// Closes the database after best-effort save.

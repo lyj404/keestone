@@ -132,6 +132,10 @@ class DatabaseService {
   final _backupService = BackupService();
   final _atomicFileStore = const AtomicFileStore();
   Future<void> _saveQueue = Future<void>.value();
+  // Bumped by close() and by every open/reload/create. An in-flight open
+  // that is superseded (e.g. the user locks while unlock is still running)
+  // must not assign its half-opened state over the newer one.
+  int _openGeneration = 0;
   KdbxDatabase? _db;
   String? _filePath;
   String? _password;
@@ -337,6 +341,7 @@ class DatabaseService {
     String password, {
     Uint8List? keyData,
   }) async {
+    final generation = ++_openGeneration;
     log.i('Opening database: $filePath');
     // Recover any interrupted atomic write before reading the target path.
     final recovered = await _recoverInterruptedWrite(
@@ -344,6 +349,7 @@ class DatabaseService {
       password,
       keyData: keyData,
     );
+    _checkOpenGeneration(generation);
     // Preload is only safe when it matches this path, recovery did not
     // rewrite the file underneath, and the file has not been changed on disk
     // since the preload was taken.
@@ -354,10 +360,13 @@ class DatabaseService {
         await _isPreloadFresh(filePath);
     final bytes =
         canUsePreload ? _preloadedBytes! : await File(filePath).readAsBytes();
+    _checkOpenGeneration(generation);
     _preloadedBytes = null;
     _preloadedFilePath = null;
     try {
-      _db = await _loadDatabase(bytes, password, keyData: keyData);
+      final db = await _loadDatabase(bytes, password, keyData: keyData);
+      _checkOpenGeneration(generation);
+      _db = db;
     } catch (e) {
       if (isCorruptionError(e)) {
         log.e('Database file corrupted: $filePath', error: e);
@@ -434,6 +443,7 @@ class DatabaseService {
     String filePath, {
     Uint8List? keyData,
   }) async {
+    final generation = ++_openGeneration;
     log.i('Creating database: $name -> $filePath');
     final credentials = KdbxCredentials(
       password: ProtectedData.fromString(password),
@@ -447,6 +457,7 @@ class DatabaseService {
     _localizeRecycleBin();
     _rebuildEntryCache();
     await save();
+    _checkOpenGeneration(generation);
     log.i('Database created successfully');
     return _db!;
   }
@@ -457,7 +468,11 @@ class DatabaseService {
   }) async {
     final pw = password ?? _password;
     if (pw == null) throw Exception('no_password_cannot_reload');
-    _db = await _loadDatabase(bytes, pw, keyData: _keyData);
+    final generation = ++_openGeneration;
+    final keyDataAtStart = _keyData;
+    final db = await _loadDatabase(bytes, pw, keyData: keyDataAtStart);
+    _checkOpenGeneration(generation);
+    _db = db;
     _password = pw;
     // Keep the database dirty until the reloaded content is actually
     // persisted: if the following save() fails, close()/auto-save must still
@@ -467,6 +482,14 @@ class DatabaseService {
     _rebuildEntryCache();
     _migrateLegacyTotpFields();
     return _db!;
+  }
+
+  /// Throws when [generation] is no longer current, i.e. close() ran or
+  /// another open/reload/create superseded this one while awaiting.
+  void _checkOpenGeneration(int generation) {
+    if (generation != _openGeneration) {
+      throw StateError('database_open_superseded');
+    }
   }
 
   void _localizeRecycleBin() {
@@ -543,14 +566,28 @@ class DatabaseService {
   }
 
   Future<void> saveAs(String newPath) async {
-    final previousPath = _filePath;
+    // Serialize first so the previous good file on disk is not left half
+    // committed when serialization fails.
+    final bytes = await saveToBytes();
+    if (_db == null) return;
+    await validateBytes(bytes, _password!, keyData: _keyData);
+    await _atomicFileStore.commit(
+      newPath,
+      bytes,
+      backup: () async {
+        if (await _backupService.isAutoBackupEnabled()) {
+          final backup = await _backupService.createBackup(newPath);
+          if (backup == null) {
+            throw const FileSystemException('Unable to create database backup');
+          }
+        }
+      },
+    );
     _filePath = newPath;
-    try {
-      await save();
-    } catch (_) {
-      _filePath = previousPath;
-      rethrow;
-    }
+    markClean();
+    // The caller checks whether the path actually changed (via a captured
+    // previous path) and decides how to handle the session; the service only
+    // guarantees the new file is committed and the in-memory path updated.
   }
 
   KdbxGroup createGroup(KdbxGroup parent, String name) {
@@ -868,6 +905,7 @@ class DatabaseService {
 
   void close() {
     log.i('Database closed: $_filePath');
+    _openGeneration++;
     _db = null;
     _filePath = null;
     _password = null;

@@ -8,7 +8,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/button_label.dart';
+import '../../../core/utils/logger.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../backup/data/backup_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../sync/data/sync_service.dart'
     show RemoteFileInfo, SyncException, SyncErrorType, normalizeETag;
@@ -29,7 +31,45 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _tryAutoOpen());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _resumePendingUploads();
+      await _tryAutoOpen();
+    });
+  }
+
+  /// Resumes failed lock-time cloud uploads for every pending recent file,
+  /// not just when a single record would auto-open. Without this, a pending
+  /// upload for a non-auto-opened record would hang forever and local and
+  /// cloud would silently diverge.
+  Future<void> _resumePendingUploads() async {
+    try {
+      final files = await ref.read(recentFilesServiceProvider).getRecentFiles();
+      final pending = files.where((f) => f.pendingUpload).toList();
+      if (pending.isEmpty) return;
+      final notifier = ref.read(databaseProvider.notifier);
+      var failed = false;
+      var conflict = false;
+      for (final file in pending) {
+        final resumed = await notifier.resumePendingUpload(file);
+        if (!resumed) {
+          failed = true;
+          final error = ref.read(lastPendingUploadErrorProvider);
+          if (error is SyncException && error.type == SyncErrorType.conflict) {
+            conflict = true;
+          }
+        }
+      }
+      ref.invalidate(recentFilesProvider);
+      if (failed && mounted) {
+        final l10n = AppLocalizations.of(context)!;
+        await _showSimpleErrorDialog(
+          context,
+          conflict ? l10n.pendingUploadConflict : l10n.pendingUploadFailed,
+        );
+      }
+    } catch (e) {
+      log.w('Pending upload resume failed', error: e);
+    }
   }
 
   Future<void> _tryAutoOpen() async {
@@ -40,27 +80,14 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     if (!mounted) return;
 
     var file = files.first;
+    // Pending uploads were already resumed in [_resumePendingUploads]; pick
+    // up the refreshed record so a cleared marker is not treated as stale.
     if (file.pendingUpload) {
-      final resumed = await ref
-          .read(databaseProvider.notifier)
-          .resumePendingUpload(file);
-      if (!mounted) return;
-      if (!resumed) {
-        final error = ref.read(lastPendingUploadErrorProvider);
-        final l10n = AppLocalizations.of(context)!;
-        final message =
-            error is SyncException && error.type == SyncErrorType.conflict
-            ? l10n.pendingUploadConflict
-            : l10n.pendingUploadFailed;
-        await _showSimpleErrorDialog(context, message);
-        if (!mounted) return;
-      } else {
-        final refreshed = await ref
-            .read(recentFilesServiceProvider)
-            .getRecentFiles();
-        final matching = refreshed.where((item) => item.path == file.path);
-        if (matching.isNotEmpty) file = matching.first;
-      }
+      final refreshed = await ref
+          .read(recentFilesServiceProvider)
+          .getRecentFiles();
+      final matching = refreshed.where((item) => item.path == file.path);
+      if (matching.isNotEmpty) file = matching.first;
     }
     final localFile = File(file.path);
     final exists = await localFile.exists();
@@ -538,6 +565,18 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       Navigator.of(context).pop();
     }
 
+  // A pendingUpload marker means the local cache may hold changes that never
+  // reached the server — this file can be the only copy of them. Downloading
+  // over it would silently destroy them, so snapshot it into the backup
+  // directory first. Best-effort: failure only skips the safety net.
+  if (cachedFile?.pendingUpload ?? false) {
+    try {
+      await BackupService().createBackup(cachedFile!.path);
+    } catch (e) {
+      log.w('Pre-download backup of pending cache failed', error: e);
+    }
+  }
+
     try {
       final cachedExists = cachedFile != null
           ? await File(cachedFile.path).exists()
@@ -569,6 +608,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         if (action != _CloudOpenAction.downloadLatest) {
           dismissLoading();
           return;
+        }
+      }
+      // A pendingUpload marker means the local cache may hold changes that
+      // never reached the server — this file can be the only copy of them.
+      // Downloading over it would silently destroy them, so snapshot it into
+      // the backup directory first. Best-effort: failure only skips the net.
+      if (cachedFile?.pendingUpload ?? false) {
+        try {
+          await BackupService().createBackup(cachedFile!.path);
+        } catch (e) {
+          log.w('Pre-download backup of pending cache failed', error: e);
         }
       }
       final downloaded = await syncService.downloadToLocal(config);

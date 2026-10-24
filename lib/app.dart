@@ -79,13 +79,21 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
         !Platform.isMacOS) {
       final notifier = ref.read(databaseProvider.notifier);
       if (ref.read(databaseProvider).value != null && notifier.isDirty) {
+        // A pure fire-and-forget future never completes once Android freezes
+        // the process; only work scheduled before the freeze runs. The local
+        // disk write happens first inside save(), so a short bounded wait
+        // still lets serialization + commit finish in the vast majority of
+        // cases. Anything slower than the budget resumes on next unlock.
         unawaited(
-          notifier.save().then(
-            (_) {},
-            onError: (Object e) {
-              log.w('Background save failed', error: e);
-            },
-          ),
+          notifier
+              .save()
+              .timeout(const Duration(seconds: 8))
+              .then(
+                (_) {},
+                onError: (Object e) {
+                  log.w('Background save failed', error: e);
+                },
+              ),
         );
       }
     }
