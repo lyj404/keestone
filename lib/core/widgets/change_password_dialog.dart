@@ -1,8 +1,10 @@
 import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kpasslib/kpasslib.dart';
 import 'package:file_picker/file_picker.dart';
+
 import '../theme/app_theme.dart';
 import 'password_text_field.dart';
 import 'button_label.dart';
@@ -22,7 +24,8 @@ class _ChangePasswordDialog extends ConsumerStatefulWidget {
   const _ChangePasswordDialog();
 
   @override
-  ConsumerState<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+  ConsumerState<_ChangePasswordDialog> createState() =>
+      _ChangePasswordDialogState();
 }
 
 class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
@@ -69,7 +72,11 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
             width: 32,
             height: 32,
             decoration: ClayDecoration.iconContainer(brightness: brightness),
-            child: Icon(Icons.key_rounded, size: 18, color: colorScheme.primary),
+            child: Icon(
+              Icons.key_rounded,
+              size: 18,
+              color: colorScheme.primary,
+            ),
           ),
           const SizedBox(width: 10),
           Text(l10n.changeMasterPassword),
@@ -86,7 +93,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
                 controller: _oldPasswordCtrl,
                 labelText: l10n.currentPassword,
                 autofocus: true,
-                validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterCurrentPassword : null,
+                validator: (v) => (v == null || v.isEmpty)
+                    ? l10n.pleaseEnterCurrentPassword
+                    : null,
               ),
               const SizedBox(height: 14),
               PasswordTextField(
@@ -94,7 +103,9 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
                 labelText: l10n.newPassword,
                 showStrengthIndicator: true,
                 validator: (v) {
-                  if (v == null || v.isEmpty) return l10n.pleaseEnterNewPassword;
+                  if (v == null || v.isEmpty) {
+                    return l10n.pleaseEnterNewPassword;
+                  }
                   return null;
                 },
               ),
@@ -122,7 +133,11 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
         FilledButton(
           onPressed: _saving ? null : _submit,
           child: _saving
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : ButtonLabel(l10n.confirm),
         ),
       ],
@@ -157,12 +172,14 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     }
 
     try {
-      await ref.read(databaseProvider.notifier).changePassword(
-        _oldPasswordCtrl.text,
-        _newPasswordCtrl.text,
-        updateKeyFile: updateKeyFile,
-        newKeyData: keyData,
-      );
+      await ref
+          .read(databaseProvider.notifier)
+          .changePassword(
+            _oldPasswordCtrl.text,
+            _newPasswordCtrl.text,
+            updateKeyFile: updateKeyFile,
+            newKeyData: keyData,
+          );
       if (mounted) {
         showToast(context, l10n.passwordChanged);
         Navigator.pop(context);
@@ -195,7 +212,10 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     return _buildAddKeyFileButton(l10n, colorScheme);
   }
 
-  Widget _buildExistingKeyFileChip(AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildExistingKeyFileChip(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -209,7 +229,10 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           Expanded(
             child: Text(
               l10n.keyFileSelected,
-              style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -220,7 +243,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text(l10n.changeKeyFile),
+            child: ButtonLabel(l10n.changeKeyFile),
           ),
           const SizedBox(width: 4),
           TextButton(
@@ -231,7 +254,7 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: colorScheme.error,
             ),
-            child: Text(l10n.removeKeyFile),
+            child: ButtonLabel(l10n.removeKeyFile),
           ),
         ],
       ),
@@ -252,12 +275,19 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
           Expanded(
             child: Text(
               _newKeyFileName ?? l10n.keyFileSelected,
-              style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            icon: Icon(Icons.close_rounded, size: 18, color: colorScheme.onSurfaceVariant),
+            icon: Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: colorScheme.onSurfaceVariant,
+            ),
             onPressed: () => setState(() {
               _newKeyData = null;
               _newKeyFileName = null;
@@ -271,7 +301,10 @@ class _ChangePasswordDialogState extends ConsumerState<_ChangePasswordDialog> {
     );
   }
 
-  Widget _buildAddKeyFileButton(AppLocalizations l10n, ColorScheme colorScheme) {
+  Widget _buildAddKeyFileButton(
+    AppLocalizations l10n,
+    ColorScheme colorScheme,
+  ) {
     return OutlinedButton.icon(
       onPressed: _pickNewKeyFile,
       icon: const Icon(Icons.vpn_key_rounded, size: 18),

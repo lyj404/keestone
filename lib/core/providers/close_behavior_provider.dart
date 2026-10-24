@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/legacy.dart';
+
 import '../utils/secure_storage_helper.dart';
 
 /// What happens when the user clicks the window close button.
@@ -13,9 +14,10 @@ enum CloseBehavior {
   exit,
 }
 
-final closeBehaviorProvider = StateNotifierProvider<CloseBehaviorNotifier, CloseBehavior>((ref) {
-  return CloseBehaviorNotifier();
-});
+final closeBehaviorProvider =
+    StateNotifierProvider<CloseBehaviorNotifier, CloseBehavior>((ref) {
+      return CloseBehaviorNotifier();
+    });
 
 class CloseBehaviorNotifier extends StateNotifier<CloseBehavior> {
   static const _storage = SecureStorageHelper();

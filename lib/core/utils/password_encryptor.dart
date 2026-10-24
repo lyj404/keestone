@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:cryptography/cryptography.dart';
 
 import 'secure_store.dart';
@@ -141,8 +142,9 @@ class PasswordEncryptor {
 
   Future<String> _decryptLegacyXor(String encryptedPassword) async {
     try {
-      final base64Data =
-          encryptedPassword.substring(legacyEncryptedMarker.length);
+      final base64Data = encryptedPassword.substring(
+        legacyEncryptedMarker.length,
+      );
       final key = await _getOrCreateKey();
       final data = base64Url.decode(base64Data);
 

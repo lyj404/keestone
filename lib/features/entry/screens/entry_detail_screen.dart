@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/utils/logger.dart';
@@ -372,9 +373,8 @@ class _SectionCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 12),
               child: Divider(
                 height: 1,
-                color: Theme.of(
-                  context,
-                ).colorScheme.outlineVariant.withValues(alpha: 0.15),
+                color: Theme.of(context).colorScheme.outlineVariant
+                    .withValues(alpha: 0.15),
               ),
             ),
           visibleChildren[i],
@@ -439,9 +439,8 @@ class _FieldRow extends StatelessWidget {
           const SizedBox(height: 4),
           SelectableText(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(height: multiline ? 1.5 : null),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(height: multiline ? 1.5 : null),
           ),
         ],
       ),

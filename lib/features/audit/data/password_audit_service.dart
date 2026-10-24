@@ -96,9 +96,7 @@ class PasswordAuditReport {
 
 /// Pure-local vault password health scan (no network, no plaintext in output).
 class PasswordAuditService {
-  const PasswordAuditService({
-    this.expiringWindow = const Duration(days: 7),
-  });
+  const PasswordAuditService({this.expiringWindow = const Duration(days: 7)});
 
   /// How soon an expiry counts as "expiring soon".
   final Duration expiringWindow;

@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 import 'button_label.dart';
 
@@ -14,27 +15,30 @@ Future<bool> showConfirmDeleteDialog({
   final colorScheme = Theme.of(context).colorScheme;
 
   return await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text(title),
-      content: Text(message),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(ctx, false),
-          child: ButtonLabel(l10n.cancel),
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: ButtonLabel(l10n.cancel),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colorScheme.error,
+                foregroundColor: colorScheme.onError,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: ButtonLabel(
+                isPermanent ? l10n.permanentDelete : l10n.delete,
+              ),
+            ),
+          ],
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: colorScheme.error,
-            foregroundColor: colorScheme.onError,
-            visualDensity: VisualDensity.compact,
-          ),
-          onPressed: () => Navigator.pop(ctx, true),
-          child: ButtonLabel(isPermanent ? l10n.permanentDelete : l10n.delete),
-        ),
-      ],
-    ),
-  ) ?? false;
+      ) ??
+      false;
 }
 
 /// Shows a confirmation dialog for moving items to recycle bin.

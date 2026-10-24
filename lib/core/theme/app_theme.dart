@@ -177,7 +177,9 @@ class ClayDecoration {
     double radius = ClayLayout.radiusLg,
   }) {
     final isDark = brightness == Brightness.dark;
-    final borderColor = isDark ? ClayColors.outlineDark : ClayColors.outlineLight;
+    final borderColor = isDark
+        ? ClayColors.outlineDark
+        : ClayColors.outlineLight;
     if (color != null) {
       return BoxDecoration(
         color: color,
@@ -187,9 +189,7 @@ class ClayDecoration {
     }
     final key = (brightness, radius);
     return _cardCache[key] ??= BoxDecoration(
-      color: isDark
-          ? ClayColors.surfaceCardDark
-          : ClayColors.surfaceCardLight,
+      color: isDark ? ClayColors.surfaceCardDark : ClayColors.surfaceCardLight,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(color: borderColor),
     );
@@ -345,18 +345,12 @@ class AppTheme {
     }
   }
 
-  static ThemeData light({
-    Locale? locale,
-    ThemeSeed seed = ThemeSeed.indigo,
-  }) {
+  static ThemeData light({Locale? locale, ThemeSeed seed = ThemeSeed.indigo}) {
     final fontFamily = resolveFontFamily(locale);
     return _lightCache[(seed, fontFamily)] ??= _buildLight(fontFamily, seed);
   }
 
-  static ThemeData dark({
-    Locale? locale,
-    ThemeSeed seed = ThemeSeed.indigo,
-  }) {
+  static ThemeData dark({Locale? locale, ThemeSeed seed = ThemeSeed.indigo}) {
     final fontFamily = resolveFontFamily(locale);
     return _darkCache[(seed, fontFamily)] ??= _buildDark(fontFamily, seed);
   }
@@ -538,9 +532,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: palette.primary,
-          textStyle: textTheme.titleMedium?.copyWith(
-            color: palette.primary,
-          ),
+          textStyle: textTheme.titleMedium?.copyWith(color: palette.primary),
         ),
       ),
       checkboxTheme: CheckboxThemeData(
@@ -628,10 +620,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
-          borderSide: BorderSide(
-            color: palette.primaryLight,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: palette.primaryLight, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
@@ -688,9 +677,7 @@ class AppTheme {
           // Light seed primary + near-black label stays compliant in dark mode.
           backgroundColor: palette.primaryLight,
           foregroundColor: palette.onPrimaryDark,
-          disabledBackgroundColor: palette.primaryLight.withValues(
-            alpha: 0.35,
-          ),
+          disabledBackgroundColor: palette.primaryLight.withValues(alpha: 0.35),
           disabledForegroundColor: palette.onPrimaryDark.withValues(
             alpha: 0.55,
           ),

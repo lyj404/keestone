@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/window_manager.dart';
+
 import 'app.dart';
 import 'core/crypto/crypto_service.dart';
 import 'core/providers/global_container.dart';
@@ -17,6 +19,7 @@ import 'core/tray_service.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/theme/theme_seed.dart';
 import 'core/theme/theme_seed_icons.dart';
+import 'core/widgets/button_label.dart';
 import 'l10n/app_localizations.dart';
 import 'features/database/providers/database_provider.dart';
 
@@ -135,8 +138,9 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
       // A save already in flight may have serialized before the latest edit,
       // so keep saving until the dirty flag clears (bounded) before exiting.
       for (var attempt = 0; attempt < 3 && notifier.isDirty; attempt++) {
-        final success =
-            await notifier.save().timeout(const Duration(seconds: 20));
+        final success = await notifier.save().timeout(
+          const Duration(seconds: 20),
+        );
         if (!success) {
           log.w(
             'Database save before app exit completed locally, but cloud sync reported a conflict.',
@@ -166,17 +170,16 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
       builder: (ctx) => AlertDialog(
         title: Text(l10n?.closeUnsavedTitle ?? 'Unsaved database changes'),
         content: Text(
-          l10n?.closeUnsavedBody ??
-              'Some changes could not be written to disk. Discard them and close anyway?',
+          l10n?.closeUnsavedBody ?? 'Some changes could not be written to disk. Discard them and close anyway?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n?.cancel ?? 'Cancel'),
+            child: ButtonLabel(l10n?.cancel ?? 'Cancel'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n?.discardAndClose ?? 'Discard and close'),
+            child: ButtonLabel(l10n?.discardAndClose ?? 'Discard and close'),
           ),
         ],
       ),

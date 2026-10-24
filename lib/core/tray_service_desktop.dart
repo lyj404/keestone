@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:system_tray/system_tray.dart';
+
 import 'theme/theme_seed.dart';
 import 'theme/theme_seed_icons.dart';
 import 'utils/logger.dart';
@@ -24,12 +25,12 @@ class TrayServiceDesktop implements TrayServiceBase {
     final iconPath = ThemeSeedIcons.assetPath(_seed);
 
     try {
-      await _tray.initSystemTray(
-        title: 'KeeStone',
-        iconPath: iconPath,
-      );
+      await _tray.initSystemTray(title: 'KeeStone', iconPath: iconPath);
     } catch (e) {
-      log.e('TrayServiceDesktop: initSystemTray failed for $iconPath', error: e);
+      log.e(
+        'TrayServiceDesktop: initSystemTray failed for $iconPath',
+        error: e,
+      );
       rethrow;
     }
 

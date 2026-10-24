@@ -44,7 +44,11 @@ void copyToClipboardWithAutoClear(
   unawaited(_scheduleClear(text, timeout, generation));
 }
 
-Future<void> _scheduleClear(String text, Duration timeout, int generation) async {
+Future<void> _scheduleClear(
+  String text,
+  Duration timeout,
+  int generation,
+) async {
   final copiedMac = await _mac(text);
   // A newer copy arrived while computing the MAC; don't arm a timer for it.
   if (generation != _scheduleGeneration) return;

@@ -58,10 +58,7 @@ class GitSyncConfig {
       _ => _gitLabApiBase(),
     };
     if (apiBase == null) return null;
-    return (
-      apiBase: apiBase,
-      provider: effectiveProvider,
-    );
+    return (apiBase: apiBase, provider: effectiveProvider);
   }
 
   /// Derives the GitLab API base from [repoUrl], or null when it is not a

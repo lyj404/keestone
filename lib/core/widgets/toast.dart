@@ -4,12 +4,22 @@ import '../theme/app_theme.dart';
 
 /// Shows a toast notification that slides in from the right side.
 /// [isError] controls the color: green for success, red for error.
-void showToast(BuildContext context, String message, {bool isError = false, Duration duration = const Duration(seconds: 2)}) {
+void showToast(
+  BuildContext context,
+  String message, {
+  bool isError = false,
+  Duration duration = const Duration(seconds: 2),
+}) {
   final overlay = Overlay.of(context);
   late OverlayEntry entry;
-  final controller = AnimationController(vsync: overlay, duration: const Duration(milliseconds: 250));
-  final animation = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-      .animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
+  final controller = AnimationController(
+    vsync: overlay,
+    duration: const Duration(milliseconds: 250),
+  );
+  final animation = Tween<Offset>(
+    begin: const Offset(1, 0),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: controller, curve: Curves.easeOutCubic));
 
   final bgColor = isError
       ? ClayColors.error
@@ -28,12 +38,19 @@ void showToast(BuildContext context, String message, {bool isError = false, Dura
               color: Colors.transparent,
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: bgColor,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 12, offset: const Offset(-2, 4)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(-2, 4),
+                    ),
                   ],
                 ),
                 child: Text(

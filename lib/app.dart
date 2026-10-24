@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'core/providers/auto_lock_provider.dart';
 import 'core/providers/auto_save_provider.dart';
 import 'core/providers/expiration_reminder_provider.dart';
@@ -285,15 +287,18 @@ class _KeeStoneAppState extends ConsumerState<KeeStoneApp>
             MaterialApp.router(
               title: 'KeeStone',
               theme: AppTheme.light(locale: effectiveLocale, seed: themeSeed),
-              darkTheme: AppTheme.dark(locale: effectiveLocale, seed: themeSeed),
+              darkTheme: AppTheme.dark(
+                locale: effectiveLocale,
+                seed: themeSeed,
+              ),
               themeMode: themeMode,
               routerConfig: router,
               debugShowCheckedModeBanner: false,
               locale: locale,
-               localizationsDelegates: [
-                 AppLocalizations.delegate,
-                 ...GlobalMaterialLocalizations.delegates,
-               ],
+              localizationsDelegates: [
+                AppLocalizations.delegate,
+                ...GlobalMaterialLocalizations.delegates,
+              ],
               supportedLocales: const [Locale('zh'), Locale('en')],
             ),
             if (_backgroundPrivacyVisible)

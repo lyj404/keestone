@@ -679,9 +679,7 @@ class _TotpListTileState extends State<_TotpListTile> {
     final l10n = AppLocalizations.of(context)!;
     final title = widget.entry.fields['Title']?.text ?? l10n.untitled;
     final isLow = _remaining <= 5;
-    final progress = _config == null
-        ? 0.0
-        : _remaining / _config!.period;
+    final progress = _config == null ? 0.0 : _remaining / _config!.period;
     final codeDisplay = _code.length == 6
         ? '${_code.substring(0, 3)} ${_code.substring(3)}'
         : _code;

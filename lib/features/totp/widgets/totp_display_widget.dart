@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/widgets/toast.dart';
@@ -116,7 +117,11 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, size: 18, color: colorScheme.onSurfaceVariant),
+              Icon(
+                Icons.timer_outlined,
+                size: 18,
+                color: colorScheme.onSurfaceVariant,
+              ),
               const SizedBox(width: 8),
               Text(
                 'TOTP',
@@ -168,7 +173,9 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
                     CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 3,
-                      backgroundColor: colorScheme.outlineVariant.withValues(alpha: 0.2),
+                      backgroundColor: colorScheme.outlineVariant.withValues(
+                        alpha: 0.2,
+                      ),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         isLow ? colorScheme.error : colorScheme.primary,
                       ),
@@ -179,7 +186,9 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
-                        color: isLow ? colorScheme.error : colorScheme.onSurfaceVariant,
+                        color: isLow
+                            ? colorScheme.error
+                            : colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],

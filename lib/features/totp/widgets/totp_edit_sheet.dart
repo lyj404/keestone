@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+
 import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/totp_service.dart';
@@ -19,10 +20,8 @@ Future<TotpEditResult?> showTotpEditSheet(
   return showModalBottomSheet<TotpEditResult>(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _TotpEditSheet(
-      initial: initial,
-      initialTitle: initialTitle,
-    ),
+    builder: (_) =>
+        _TotpEditSheet(initial: initial, initialTitle: initialTitle),
   );
 }
 
@@ -86,9 +85,8 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
       });
     } else {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(l10n.totpInvalidUri)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.totpInvalidUri)));
     }
   }
 
@@ -147,9 +145,7 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                         : Icons.qr_code_2_rounded,
                   ),
                   label: ButtonLabel(
-                    useMobileQrScanner
-                        ? l10n.scanQrCode
-                        : l10n.scanQrFromImage,
+                    useMobileQrScanner ? l10n.scanQrCode : l10n.scanQrFromImage,
                   ),
                 ),
               ),
@@ -169,14 +165,14 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _parseUri,
-                child: Text(l10n.totpParseUri),
+                child: ButtonLabel(l10n.totpParseUri),
               ),
             ),
             const SizedBox(height: 8),
             Center(
               child: TextButton(
                 onPressed: () => setState(() => _isUriMode = false),
-                child: Text(l10n.totpManualConfig),
+                child: ButtonLabel(l10n.totpManualConfig),
               ),
             ),
           ] else ...[
@@ -273,7 +269,7 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
               Center(
                 child: TextButton(
                   onPressed: () => setState(() => _isUriMode = true),
-                  child: Text(l10n.totpPasteUri),
+                  child: ButtonLabel(l10n.totpPasteUri),
                 ),
               ),
             const SizedBox(height: 16),

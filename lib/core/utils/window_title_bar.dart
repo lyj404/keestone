@@ -16,8 +16,9 @@ import 'logger.dart';
 class WindowTitleBar {
   WindowTitleBar._();
 
-  static const MethodChannel _windowsChannel =
-      MethodChannel('keestone/window_theme');
+  static const MethodChannel _windowsChannel = MethodChannel(
+    'keestone/window_theme',
+  );
 
   static bool? _lastDark;
 

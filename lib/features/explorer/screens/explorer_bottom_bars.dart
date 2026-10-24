@@ -239,10 +239,8 @@ Future<void> _syncToCloud(BuildContext context) async {
   // Validate via the shared backend resolver so this entry point cannot
   // disagree with DatabaseNotifier about which backend is in play.
   final profileId = isCloud
-      ? (await container
-            .read(recentFilesServiceProvider)
-            .getLastOpenedFile())
-          ?.webDavProfileId
+      ? (await container.read(recentFilesServiceProvider).getLastOpenedFile())
+            ?.webDavProfileId
       : null;
   final backend = await resolveSyncBackend(
     (id) => container.read(gitSettingsServiceProvider).getConfigById(id),
@@ -262,28 +260,28 @@ Future<void> _syncToCloud(BuildContext context) async {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 28,
-              height: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.uploadingToCloud,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(ctx).colorScheme.onSurface,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.uploadingToCloud,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(ctx).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     ),
   );
   try {
@@ -490,7 +488,7 @@ void _showSyncErrorDialog(BuildContext context, String message) {
           onPressed: () => Navigator.of(ctx).pop(),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(l10n.cancel),
+            child: ButtonLabel(l10n.cancel),
           ),
         ),
         FilledButton(
@@ -504,7 +502,7 @@ void _showSyncErrorDialog(BuildContext context, String message) {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          child: Text(l10n.goToSettings),
+          child: ButtonLabel(l10n.goToSettings),
         ),
       ],
     ),

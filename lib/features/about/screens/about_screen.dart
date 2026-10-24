@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+
 import '../../../core/services/external_url_service.dart';
 import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';

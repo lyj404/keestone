@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 import '../utils/password_strength.dart';
 
@@ -29,10 +30,7 @@ class PasswordStrengthIndicator extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 11, color: level.color),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: level.color)),
       ],
     );
   }

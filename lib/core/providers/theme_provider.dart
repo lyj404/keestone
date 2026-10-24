@@ -1,9 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
 import '../theme/theme_seed.dart';
 import '../utils/secure_storage_helper.dart';
 
-final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
+  ref,
+) {
   return ThemeModeNotifier();
 });
 
@@ -32,7 +35,9 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 }
 
-final themeSeedProvider = StateNotifierProvider<ThemeSeedNotifier, ThemeSeed>((ref) {
+final themeSeedProvider = StateNotifierProvider<ThemeSeedNotifier, ThemeSeed>((
+  ref,
+) {
   return ThemeSeedNotifier();
 });
 

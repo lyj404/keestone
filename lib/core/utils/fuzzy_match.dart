@@ -103,4 +103,3 @@ FuzzyMatchResult? _fuzzyMatchPositions(String text, String query) {
   score /= (text.length * 1.5);
   return FuzzyMatchResult(score.clamp(0.01, 1.0), positions);
 }
-

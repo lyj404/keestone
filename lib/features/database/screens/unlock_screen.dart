@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
@@ -50,11 +52,12 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     // Fire-and-forget preload: a missing/unreadable file must not surface as
     // an unhandled async exception here — openFile reports it properly.
     unawaited(
-      ref.read(databaseProvider.notifier).preloadFile(widget.filePath).catchError(
-        (Object e) {
-          log.w('Preload failed for ${widget.filePath}', error: e);
-        },
-      ),
+      ref
+          .read(databaseProvider.notifier)
+          .preloadFile(widget.filePath)
+          .catchError((Object e) {
+            log.w('Preload failed for ${widget.filePath}', error: e);
+          }),
     );
   }
 
@@ -160,7 +163,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: colorScheme.primary.withValues(alpha: 0.12),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -175,17 +180,15 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                       const SizedBox(height: 20),
                       Text(
                         _fileName,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         widget.isCloud ? l10n.cloudDatabase : widget.filePath,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: colorScheme.onSurfaceVariant),
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -300,7 +303,9 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                                       Icons.fingerprint_rounded,
                                       size: 24,
                                     ),
-                                    label: ButtonLabel(l10n.unlockWithBiometric),
+                                    label: ButtonLabel(
+                                      l10n.unlockWithBiometric,
+                                    ),
                                     style: OutlinedButton.styleFrom(
                                       minimumSize: const Size.fromHeight(50),
                                       shape: RoundedRectangleBorder(
@@ -355,9 +360,8 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     if (storedCredentials == null) {
       // No stored password, need to unlock with password first
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.noStoredPassword)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.noStoredPassword)));
       }
       return;
     }
@@ -409,9 +413,8 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     final backups = await backupService.listBackupsFor(widget.filePath);
     if (!mounted || backups.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(l10n.noBackupAvailable)));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.noBackupAvailable)));
       }
       return;
     }
@@ -441,9 +444,8 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
         );
         if (backupPath == null) {
           if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(l10n.backupNotFound)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(l10n.backupNotFound)));
           }
           return;
         }
@@ -471,17 +473,15 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
           },
         );
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.backupRestored)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.backupRestored)));
           // Re-trigger unlock with the restored file
           _unlock();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(l10n.backupRestoreFailed)));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(l10n.backupRestoreFailed)));
         }
       }
     }

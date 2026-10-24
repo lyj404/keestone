@@ -1,6 +1,8 @@
 import 'dart:ffi';
 import 'dart:io';
+
 import 'package:kpasslib/kpasslib.dart';
+
 import '../utils/logger.dart';
 
 class CryptoService {

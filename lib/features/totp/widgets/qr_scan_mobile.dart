@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import '../../../l10n/app_localizations.dart';
 
 class QrScanScreen extends StatefulWidget {
@@ -59,15 +60,13 @@ class _QrScanScreenState extends State<QrScanScreen> {
         }
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.totpInvalidUri)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.totpInvalidUri)));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.totpInvalidUri)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l10n.totpInvalidUri)));
       }
     }
   }
@@ -160,7 +159,8 @@ class _QrScanScreenState extends State<QrScanScreen> {
 }
 
 Future<String?> openQrScanner(BuildContext context) {
-  return Navigator.of(context, rootNavigator: true).push<String>(
-    MaterialPageRoute(builder: (_) => const QrScanScreen()),
-  );
+  return Navigator.of(
+    context,
+    rootNavigator: true,
+  ).push<String>(MaterialPageRoute(builder: (_) => const QrScanScreen()));
 }

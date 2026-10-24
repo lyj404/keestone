@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../database/providers/database_provider.dart';
 
 final currentGroupPathProvider = StateProvider<String>((ref) => '');
@@ -47,32 +48,50 @@ final entriesProvider = Provider<List<KdbxEntry>>((ref) {
   if (group == null) return [];
   var entries = [...group.entries];
   if (selectedTag != null) {
-    entries = entries.where((e) => e.tags?.contains(selectedTag) ?? false).toList();
+    entries = entries
+        .where((e) => e.tags?.contains(selectedTag) ?? false)
+        .toList();
   }
   // Apply sorting
   entries.sort((a, b) {
     switch (sortOption) {
       case EntrySortOption.titleAsc:
-        return (a.fields['Title']?.text ?? '').compareTo(b.fields['Title']?.text ?? '');
+        return (a.fields['Title']?.text ?? '').compareTo(
+          b.fields['Title']?.text ?? '',
+        );
       case EntrySortOption.titleDesc:
-        return (b.fields['Title']?.text ?? '').compareTo(a.fields['Title']?.text ?? '');
+        return (b.fields['Title']?.text ?? '').compareTo(
+          a.fields['Title']?.text ?? '',
+        );
       case EntrySortOption.createdNewest:
-        return (b.times.creation.time ?? DateTime(0)).compareTo(a.times.creation.time ?? DateTime(0));
+        return (b.times.creation.time ?? DateTime(0)).compareTo(
+          a.times.creation.time ?? DateTime(0),
+        );
       case EntrySortOption.createdOldest:
-        return (a.times.creation.time ?? DateTime(0)).compareTo(b.times.creation.time ?? DateTime(0));
+        return (a.times.creation.time ?? DateTime(0)).compareTo(
+          b.times.creation.time ?? DateTime(0),
+        );
       case EntrySortOption.modifiedNewest:
-        return (b.times.modification.time ?? DateTime(0)).compareTo(a.times.modification.time ?? DateTime(0));
+        return (b.times.modification.time ?? DateTime(0)).compareTo(
+          a.times.modification.time ?? DateTime(0),
+        );
       case EntrySortOption.modifiedOldest:
-        return (a.times.modification.time ?? DateTime(0)).compareTo(b.times.modification.time ?? DateTime(0));
+        return (a.times.modification.time ?? DateTime(0)).compareTo(
+          b.times.modification.time ?? DateTime(0),
+        );
       case EntrySortOption.expiredFirst:
         final aExpired = a.times.expiry.time;
         final bExpired = b.times.expiry.time;
         final now = DateTime.now();
-        final aIsExpired = a.times.expires && aExpired != null && aExpired.isBefore(now);
-        final bIsExpired = b.times.expires && bExpired != null && bExpired.isBefore(now);
+        final aIsExpired =
+            a.times.expires && aExpired != null && aExpired.isBefore(now);
+        final bIsExpired =
+            b.times.expires && bExpired != null && bExpired.isBefore(now);
         if (aIsExpired && !bIsExpired) return -1;
         if (!aIsExpired && bIsExpired) return 1;
-        return (aExpired ?? DateTime(2100)).compareTo(bExpired ?? DateTime(2100));
+        return (aExpired ?? DateTime(2100)).compareTo(
+          bExpired ?? DateTime(2100),
+        );
     }
   });
   return entries;

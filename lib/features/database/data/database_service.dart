@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
+
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/crypto/crypto_service.dart';
 import 'atomic_file_store.dart';
@@ -304,8 +306,7 @@ class DatabaseService {
     if (_preloadedModified == null || _preloadedSize == null) return false;
     try {
       final stat = await File(filePath).stat();
-      return stat.size == _preloadedSize &&
-          stat.modified == _preloadedModified;
+      return stat.size == _preloadedSize && stat.modified == _preloadedModified;
     } catch (_) {
       return false;
     }
@@ -336,6 +337,7 @@ class DatabaseService {
   }) async {
     await _loadDatabase(bytes, password, keyData: keyData);
   }
+
   Future<KdbxDatabase> openFile(
     String filePath,
     String password, {
@@ -358,8 +360,9 @@ class DatabaseService {
         _preloadedBytes != null &&
         _preloadedFilePath == filePath &&
         await _isPreloadFresh(filePath);
-    final bytes =
-        canUsePreload ? _preloadedBytes! : await File(filePath).readAsBytes();
+    final bytes = canUsePreload
+        ? _preloadedBytes!
+        : await File(filePath).readAsBytes();
     _checkOpenGeneration(generation);
     _preloadedBytes = null;
     _preloadedFilePath = null;
@@ -503,9 +506,9 @@ class DatabaseService {
   /// Returns the serialized bytes so callers can reuse them (e.g. for cloud upload).
   Future<Uint8List> save() {
     final completer = Completer<Uint8List>();
-    _saveQueue = _saveQueue
-        .then((_) => null, onError: (_) => null)
-        .then((_) async {
+    _saveQueue = _saveQueue.then((_) => null, onError: (_) => null).then((
+      _,
+    ) async {
       try {
         completer.complete(await _saveOnce());
       } catch (error, stackTrace) {
@@ -773,8 +776,9 @@ class DatabaseService {
     Map<String, String> remoteValues = const {},
   }) {
     final title = entry.fields['Title']?.text ?? '(Untitled)';
-    final groupPath =
-        entry.parent != null ? getGroupPath(entry.parent!, root: root) : '';
+    final groupPath = entry.parent != null
+        ? getGroupPath(entry.parent!, root: root)
+        : '';
     final modifiedAt = entry.times.modification.time?.toIso8601String();
     return SyncAuditChange(
       type: type,
@@ -868,7 +872,9 @@ class DatabaseService {
     final aBytes = a.codeUnits;
     final bBytes = b.codeUnits;
     var difference = aBytes.length ^ bBytes.length;
-    final maxLen = aBytes.length > bBytes.length ? aBytes.length : bBytes.length;
+    final maxLen = aBytes.length > bBytes.length
+        ? aBytes.length
+        : bBytes.length;
     for (var i = 0; i < maxLen; i++) {
       final av = i < aBytes.length ? aBytes[i] : 0;
       final bv = i < bBytes.length ? bBytes[i] : 0;
@@ -921,4 +927,3 @@ class DatabaseService {
     _searchIndex = null;
   }
 }
-

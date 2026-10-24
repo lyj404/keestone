@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/section_card.dart';
 import '../../../l10n/app_localizations.dart';
@@ -147,9 +148,8 @@ class _SummaryCard extends StatelessWidget {
             children: [
               Text(
                 l10n.auditHealthScore,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
               Row(
@@ -181,9 +181,8 @@ class _SummaryCard extends StatelessWidget {
                       report.healthyEntries,
                       report.totalEntries,
                     ),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -208,7 +207,8 @@ class _SummaryCard extends StatelessWidget {
                   ),
                   _StatChip(
                     label: l10n.auditIssueWeak,
-                    count: report.countOf(PasswordIssueKind.weak) +
+                    count:
+                        report.countOf(PasswordIssueKind.weak) +
                         report.countOf(PasswordIssueKind.fair),
                   ),
                   _StatChip(
@@ -217,7 +217,8 @@ class _SummaryCard extends StatelessWidget {
                   ),
                   _StatChip(
                     label: l10n.auditIssueExpired,
-                    count: report.countOf(PasswordIssueKind.expired) +
+                    count:
+                        report.countOf(PasswordIssueKind.expired) +
                         report.countOf(PasswordIssueKind.expiringSoon),
                   ),
                 ],
@@ -293,7 +294,7 @@ class _FilterBar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 6),
             child: ChoiceChip(
-              label: Text(l10n.auditAll),
+              label: ButtonLabel(l10n.auditAll),
               selected: selected == null,
               onSelected: (_) => onSelected(null),
             ),
@@ -303,7 +304,9 @@ class _FilterBar extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 6),
                 child: ChoiceChip(
-                  label: Text('${labels[kind]} · ${report.countOf(kind)}'),
+                  label: ButtonLabel(
+                    '${labels[kind]} · ${report.countOf(kind)}',
+                  ),
                   selected: selected == kind,
                   selectedColor: colorScheme.primaryContainer,
                   onSelected: (_) => onSelected(kind),
@@ -367,14 +370,18 @@ class _FindingCard extends StatelessWidget {
         l10n.auditSharedCount(finding.sharedCount),
       if (finding.strength != null)
         '${l10n.auditStrength}: ${finding.strength!.getLabel(l10n)}',
-      if (finding.expiry != null) l10n.auditExpiresOn(_fmtDate(finding.expiry!)),
+      if (finding.expiry != null)
+        l10n.auditExpiresOn(_fmtDate(finding.expiry!)),
     ];
 
     return SectionCard(
       margin: const EdgeInsets.only(bottom: 8),
       children: [
         ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 4,
+          ),
           leading: Container(
             width: 40,
             height: 40,
@@ -382,11 +389,7 @@ class _FindingCard extends StatelessWidget {
               color: _kindColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              _iconFor(finding.kind),
-              color: _kindColor,
-              size: 20,
-            ),
+            child: Icon(_iconFor(finding.kind), color: _kindColor, size: 20),
           ),
           title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Column(
@@ -424,9 +427,8 @@ class _FindingCard extends StatelessWidget {
                   for (final d in details)
                     Text(
                       d,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: colorScheme.onSurfaceVariant),
                     ),
                 ],
               ),

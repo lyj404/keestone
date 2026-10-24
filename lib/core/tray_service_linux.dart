@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:dart_xdg_status_notifier_item/dart_xdg_status_notifier_item.dart';
+
 import 'theme/theme_seed.dart';
 import 'theme/theme_seed_icons.dart';
 import 'utils/logger.dart';
@@ -25,23 +26,25 @@ class TrayServiceLinux implements TrayServiceBase {
     log.d('TrayServiceLinux: Using icon path: $iconPath');
 
     // Create menu items
-    final menu = DBusMenuItem(children: [
-      DBusMenuItem(
-        label: showLabel,
-        onClicked: () async {
-          log.d('TrayServiceLinux: Show window clicked');
-          onShowWindow();
-        },
-      ),
-      DBusMenuItem.separator(),
-      DBusMenuItem(
-        label: exitLabel,
-        onClicked: () async {
-          log.d('TrayServiceLinux: Exit clicked');
-          onExitApp();
-        },
-      ),
-    ]);
+    final menu = DBusMenuItem(
+      children: [
+        DBusMenuItem(
+          label: showLabel,
+          onClicked: () async {
+            log.d('TrayServiceLinux: Show window clicked');
+            onShowWindow();
+          },
+        ),
+        DBusMenuItem.separator(),
+        DBusMenuItem(
+          label: exitLabel,
+          onClicked: () async {
+            log.d('TrayServiceLinux: Exit clicked');
+            onExitApp();
+          },
+        ),
+      ],
+    );
 
     // Create StatusNotifierItem client
     _client = StatusNotifierItemClient(
@@ -58,7 +61,11 @@ class TrayServiceLinux implements TrayServiceBase {
       _client!.iconName = ThemeSeedIcons.resolveLinuxAbsolutePath(_seed);
       log.d('TrayServiceLinux: Connected successfully');
     } catch (e, stackTrace) {
-      log.e('TrayServiceLinux: Failed to connect', error: e, stackTrace: stackTrace);
+      log.e(
+        'TrayServiceLinux: Failed to connect',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 

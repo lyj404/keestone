@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/providers/auto_lock_provider.dart';
 import '../../../core/providers/auto_save_provider.dart';
@@ -42,10 +44,10 @@ class _CustomFieldData {
     required String name,
     required String value,
     this.protected = false,
-  })  : nameCtrl = TextEditingController(text: name),
-        valueCtrl = TextEditingController(text: value),
-        nameFocus = FocusNode(),
-        obscure = protected;
+  }) : nameCtrl = TextEditingController(text: name),
+       valueCtrl = TextEditingController(text: value),
+       nameFocus = FocusNode(),
+       obscure = protected;
 
   void dispose() {
     nameCtrl.dispose();
@@ -116,11 +118,11 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.keepEditing),
+            child: ButtonLabel(l10n.keepEditing),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.discardAndLeave),
+            child: ButtonLabel(l10n.discardAndLeave),
           ),
         ],
       ),
@@ -137,13 +139,19 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     if (widget.entryUuid != null && widget.entryUuid!.isNotEmpty) {
       final uuid = KdbxUuid.fromString(widget.entryUuid!);
       final group = service.findGroupByPath(widget.groupPath);
-      log.d('[EntryEdit] lookup uuid=${widget.entryUuid} groupPath="${widget.groupPath}" group=${group?.name} groupEntries=${group?.entries.length}');
+      log.d(
+        '[EntryEdit] lookup uuid=${widget.entryUuid} groupPath="${widget.groupPath}" group=${group?.name} groupEntries=${group?.entries.length}',
+      );
       var entry = group?.entries.where((e) => e.uuid == uuid).firstOrNull;
       if (entry == null) {
-        log.w('[EntryEdit] not in group, trying findEntryByUuid cacheSize=${service.allEntries.length}');
+        log.w(
+          '[EntryEdit] not in group, trying findEntryByUuid cacheSize=${service.allEntries.length}',
+        );
         entry = service.findEntryByUuid(uuid);
         if (entry == null) {
-          log.e('[EntryEdit] ENTRY NOT FOUND uuid=${widget.entryUuid} groupPath="${widget.groupPath}"');
+          log.e(
+            '[EntryEdit] ENTRY NOT FOUND uuid=${widget.entryUuid} groupPath="${widget.groupPath}"',
+          );
         }
       }
       if (entry != null) {
@@ -221,203 +229,240 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
         unawaited(_confirmDiscardChanges());
       },
       child: Scaffold(
-      appBar: AppBar(
-        title: Text(_isEdit ? l10n.editEntry : l10n.newEntry),
-        actions: [
-          TextButton(onPressed: _save, child: Text(l10n.save)),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          children: [
-            // Basic info card
-            _SectionCard(
-              children: [
-                TextFormField(
-                  controller: _titleCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.title,
-                    prefixIcon: const Icon(Icons.title_rounded),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                ),
-                Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
-                TextFormField(
-                  controller: _usernameCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.username,
-                    prefixIcon: const Icon(Icons.person_outline_rounded),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Password card
-            _SectionCard(
-              children: [
-                PasswordTextField(
-                  controller: _passwordCtrl,
-                  labelText: l10n.password,
-                  showStrengthIndicator: true,
-                ),
-                const SizedBox(height: 4),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      final password = await showPasswordGeneratorDialog(context);
-                      if (password != null) {
-                        _passwordCtrl.text = password;
-                      }
-                    },
-                    icon: const Icon(Icons.casino_outlined, size: 16),
-                    label: ButtonLabel(l10n.generatePassword),
-                    style: TextButton.styleFrom(
-                      visualDensity: VisualDensity.compact,
+        appBar: AppBar(
+          title: Text(_isEdit ? l10n.editEntry : l10n.newEntry),
+          actions: [
+            TextButton(onPressed: _save, child: ButtonLabel(l10n.save)),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            children: [
+              // Basic info card
+              _SectionCard(
+                children: [
+                  TextFormField(
+                    controller: _titleCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.title,
+                      prefixIcon: const Icon(Icons.title_rounded),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Details card
-            _SectionCard(
-              children: [
-                TextFormField(
-                  controller: _urlCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.url,
-                    prefixIcon: const Icon(Icons.link_rounded),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  Divider(
+                    height: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.15),
                   ),
-                ),
-                Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
-                TextFormField(
-                  controller: _notesCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.notes,
-                    prefixIcon: const Icon(Icons.note_outlined),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    filled: false,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  maxLines: 4,
-                ),
-              ],
-            ),
-            // Expiration
-            const SizedBox(height: 12),
-            _SectionCard(
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.schedule_rounded, size: 20, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(l10n.expiration, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
+                  TextFormField(
+                    controller: _usernameCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.username,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     ),
-                    Switch(
-                      value: _expires,
-                      onChanged: (v) {
-                        setState(() {
-                          _expires = v;
-                          if (v && _expiryDate == null) {
-                            _expiryDate = DateTime.now().add(const Duration(days: 30));
-                          }
-                        });
-                        _onFormChanged();
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Password card
+              _SectionCard(
+                children: [
+                  PasswordTextField(
+                    controller: _passwordCtrl,
+                    labelText: l10n.password,
+                    showStrengthIndicator: true,
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final password = await showPasswordGeneratorDialog(
+                          context,
+                        );
+                        if (password != null) {
+                          _passwordCtrl.text = password;
+                        }
                       },
-                    ),
-                  ],
-                ),
-                if (_expires) ...[
-                  Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
-                  InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _expiryDate ?? DateTime.now().add(const Duration(days: 30)),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        setState(() => _expiryDate = picked);
-                        _onFormChanged();
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today_rounded, size: 18, color: colorScheme.onSurfaceVariant),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _expiryDate != null
-                                  ? '${_expiryDate!.year}-${_expiryDate!.month.toString().padLeft(2, '0')}-${_expiryDate!.day.toString().padLeft(2, '0')}'
-                                  : l10n.noExpiration,
-                              style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
-                            ),
-                          ),
-                          if (_expiryDate != null)
-                            IconButton(
-                              icon: Icon(Icons.clear_rounded, size: 18, color: colorScheme.onSurfaceVariant),
-                              onPressed: () {
-                                setState(() => _expiryDate = null);
-                                _onFormChanged();
-                              },
-                            ),
-                        ],
+                      icon: const Icon(Icons.casino_outlined, size: 16),
+                      label: ButtonLabel(l10n.generatePassword),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
                       ),
                     ),
                   ),
                 ],
-              ],
-            ),
-            // Custom fields
-            if (_entry != null) ...[
-              const SizedBox(height: 12),
-              _buildCustomFieldsSection(colorScheme, l10n),
-            ],
-            // Tags
-            if (_entry != null) ...[
-              const SizedBox(height: 12),
-              _buildTagsSection(colorScheme, l10n),
-            ],
-            // TOTP
-            if (_entry != null) ...[
-              const SizedBox(height: 12),
-              _buildTotpSection(colorScheme, l10n),
-            ],
-            // Attachments
-            if (_entry != null) ...[
-              const SizedBox(height: 4),
-              _AttachmentsSectionWrapper(
-                entry: _entry!,
-                onFormActivity: _onFormChanged,
               ),
+              const SizedBox(height: 12),
+              // Details card
+              _SectionCard(
+                children: [
+                  TextFormField(
+                    controller: _urlCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.url,
+                      prefixIcon: const Icon(Icons.link_rounded),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                  ),
+                  Divider(
+                    height: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+                  ),
+                  TextFormField(
+                    controller: _notesCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.notes,
+                      prefixIcon: const Icon(Icons.note_outlined),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    maxLines: 4,
+                  ),
+                ],
+              ),
+              // Expiration
+              const SizedBox(height: 12),
+              _SectionCard(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 20,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          l10n.expiration,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _expires,
+                        onChanged: (v) {
+                          setState(() {
+                            _expires = v;
+                            if (v && _expiryDate == null) {
+                              _expiryDate = DateTime.now().add(
+                                const Duration(days: 30),
+                              );
+                            }
+                          });
+                          _onFormChanged();
+                        },
+                      ),
+                    ],
+                  ),
+                  if (_expires) ...[
+                    Divider(
+                      height: 1,
+                      color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate:
+                              _expiryDate ??
+                              DateTime.now().add(const Duration(days: 30)),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setState(() => _expiryDate = picked);
+                          _onFormChanged();
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_rounded,
+                              size: 18,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                _expiryDate != null
+                                    ? '${_expiryDate!.year}-${_expiryDate!.month.toString().padLeft(2, '0')}-${_expiryDate!.day.toString().padLeft(2, '0')}'
+                                    : l10n.noExpiration,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            if (_expiryDate != null)
+                              IconButton(
+                                icon: Icon(
+                                  Icons.clear_rounded,
+                                  size: 18,
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                                onPressed: () {
+                                  setState(() => _expiryDate = null);
+                                  _onFormChanged();
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              // Custom fields
+              if (_entry != null) ...[
+                const SizedBox(height: 12),
+                _buildCustomFieldsSection(colorScheme, l10n),
+              ],
+              // Tags
+              if (_entry != null) ...[
+                const SizedBox(height: 12),
+                _buildTagsSection(colorScheme, l10n),
+              ],
+              // TOTP
+              if (_entry != null) ...[
+                const SizedBox(height: 12),
+                _buildTotpSection(colorScheme, l10n),
+              ],
+              // Attachments
+              if (_entry != null) ...[
+                const SizedBox(height: 4),
+                _AttachmentsSectionWrapper(
+                  entry: _entry!,
+                  onFormActivity: _onFormChanged,
+                ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -427,17 +472,28 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
       children: [
         Row(
           children: [
-            Icon(Icons.label_outline_rounded, size: 20, color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.label_outline_rounded,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 l10n.tags,
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
           ],
         ),
-        Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+        Divider(
+          height: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Wrap(
@@ -456,7 +512,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ActionChip(
-                label: Text(l10n.addTag, style: TextStyle(fontSize: 13)),
+                label: ButtonLabel(l10n.addTag, style: TextStyle(fontSize: 13)),
                 avatar: Icon(Icons.add_rounded, size: 16),
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -495,7 +551,8 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                 onSubmitted: (_) {
                   final tag = ctrl.text.trim();
                   if (tag.isNotEmpty && !_tags.contains(tag)) {
-                    setState(() => _tags.add(tag)); _onFormChanged();
+                    setState(() => _tags.add(tag));
+                    _onFormChanged();
                   }
                   Navigator.pop(ctx);
                 },
@@ -506,13 +563,16 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    for (final tag in existingTags.where((t) => !_tags.contains(t)))
+                    for (final tag in existingTags.where(
+                      (t) => !_tags.contains(t),
+                    ))
                       ActionChip(
                         label: Text(tag, style: TextStyle(fontSize: 12)),
                         visualDensity: VisualDensity.compact,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         onPressed: () {
-                          setState(() => _tags.add(tag)); _onFormChanged();
+                          setState(() => _tags.add(tag));
+                          _onFormChanged();
                           Navigator.pop(ctx);
                         },
                       ),
@@ -522,12 +582,16 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: ButtonLabel(l10n.cancel),
+            ),
             FilledButton(
               onPressed: () {
                 final tag = ctrl.text.trim();
                 if (tag.isNotEmpty && !_tags.contains(tag)) {
-                  setState(() => _tags.add(tag)); _onFormChanged();
+                  setState(() => _tags.add(tag));
+                  _onFormChanged();
                 }
                 Navigator.pop(ctx);
               },
@@ -544,17 +608,29 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
       children: [
         Row(
           children: [
-            Icon(Icons.timer_outlined, size: 20, color: colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.timer_outlined,
+              size: 20,
+              color: colorScheme.onSurfaceVariant,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'TOTP',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: colorScheme.onSurface),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             if (_totpConfig != null)
               IconButton(
-                icon: Icon(Icons.delete_outline_rounded, size: 18, color: colorScheme.error),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: colorScheme.error,
+                ),
                 tooltip: l10n.deleteTotp,
                 onPressed: () async {
                   final confirmed = await showDialog<bool>(
@@ -563,7 +639,10 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                       title: Text(l10n.deleteTotp),
                       content: Text(l10n.deleteTotpConfirm),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(ctx, false), child: ButtonLabel(l10n.cancel)),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: ButtonLabel(l10n.cancel),
+                        ),
                         FilledButton(
                           style: FilledButton.styleFrom(
                             backgroundColor: Theme.of(ctx).colorScheme.error,
@@ -575,12 +654,16 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                       ],
                     ),
                   );
-                  if (confirmed == true) setState(() => _totpConfig = null); _onFormChanged();
+                  if (confirmed == true) setState(() => _totpConfig = null);
+                  _onFormChanged();
                 },
               ),
           ],
         ),
-        Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+        Divider(
+          height: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+        ),
         if (_totpConfig != null)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -592,12 +675,19 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                     children: [
                       Text(
                         '${l10n.totpSecretLabel}: ${_totpConfig!.secret.substring(0, _totpConfig!.secret.length > 8 ? 8 : _totpConfig!.secret.length)}...',
-                        style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant, fontFamily: 'monospace'),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: colorScheme.onSurfaceVariant,
+                          fontFamily: 'monospace',
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${_totpConfig!.digits} digits / ${_totpConfig!.period}s / ${_totpConfig!.algorithm}',
-                        style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -609,9 +699,12 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                       initial: _totpConfig,
                       initialTitle: _titleCtrl.text,
                     );
-                    if (result != null) setState(() => _totpConfig = result.config); _onFormChanged();
+                    if (result != null) {
+                      setState(() => _totpConfig = result.config);
+                    }
+                    _onFormChanged();
                   },
-                  child: Text(l10n.edit),
+                  child: ButtonLabel(l10n.edit),
                 ),
               ],
             ),
@@ -624,11 +717,16 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
               child: TextButton.icon(
                 onPressed: () async {
                   final result = await showTotpEditSheet(context);
-                  if (result != null) setState(() => _totpConfig = result.config); _onFormChanged();
+                  if (result != null) {
+                    setState(() => _totpConfig = result.config);
+                  }
+                  _onFormChanged();
                 },
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: ButtonLabel(l10n.setupTotp),
-                style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                ),
               ),
             ),
           ),
@@ -636,32 +734,43 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     );
   }
 
-  Widget _buildCustomFieldsSection(ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildCustomFieldsSection(
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
     return _SectionCard(
       children: [
         for (int i = 0; i < _customFields.length; i++) ...[
           if (i > 0)
-            Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+            Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+            ),
           _buildCustomFieldRow(_customFields[i], colorScheme, l10n),
         ],
         if (_customFields.isNotEmpty)
-          Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+          Divider(
+            height: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+          ),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton.icon(
             onPressed: _addCustomField,
             icon: const Icon(Icons.add_rounded, size: 16),
             label: ButtonLabel(l10n.addCustomField),
-            style: TextButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-            ),
+            style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCustomFieldRow(_CustomFieldData field, ColorScheme colorScheme, AppLocalizations l10n) {
+  Widget _buildCustomFieldRow(
+    _CustomFieldData field,
+    ColorScheme colorScheme,
+    AppLocalizations l10n,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -702,10 +811,13 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                 suffixIcon: field.protected
                     ? IconButton(
                         icon: Icon(
-                          field.obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          field.obscure
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
                           size: 18,
                         ),
-                        onPressed: () => setState(() => field.obscure = !field.obscure),
+                        onPressed: () =>
+                            setState(() => field.obscure = !field.obscure),
                       )
                     : null,
               ),
@@ -719,9 +831,13 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
               icon: Icon(
                 field.protected ? Icons.shield_rounded : Icons.shield_outlined,
                 size: 18,
-                color: field.protected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+                color: field.protected
+                    ? colorScheme.primary
+                    : colorScheme.onSurfaceVariant,
               ),
-              tooltip: field.protected ? l10n.unprotectField : l10n.protectField,
+              tooltip: field.protected
+                  ? l10n.unprotectField
+                  : l10n.protectField,
               padding: EdgeInsets.zero,
               onPressed: () => setState(() {
                 field.protected = !field.protected;
@@ -734,7 +850,11 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
             width: 36,
             height: 36,
             child: IconButton(
-              icon: Icon(Icons.delete_outline_rounded, size: 18, color: colorScheme.error),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                size: 18,
+                color: colorScheme.error,
+              ),
               padding: EdgeInsets.zero,
               onPressed: () => _deleteCustomField(field),
             ),
@@ -763,7 +883,10 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
           title: Text(l10n.delete),
           content: Text(l10n.deleteCustomFieldConfirm(field.nameCtrl.text)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: ButtonLabel(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: ButtonLabel(l10n.cancel),
+            ),
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: Theme.of(ctx).colorScheme.error,
@@ -842,8 +965,10 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     entry.times.expiry = KdbxTime(effectiveExpires ? _expiryDate : null);
     entry.fields['Title'] = KdbxTextField.fromText(text: _titleCtrl.text);
     entry.fields['UserName'] = KdbxTextField.fromText(text: _usernameCtrl.text);
-    entry.fields['Password'] =
-        KdbxTextField.fromText(text: _passwordCtrl.text, protected: true);
+    entry.fields['Password'] = KdbxTextField.fromText(
+      text: _passwordCtrl.text,
+      protected: true,
+    );
     entry.fields['URL'] = KdbxTextField.fromText(text: _urlCtrl.text);
     entry.fields['Notes'] = KdbxTextField.fromText(text: _notesCtrl.text);
 
@@ -898,9 +1023,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      children: children,
-    );
+    return SectionCard(children: children);
   }
 }
 
@@ -914,10 +1037,12 @@ class _AttachmentsSectionWrapper extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_AttachmentsSectionWrapper> createState() => _AttachmentsSectionWrapperState();
+  ConsumerState<_AttachmentsSectionWrapper> createState() =>
+      _AttachmentsSectionWrapperState();
 }
 
-class _AttachmentsSectionWrapperState extends ConsumerState<_AttachmentsSectionWrapper> {
+class _AttachmentsSectionWrapperState
+    extends ConsumerState<_AttachmentsSectionWrapper> {
   @override
   Widget build(BuildContext context) {
     final service = ref.read(databaseServiceProvider);

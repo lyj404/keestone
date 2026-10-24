@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
+
 import 'theme/theme_seed.dart';
 import 'tray_service_desktop.dart';
 import 'tray_service_linux.dart';

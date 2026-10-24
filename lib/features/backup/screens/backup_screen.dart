@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/format_utils.dart';
 import '../../../core/widgets/toast.dart';
@@ -150,7 +151,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                                   .map(
                                     (n) => DropdownMenuItem(
                                       value: n,
-                                      child: Text(l10n.backupRetentionCount(n)),
+                                      child: ButtonLabel(
+                                        l10n.backupRetentionCount(n),
+                                      ),
                                     ),
                                   )
                                   .toList(),

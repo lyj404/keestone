@@ -1,4 +1,5 @@
 import 'package:logger/logger.dart';
+
 import 'file_log_output.dart';
 
 /// File-based log output — only captures errors.
@@ -6,9 +7,9 @@ import 'file_log_output.dart';
 final fileLogOutput = FileLogOutput(minLevel: Level.error);
 
 final log = Logger(
-  printer: PrettyPrinter(methodCount: 0, dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart),
-  output: MultiOutput([
-    ConsoleOutput(),
-    fileLogOutput,
-  ]),
+  printer: PrettyPrinter(
+    methodCount: 0,
+    dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
+  ),
+  output: MultiOutput([ConsoleOutput(), fileLogOutput]),
 );

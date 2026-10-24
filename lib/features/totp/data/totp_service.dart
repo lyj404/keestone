@@ -66,10 +66,8 @@ class TotpService {
 
   TotpConfig? loadFromEntry(KdbxEntry entry) {
     final period = _readInt(entry, _kPeriod) ?? 30;
-    final digits =
-        _readInt(entry, _kLength) ?? _readInt(entry, _kSize) ?? 6;
-    final algorithm =
-        _readString(entry, _kAlgorithm) ?? 'HMAC-SHA-1';
+    final digits = _readInt(entry, _kLength) ?? _readInt(entry, _kSize) ?? 6;
+    final algorithm = _readString(entry, _kAlgorithm) ?? 'HMAC-SHA-1';
 
     final fromFields = _fieldSecretSource(entry);
     if (fromFields != null) {
@@ -318,7 +316,9 @@ class TotpService {
 
   TotpConfig? _parseOtpAuthUri(String uriStr) {
     final uri = Uri.tryParse(uriStr);
-    if (uri == null || uri.scheme != 'otpauth' || uri.host != 'totp') return null;
+    if (uri == null || uri.scheme != 'otpauth' || uri.host != 'totp') {
+      return null;
+    }
 
     String? secret;
     int period = 30;

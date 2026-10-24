@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/button_label.dart';
@@ -103,7 +105,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     if (!file.isCloud) {
       if (exists && mounted) {
         _autoOpened = true;
-        unawaited(context.push('/unlock?path=${Uri.encodeComponent(file.path)}'));
+        unawaited(
+          context.push('/unlock?path=${Uri.encodeComponent(file.path)}'),
+        );
       }
       return;
     }
@@ -113,7 +117,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       if (exists) {
         // Local file exists but no sync backend configured — open as local.
         if (mounted) {
-          unawaited(context.push('/unlock?path=${Uri.encodeComponent(file.path)}'));
+          unawaited(
+            context.push('/unlock?path=${Uri.encodeComponent(file.path)}'),
+          );
         }
       } else {
         // Local cache missing and no backend configured — remove stale record.
@@ -168,7 +174,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (_) => _SyncLoadingDialog(message: l10n.syncingCloudDatabase),
+          builder: (_) =>
+              _SyncLoadingDialog(message: l10n.syncingCloudDatabase),
         ),
       );
       var loadingVisible = true;
@@ -295,15 +302,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      AppConstants.appName,
-                      style: textTheme.headlineSmall,
-                    ),
+                    Text(AppConstants.appName, style: textTheme.headlineSmall),
                     const SizedBox(height: 6),
-                    Text(
-                      l10n.appSubtitle,
-                      style: textTheme.bodySmall,
-                    ),
+                    Text(l10n.appSubtitle, style: textTheme.bodySmall),
                     const SizedBox(height: 44),
 
                     // Primary action – clay button
@@ -550,7 +551,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (ctx) => _SyncLoadingDialog(message: l10n.downloadingFromCloud),
+        builder: (ctx) =>
+            _SyncLoadingDialog(message: l10n.downloadingFromCloud),
       ),
     );
     var loadingVisible = true;
@@ -740,7 +742,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(AppLocalizations.of(ctx)!.confirm),
+              child: ButtonLabel(AppLocalizations.of(ctx)!.confirm),
             ),
           ],
         ),
@@ -757,7 +759,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(l10n.cancel),
+              child: ButtonLabel(l10n.cancel),
             ),
           ),
           FilledButton(
@@ -771,7 +773,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(l10n.goToSettings),
+            child: ButtonLabel(l10n.goToSettings),
           ),
         ],
       ),
@@ -788,7 +790,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             onPressed: () => Navigator.of(ctx).pop(),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Text(l10n.cancel),
+              child: ButtonLabel(l10n.cancel),
             ),
           ),
           FilledButton(
@@ -802,7 +804,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: Text(l10n.createNewDatabase),
+            child: ButtonLabel(l10n.createNewDatabase),
           ),
         ],
       ),
@@ -878,7 +880,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               if (hasLocalCache) const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(_CloudOpenAction.cancel),
-                child: Text(l10n.cancel),
+                child: ButtonLabel(l10n.cancel),
               ),
             ],
           ),
@@ -894,8 +896,7 @@ class _CloudTarget {
   final String profileId;
   final String remotePath;
   final Future<RemoteFileInfo?> Function() info;
-  final Future<({String path, RemoteFileInfo info})> Function()
-  downloadToLocal;
+  final Future<({String path, RemoteFileInfo info})> Function() downloadToLocal;
 
   const _CloudTarget({
     required this.profileId,

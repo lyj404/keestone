@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
+
 import '../../../core/utils/logger.dart';
 
 /// Durable, recoverable file replacement used for sensitive database files.
@@ -130,11 +131,11 @@ class AtomicFileStore {
           (name.startsWith('$base.keestone.') ||
               name.startsWith('$base.keevault.')) &&
           name.endsWith('.transaction.json');
-      final isLegacy = name == '$base.keestone.transaction.json' ||
+      final isLegacy =
+          name == '$base.keestone.transaction.json' ||
           name == '$base.keevault.transaction.json';
       if (!isTokenized && !isLegacy) continue;
-      if (newest == null ||
-          entry.path.compareTo(newest.path) > 0) {
+      if (newest == null || entry.path.compareTo(newest.path) > 0) {
         newest = entry;
       }
     }
@@ -161,12 +162,14 @@ class AtomicFileStore {
       final file = File(path);
       if (!await file.exists()) continue;
       final stat = await file.stat();
-      result.add(AtomicRecoveryCandidate(
-        path: path,
-        length: stat.size,
-        modified: stat.modified,
-        expectedSha256: pending.sha256,
-      ));
+      result.add(
+        AtomicRecoveryCandidate(
+          path: path,
+          length: stat.size,
+          modified: stat.modified,
+          expectedSha256: pending.sha256,
+        ),
+      );
     }
     return result;
   }
@@ -245,8 +248,3 @@ class AtomicRecoveryCandidate {
     required this.expectedSha256,
   });
 }
-
-
-
-
-

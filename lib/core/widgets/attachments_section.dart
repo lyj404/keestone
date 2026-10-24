@@ -1,7 +1,9 @@
 import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:kpasslib/kpasslib.dart';
 import 'package:file_picker/file_picker.dart';
+
 import '../theme/app_theme.dart';
 import '../utils/format_utils.dart';
 import '../utils/logger.dart';
@@ -59,15 +61,24 @@ class AttachmentsSection extends StatelessWidget {
               if (i > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+                  child: Divider(
+                    height: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+                  ),
                 ),
               _AttachmentTile(
                 name: attachments[i].key,
                 binaryRef: attachments[i].value,
                 binaries: binaries,
                 readOnly: readOnly,
-                onDownload: () => _downloadAttachment(context, attachments[i].key, attachments[i].value),
-                onDelete: readOnly ? null : () => _deleteAttachment(context, attachments[i].key),
+                onDownload: () => _downloadAttachment(
+                  context,
+                  attachments[i].key,
+                  attachments[i].value,
+                ),
+                onDelete: readOnly
+                    ? null
+                    : () => _deleteAttachment(context, attachments[i].key),
               ),
             ],
           if (!readOnly) ...[
@@ -89,7 +100,10 @@ class AttachmentsSection extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 l10n.noAttachments,
-                style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
         ],
@@ -118,7 +132,11 @@ class AttachmentsSection extends StatelessWidget {
     }
   }
 
-  Future<void> _downloadAttachment(BuildContext context, String name, BinaryReference ref) async {
+  Future<void> _downloadAttachment(
+    BuildContext context,
+    String name,
+    BinaryReference ref,
+  ) async {
     final l10n = AppLocalizations.of(context)!;
     final binaries = service.db?.binaries;
     if (binaries == null) return;
@@ -145,7 +163,10 @@ class AttachmentsSection extends StatelessWidget {
         title: Text(l10n.deleteAttachment),
         content: Text(l10n.deleteAttachmentConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: ButtonLabel(l10n.cancel),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
@@ -194,7 +215,11 @@ class _AttachmentTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(Icons.attach_file_rounded, size: 16, color: colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.attach_file_rounded,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Column(
@@ -204,11 +229,18 @@ class _AttachmentTile extends StatelessWidget {
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: colorScheme.onSurface),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
                 Text(
                   _formatSize(size),
-                  style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -218,7 +250,11 @@ class _AttachmentTile extends StatelessWidget {
               width: 30,
               height: 30,
               child: IconButton(
-                icon: Icon(Icons.download_rounded, size: 15, color: colorScheme.primary),
+                icon: Icon(
+                  Icons.download_rounded,
+                  size: 15,
+                  color: colorScheme.primary,
+                ),
                 padding: EdgeInsets.zero,
                 onPressed: onDownload,
               ),
@@ -228,7 +264,11 @@ class _AttachmentTile extends StatelessWidget {
               width: 30,
               height: 30,
               child: IconButton(
-                icon: Icon(Icons.close_rounded, size: 15, color: colorScheme.error),
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 15,
+                  color: colorScheme.error,
+                ),
                 padding: EdgeInsets.zero,
                 onPressed: onDelete,
               ),

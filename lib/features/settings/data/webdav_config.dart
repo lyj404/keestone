@@ -164,4 +164,3 @@ class WebDavProfilesState {
   factory WebDavProfilesState.decode(String source) =>
       WebDavProfilesState.fromJson(jsonDecode(source) as Map<String, dynamic>);
 }
-

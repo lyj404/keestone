@@ -74,7 +74,8 @@ SecureStore? _defaultBackend;
 /// Backend used when no explicit one is injected. Defaults to the plugin so
 /// tests stay hermetic; [initSecureStoreBackend] swaps in the Linux runner
 /// backend at app startup.
-SecureStore get defaultSecureStore => _defaultBackend ??= const PluginSecureStore();
+SecureStore get defaultSecureStore =>
+    _defaultBackend ??= const PluginSecureStore();
 
 set defaultSecureStore(SecureStore store) => _defaultBackend = store;
 

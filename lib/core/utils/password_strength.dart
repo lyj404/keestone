@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../../l10n/app_localizations.dart';
 
 enum PasswordStrengthLevel {
@@ -61,7 +62,9 @@ PasswordStrengthLevel evaluatePasswordStrength(String password) {
   if (RegExp(r'[a-z]').hasMatch(password)) score++;
   if (RegExp(r'[A-Z]').hasMatch(password)) score++;
   if (RegExp(r'[0-9]').hasMatch(password)) score++;
-  if (RegExp(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>/?~`]').hasMatch(password)) score++;
+  if (RegExp(r'[!@#$%^&*()_+\-=\[\]{};:"\\|,.<>/?~`]').hasMatch(password)) {
+    score++;
+  }
 
   // Bonus for mixing types
   int types = 0;

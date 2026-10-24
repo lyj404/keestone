@@ -78,14 +78,12 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
               duration: const Duration(milliseconds: 150),
               decoration: isDragOver
                   ? BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer.withValues(alpha: 0.4),
+                      color: Theme.of(context).colorScheme.primaryContainer
+                          .withValues(alpha: 0.4),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.5),
+                        color: Theme.of(context).colorScheme.primary
+                            .withValues(alpha: 0.5),
                         width: 1.5,
                       ),
                     )

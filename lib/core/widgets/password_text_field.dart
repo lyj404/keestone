@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+
 import 'password_strength_indicator.dart';
 
 class PasswordTextField extends StatefulWidget {
@@ -114,9 +115,12 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return KeyEventResult.ignored;
+    }
     // Try logical key first, then physical key code as fallback
-    final char = _numpadLogicalMap[event.logicalKey] ??
+    final char =
+        _numpadLogicalMap[event.logicalKey] ??
         _numpadPhysicalMap[event.physicalKey.usbHidUsage];
     if (char == null) return KeyEventResult.ignored;
     final sel = _controller.selection;
@@ -124,7 +128,9 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
     final start = sel.start >= 0 ? sel.start : text.length;
     final end = sel.end >= 0 ? sel.end : text.length;
     _controller.text = text.replaceRange(start, end, char);
-    _controller.selection = TextSelection.collapsed(offset: start + char.length);
+    _controller.selection = TextSelection.collapsed(
+      offset: start + char.length,
+    );
     return KeyEventResult.handled;
   }
 
@@ -147,9 +153,16 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
           decoration: InputDecoration(
             labelText: widget.labelText,
             hintText: widget.hintText,
-            prefixIcon: widget.showPrefixIcon ? const Icon(Icons.lock_outline_rounded) : null,
+            prefixIcon: widget.showPrefixIcon
+                ? const Icon(Icons.lock_outline_rounded)
+                : null,
             suffixIcon: IconButton(
-              icon: Icon(_obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18),
+              icon: Icon(
+                _obscure
+                    ? Icons.visibility_off_rounded
+                    : Icons.visibility_rounded,
+                size: 18,
+              ),
               onPressed: () => setState(() => _obscure = !_obscure),
             ),
           ),

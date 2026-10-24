@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+
 import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/key_file_picker.dart';
 import '../../../core/widgets/password_text_field.dart';
@@ -17,7 +19,8 @@ class CreateDatabaseScreen extends ConsumerStatefulWidget {
   const CreateDatabaseScreen({super.key});
 
   @override
-  ConsumerState<CreateDatabaseScreen> createState() => _CreateDatabaseScreenState();
+  ConsumerState<CreateDatabaseScreen> createState() =>
+      _CreateDatabaseScreenState();
 }
 
 class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
@@ -34,7 +37,9 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      _nameController = TextEditingController(text: AppLocalizations.of(context)!.myDatabase);
+      _nameController = TextEditingController(
+        text: AppLocalizations.of(context)!.myDatabase,
+      );
       _initialized = true;
     }
   }
@@ -91,13 +96,19 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                           borderRadius: BorderRadius.circular(22),
                           boxShadow: [
                             BoxShadow(
-                              color: colorScheme.primary.withValues(alpha: 0.12),
+                              color: colorScheme.primary.withValues(
+                                alpha: 0.12,
+                              ),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
                           ],
                         ),
-                        child: Icon(Icons.add_rounded, size: 34, color: colorScheme.primary),
+                        child: Icon(
+                          Icons.add_rounded,
+                          size: 34,
+                          color: colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(height: 28),
                       TextFormField(
@@ -106,25 +117,36 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                           labelText: l10n.databaseName,
                           prefixIcon: const Icon(Icons.badge_outlined),
                         ),
-                        validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? l10n.pleaseEnterName
+                            : null,
                       ),
                       const SizedBox(height: 14),
                       PasswordTextField(
                         controller: _passwordController,
                         labelText: l10n.masterPassword,
                         showStrengthIndicator: true,
-                        validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterPassword : null,
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? l10n.pleaseEnterPassword
+                            : null,
                       ),
                       const SizedBox(height: 14),
                       PasswordTextField(
                         controller: _confirmController,
                         labelText: l10n.confirmPassword,
-                        validator: (v) => v != _passwordController.text ? l10n.passwordsNotMatch : null,
+                        validator: (v) => v != _passwordController.text
+                            ? l10n.passwordsNotMatch
+                            : null,
                       ),
                       const SizedBox(height: 14),
                       OutlinedButton.icon(
                         onPressed: _pickSaveLocation,
-                        icon: Icon(_savePath != null ? Icons.check_circle_outline_rounded : Icons.save_as_rounded, size: 18),
+                        icon: Icon(
+                          _savePath != null
+                              ? Icons.check_circle_outline_rounded
+                              : Icons.save_as_rounded,
+                          size: 18,
+                        ),
                         label: ButtonLabel(
                           _savePath == null
                               ? l10n.selectSaveLocation
@@ -132,8 +154,12 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                         ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(50),
-                          foregroundColor: _savePath != null ? colorScheme.primary : null,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                          foregroundColor: _savePath != null
+                              ? colorScheme.primary
+                              : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -143,14 +169,19 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                           ? SizedBox(
                               width: 28,
                               height: 28,
-                              child: CircularProgressIndicator(strokeWidth: 2.5, color: colorScheme.primary),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: colorScheme.primary,
+                              ),
                             )
                           : Container(
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(18),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: colorScheme.primary.withValues(alpha: 0.3),
+                                    color: colorScheme.primary.withValues(
+                                      alpha: 0.3,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 6),
                                   ),
@@ -160,7 +191,9 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
                                 onPressed: _savePath != null ? _create : null,
                                 style: FilledButton.styleFrom(
                                   minimumSize: const Size.fromHeight(50),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
                                 ),
                                 child: ButtonLabel(l10n.create),
                               ),
@@ -217,7 +250,9 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
       savePath = await _defaultMobileSavePath();
       if (mounted) setState(() => _savePath = savePath);
     }
-    await ref.read(databaseProvider.notifier).createDatabase(
+    await ref
+        .read(databaseProvider.notifier)
+        .createDatabase(
           _nameController.text,
           _passwordController.text,
           savePath,

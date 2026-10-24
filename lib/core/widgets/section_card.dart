@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../theme/app_theme.dart';
 
 /// A reusable card container with clay styling, used across multiple screens.
@@ -41,7 +42,8 @@ class SectionCard extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: Padding(
-            padding: padding ??
+            padding:
+                padding ??
                 EdgeInsets.symmetric(
                   horizontal: ClayLayout.space16,
                   vertical: dense ? ClayLayout.space12 : ClayLayout.space16,

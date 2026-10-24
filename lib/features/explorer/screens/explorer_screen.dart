@@ -2,13 +2,17 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
+
 import '../../../core/utils/logger.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/widgets/confirm_dialogs.dart';
@@ -132,7 +136,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
                   Navigator.pop(ctx);
                   _syncFromCloud(context);
                 },
-                child: Text(l10n.sync),
+                child: ButtonLabel(l10n.sync),
               ),
               const SizedBox(height: 8),
               OutlinedButton(
@@ -140,12 +144,12 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
                   Navigator.pop(ctx);
                   _showSyncAuditDialog(context, ref);
                 },
-                child: Text(l10n.more),
+                child: ButtonLabel(l10n.more),
               ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text(l10n.ignore),
+                child: ButtonLabel(l10n.ignore),
               ),
             ],
           ),
@@ -696,42 +700,42 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(l10n.syncConflict),
-        content: SizedBox(
-          width: 520,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAuditSection(ctx, 'Local Only', audit.localOnly),
-                const SizedBox(height: 12),
-                _buildAuditSection(ctx, 'Cloud Only', audit.remoteOnly),
-                const SizedBox(height: 12),
-                _buildAuditSection(ctx, 'Modified Both', audit.modifiedBoth),
-              ],
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAuditSection(ctx, 'Local Only', audit.localOnly),
+                  const SizedBox(height: 12),
+                  _buildAuditSection(ctx, 'Cloud Only', audit.remoteOnly),
+                  const SizedBox(height: 12),
+                  _buildAuditSection(ctx, 'Modified Both', audit.modifiedBoth),
+                ],
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: ButtonLabel(l10n.cancel),
+            ),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _syncFromCloud(context);
+              },
+              child: ButtonLabel(l10n.downloadCloudVersion),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _forceUpload(context, ref);
+              },
+              child: ButtonLabel(l10n.overwriteCloud),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: ButtonLabel(l10n.cancel),
-          ),
-          OutlinedButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _syncFromCloud(context);
-            },
-             child: ButtonLabel(l10n.downloadCloudVersion),
-           ),
-           FilledButton(
-             onPressed: () {
-               Navigator.of(ctx).pop();
-               _forceUpload(context, ref);
-             },
-             child: ButtonLabel(l10n.overwriteCloud),
-           ),
-         ],
-       ),
       ),
     );
   }

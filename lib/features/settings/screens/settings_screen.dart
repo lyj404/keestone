@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/password_text_field.dart';
@@ -24,7 +26,6 @@ import '../../sync/data/git_config.dart';
 import '../data/webdav_config.dart';
 import '../providers/settings_provider.dart';
 import '../../sync/providers/sync_provider.dart';
-
 
 part 'settings_layouts.dart';
 
@@ -50,6 +51,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _gitRepoController = TextEditingController();
   final _gitTokenController = TextEditingController();
   final _gitFileController = TextEditingController(text: 'database.kdbx');
+
   /// Gist/snippet id of the loaded profile, shown read-only after the first
   /// sync creates the remote store.
   String? _gitGistId;
@@ -57,6 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String? _selectedProfileId;
   String? _selectedGitProfileId;
   String _gitProvider = 'github';
+
   /// Which sync backend the sync cards currently edit.
   String _syncMode = 'webdav'; // 'webdav' | 'git'
   bool _enabled = false;
@@ -413,12 +416,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
-              DropdownMenuItem(value: CloseBehavior.ask, child: Text(l10n.askEveryTime)),
+              DropdownMenuItem(
+                value: CloseBehavior.ask,
+                child: Text(l10n.askEveryTime),
+              ),
               DropdownMenuItem(
                 value: CloseBehavior.minimizeToTray,
                 child: Text(l10n.minimizeToTray),
               ),
-              DropdownMenuItem(value: CloseBehavior.exit, child: Text(l10n.exitApp)),
+              DropdownMenuItem(
+                value: CloseBehavior.exit,
+                child: Text(l10n.exitApp),
+              ),
             ],
             onChanged: (v) {
               if (v != null) {
@@ -454,7 +463,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Container(
                 width: 38,
                 height: 38,
-                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                decoration: ClayDecoration.iconContainer(
+                  brightness: brightness,
+                ),
                 child: Icon(
                   Icons.palette_outlined,
                   size: 20,
@@ -526,9 +537,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             focusColor: ClayDecoration.dropdownFocusColor,
             underline: const SizedBox.shrink(),
             items: [
-              DropdownMenuItem(value: ThemeMode.system, child: Text(l10n.followSystem)),
-              DropdownMenuItem(value: ThemeMode.light, child: Text(l10n.lightTheme)),
-              DropdownMenuItem(value: ThemeMode.dark, child: Text(l10n.darkTheme)),
+              DropdownMenuItem(
+                value: ThemeMode.system,
+                child: Text(l10n.followSystem),
+              ),
+              DropdownMenuItem(
+                value: ThemeMode.light,
+                child: Text(l10n.lightTheme),
+              ),
+              DropdownMenuItem(
+                value: ThemeMode.dark,
+                child: Text(l10n.darkTheme),
+              ),
             ],
             onChanged: (v) {
               if (v != null) {
@@ -660,7 +680,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Container(
                 width: 38,
                 height: 38,
-                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                decoration: ClayDecoration.iconContainer(
+                  brightness: brightness,
+                ),
                 child: Icon(
                   Icons.lock_open_rounded,
                   size: 20,
@@ -682,7 +704,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               _UnlockMethodChip(
                 icon: Icons.password_rounded,
                 label: l10n.unlockByPassword,
-                selected: ref.watch(unlockMethodProvider) == UnlockMethod.password,
+                selected:
+                    ref.watch(unlockMethodProvider) == UnlockMethod.password,
                 onTap: () => _setUnlockMethod(UnlockMethod.password, l10n),
               ),
               const SizedBox(width: 10),
@@ -739,7 +762,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Container(
                 width: 38,
                 height: 38,
-                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                decoration: ClayDecoration.iconContainer(
+                  brightness: brightness,
+                ),
                 child: Icon(
                   Icons.cloud_upload_rounded,
                   size: 20,
@@ -769,12 +794,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             segments: [
               ButtonSegment(
                 value: 'webdav',
-                label: Text(l10n.syncBackendWebdav),
+                label: ButtonLabel(l10n.syncBackendWebdav),
                 icon: const Icon(Icons.dns_rounded, size: 18),
               ),
               ButtonSegment(
                 value: 'git',
-                label: Text(l10n.syncBackendGit),
+                label: ButtonLabel(l10n.syncBackendGit),
                 icon: const Icon(Icons.merge_rounded, size: 18),
               ),
             ],
@@ -837,11 +862,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 return null;
               }
               if (GitSyncConfig(
-                id: 'validation',
-                name: 'validation',
-                provider: _gitProvider,
-                repoUrl: value,
-              ).parsedRepo == null) {
+                    id: 'validation',
+                    name: 'validation',
+                    provider: _gitProvider,
+                    repoUrl: value,
+                  ).parsedRepo ==
+                  null) {
                 return l10n.webDavInvalidUrl;
               }
               return null;
@@ -869,9 +895,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 4),
           Text(
             l10n.gitTokenHelper,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -880,9 +905,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               labelText: l10n.filename,
               hintText: 'database.kdbx',
             ),
-            validator: (v) => (v == null || v.isEmpty)
-                ? l10n.pleaseEnterName
-                : null,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
           ),
           const SizedBox(height: 12),
           // Save button for the Git profile (independent of the WebDAV one).
@@ -900,15 +924,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   GitSyncConfig _gitConfigFromForm({bool enabled = true}) => GitSyncConfig(
-      id: _selectedGitProfileId ?? _generateGitProfileId(),
-      name: 'Git',
-      provider: _gitProvider,
-      repoUrl: _gitRepoController.text.trim(),
-      gistId: _gitGistId ?? '',
-      token: _gitTokenController.text,
-      remoteFilename: _gitFileController.text.trim(),
-      enabled: enabled,
-    );
+    id: _selectedGitProfileId ?? _generateGitProfileId(),
+    name: 'Git',
+    provider: _gitProvider,
+    repoUrl: _gitRepoController.text.trim(),
+    gistId: _gitGistId ?? '',
+    token: _gitTokenController.text,
+    remoteFilename: _gitFileController.text.trim(),
+    enabled: enabled,
+  );
 
   /// Persists the form, merging it into the stored profile instead of
   /// replacing it: the gistId (and anything else the form does not edit)
@@ -921,13 +945,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final existing = await ref
           .read(gitSettingsServiceProvider)
           .getConfigById(profileId);
-      final config = _gitConfigFromForm(
-        enabled: existing?.enabled ?? true,
-      ).copyWith(
-        id: profileId,
-        // The form has no gistId field; keep the stored one.
-        gistId: existing?.gistId ?? '',
-      );
+      final config = _gitConfigFromForm(enabled: existing?.enabled ?? true)
+          .copyWith(
+            id: profileId,
+            // The form has no gistId field; keep the stored one.
+            gistId: existing?.gistId ?? '',
+          );
       await ref.read(gitSettingsServiceProvider).saveConfig(config);
       if (config.enabled) {
         // The two sync backends are mutually exclusive: enabling Git
@@ -1005,7 +1028,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Container(
                 width: 38,
                 height: 38,
-                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                decoration: ClayDecoration.iconContainer(
+                  brightness: brightness,
+                ),
                 child: Icon(
                   Icons.cloud_upload_rounded,
                   size: 20,
@@ -1085,9 +1110,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           TextFormField(
             controller: _profileNameController,
             decoration: InputDecoration(labelText: l10n.profileName),
-            validator: (v) => (v == null || v.trim().isEmpty)
-                ? l10n.pleaseEnterName
-                : null,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? l10n.pleaseEnterName : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -1128,9 +1152,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 4),
           Text(
             l10n.appPasswordHelper,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: Theme.of(context).colorScheme.outline,
-            ),
+            style: Theme.of(context).textTheme.labelSmall
+                ?.copyWith(color: Theme.of(context).colorScheme.outline),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -1147,9 +1170,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               labelText: l10n.filename,
               hintText: 'database.kdbx',
             ),
-            validator: (v) => (v == null || v.isEmpty)
-                ? l10n.pleaseEnterName
-                : null,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
           ),
         ],
       ),
@@ -1207,7 +1229,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ? l10n.connectionSuccess
                       : (_connectionError ?? l10n.connectionFailed),
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: _connectionOk! ? ClayColors.secondary : ClayColors.error,
+                    color: _connectionOk!
+                        ? ClayColors.secondary
+                        : ClayColors.error,
                   ),
                 ),
               ),
@@ -1221,7 +1245,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+              color: Theme.of(context).colorScheme.primary
+                  .withValues(alpha: 0.3),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -1280,9 +1305,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 Text(
                   l10n.passwordHealthSubtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -1483,8 +1507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       // Path missing on an otherwise reachable server: ask the user whether
       // to re-enter the path or create it now. We intercept before showing an
       // error so the dialog drives the next action.
-      if (errorKey != null &&
-          errorKey.startsWith('path_not_accessible:')) {
+      if (errorKey != null && errorKey.startsWith('path_not_accessible:')) {
         final path = errorKey.substring('path_not_accessible:'.length);
         final choice = await _promptPathNotExist(path);
         if (!mounted) return;

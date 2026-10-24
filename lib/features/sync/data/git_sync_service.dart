@@ -115,9 +115,7 @@ class GitSyncService {
       // snippet when one is found so uploads never stack duplicates; only
       // create when none exists.
       final recoveredId = await _findExistingSnippetId(config, parsed);
-      final id =
-          recoveredId ??
-          await _createSnippet(config, parsed, content);
+      final id = recoveredId ?? await _createSnippet(config, parsed, content);
       final callback = onGistIdCreated;
       if (callback != null) {
         await callback(config.copyWith(gistId: id));
@@ -293,8 +291,7 @@ class GitSyncService {
   /// Fetches the snippet, recovering from a blank or stale (deleted)
   /// gist id by scanning the account for a snippet carrying the database
   /// file. Returns null when no snippet can be located at all.
-  Future<({String id, Map<String, dynamic> data})?>
-  _fetchSnippetWithRecovery(
+  Future<({String id, Map<String, dynamic> data})?> _fetchSnippetWithRecovery(
     GitSyncConfig config,
     _RepoRef parsed,
     String gistId,
@@ -389,7 +386,10 @@ class GitSyncService {
       'Git raw content fetch',
       () => _dio.get<String>(
         rawUrl,
-        options: Options(headers: _headers(config), responseType: ResponseType.plain),
+        options: Options(
+          headers: _headers(config),
+          responseType: ResponseType.plain,
+        ),
       ),
     );
     if (response.statusCode != 200 || response.data == null) {

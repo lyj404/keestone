@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:kpasslib/kpasslib.dart';
+
 import '../../../core/utils/logger.dart';
 import '../data/csv_service.dart';
 import '../data/database_service.dart';
@@ -69,8 +71,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   Future<_SyncTarget?> _resolveProfileById(String? profileId) async {
     final resolved = await resolveSyncBackend(
       (id) => _ref.read(gitSettingsServiceProvider).getConfigById(id),
-      (id) =>
-          _ref.read(webDavSettingsServiceProvider).getConfigById(id),
+      (id) => _ref.read(webDavSettingsServiceProvider).getConfigById(id),
       profileId,
     );
     if (resolved.hasGit) return _SyncTarget.git(resolved.git!);
@@ -154,7 +155,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
           log.w('Failed to update recent files after open: $e');
         }),
       );
-      unawaited(_ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db));
+      unawaited(
+        _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
+      );
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -348,8 +351,10 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
           } catch (diffError) {
             // Fetching the diff is best-effort; a failure here must not
             // escape and leave the sync state machine stuck on "syncing".
-            log.e('Failed to inspect cloud diff after conflict',
-                error: diffError);
+            log.e(
+              'Failed to inspect cloud diff after conflict',
+              error: diffError,
+            );
           }
           _ref.read(syncStateProvider.notifier).state = SyncState.conflict;
         } else {
@@ -495,8 +500,10 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         try {
           _lastSyncAuditReport = await inspectCloudDiff();
         } catch (diffError) {
-          log.e('Failed to inspect cloud diff while linking local database',
-              error: diffError);
+          log.e(
+            'Failed to inspect cloud diff while linking local database',
+            error: diffError,
+          );
         }
         _lastSyncError = SyncException(
           SyncErrorType.conflict,
@@ -556,7 +563,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     final db = await _service.reloadFromBytes(bytes, password: password);
     final savedBytes = await _service.save();
     state = AsyncValue.data(db);
-    unawaited(_ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db));
+    unawaited(
+      _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
+    );
 
     if (_ref.read(openedFromCloudProvider)) {
       await forceUpload(savedBytes: savedBytes);
@@ -668,7 +677,11 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         // password / key file from memory. The local save already succeeded, so
         // data is safe on disk; the upload can resume on next open. We null the
         // target so the background upload below is skipped for this attempt.
-        log.e('Failed to mark pending upload during lock', error: e, stackTrace: st);
+        log.e(
+          'Failed to mark pending upload during lock',
+          error: e,
+          stackTrace: st,
+        );
         target = null;
       }
     }
@@ -816,7 +829,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     await _service.save();
     _service.setLastSyncedRemoteInfo(result.info);
     state = AsyncValue.data(db);
-    unawaited(_ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db));
+    unawaited(
+      _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
+    );
     if (_service.filePath != null) {
       final recentSvc = _ref.read(recentFilesServiceProvider);
       final existing = await recentSvc.getRecentFiles();
@@ -904,12 +919,10 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
 
   Future<RemoteFileInfo?> _remoteFileInfo(_SyncTarget target) =>
       switch (target) {
-        _WebDavTarget(:final config) => _ref
-            .read(syncServiceProvider)
-            .getRemoteFileInfo(config),
-        _GitTarget(:final config) => _ref
-            .read(gitSyncServiceProvider)
-            .getRemoteFileInfo(config),
+        _WebDavTarget(:final config) =>
+          _ref.read(syncServiceProvider).getRemoteFileInfo(config),
+        _GitTarget(:final config) =>
+          _ref.read(gitSyncServiceProvider).getRemoteFileInfo(config),
       };
 
   Future<({Uint8List bytes, RemoteFileInfo info})?> _downloadWithInfo(
@@ -930,16 +943,25 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     _WebDavTarget(:final config) => () async {
       final sync = _ref.read(syncServiceProvider);
       await sync.ensureRemoteDirectory(config);
-      return sync.uploadDatabase(config, bytes, expected: expected, force: force);
+      return sync.uploadDatabase(
+        config,
+        bytes,
+        expected: expected,
+        force: force,
+      );
     }(),
     _GitTarget(:final config) => () async {
       final git = _ref.read(gitSyncServiceProvider);
       // First push creates the gist/snippet; persist the returned id on the
       // profile so later syncs update it instead of creating duplicates.
-      git.onGistIdCreated = (updated) => _ref
-          .read(gitSettingsServiceProvider)
-          .saveConfig(updated);
-      return git.uploadDatabase(config, bytes, expected: expected, force: force);
+      git.onGistIdCreated = (updated) =>
+          _ref.read(gitSettingsServiceProvider).saveConfig(updated);
+      return git.uploadDatabase(
+        config,
+        bytes,
+        expected: expected,
+        force: force,
+      );
     }(),
   };
 }

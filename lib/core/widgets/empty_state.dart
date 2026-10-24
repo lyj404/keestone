@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+
 import '../theme/app_theme.dart';
 
 class EmptyState extends StatelessWidget {
@@ -27,9 +28,8 @@ class EmptyState extends StatelessWidget {
           const SizedBox(height: ClayLayout.space16),
           Text(
             message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),

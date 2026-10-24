@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
 import '../services/biometric_service.dart';
 
 enum UnlockMethod { password, biometric }
@@ -8,9 +9,10 @@ final biometricAvailableProvider = FutureProvider<bool>((ref) async {
   return BiometricService().isBiometricAvailable();
 });
 
-final unlockMethodProvider = StateNotifierProvider<UnlockMethodNotifier, UnlockMethod>((ref) {
-  return UnlockMethodNotifier();
-});
+final unlockMethodProvider =
+    StateNotifierProvider<UnlockMethodNotifier, UnlockMethod>((ref) {
+      return UnlockMethodNotifier();
+    });
 
 class UnlockMethodNotifier extends StateNotifier<UnlockMethod> {
   UnlockMethodNotifier() : super(UnlockMethod.password) {
@@ -23,7 +25,9 @@ class UnlockMethodNotifier extends StateNotifier<UnlockMethod> {
   }
 
   Future<void> setMethod(UnlockMethod method) async {
-    await BiometricService().setBiometricEnabled(method == UnlockMethod.biometric);
+    await BiometricService().setBiometricEnabled(
+      method == UnlockMethod.biometric,
+    );
     state = method;
   }
 }

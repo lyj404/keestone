@@ -16,7 +16,8 @@ class LegacyMigration {
     try {
       if (Platform.isLinux) {
         final home = Platform.environment['HOME'];
-        final xdg = Platform.environment['XDG_DATA_HOME'] ??
+        final xdg =
+            Platform.environment['XDG_DATA_HOME'] ??
             (home != null ? '$home/.local/share' : null);
         if (xdg != null) {
           // Error logs (FileLogOutput).

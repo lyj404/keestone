@@ -163,10 +163,7 @@ class _ThemeSeedSwatch extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
-              border: Border.all(
-                color: borderColor,
-                width: selected ? 2.5 : 1,
-              ),
+              border: Border.all(color: borderColor, width: selected ? 2.5 : 1),
             ),
             child: selected
                 ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)

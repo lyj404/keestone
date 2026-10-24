@@ -89,23 +89,42 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                           color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(9),
                         ),
-                        child: Icon(Icons.add_rounded, size: 16, color: colorScheme.primary),
+                        child: Icon(
+                          Icons.add_rounded,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(width: 10),
-                      Text(l10n.newEntry, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colorScheme.onSurface)),
+                      Text(
+                        l10n.newEntry,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                      ),
                       const Spacer(),
-                      TextButton(onPressed: _save, child: Text(l10n.save)),
+                      TextButton(
+                        onPressed: _save,
+                        child: ButtonLabel(l10n.save),
+                      ),
                       IconButton(
                         onPressed: () => Navigator.pop(context),
                         icon: const Icon(Icons.close_rounded, size: 20),
-                        style: IconButton.styleFrom(minimumSize: const Size(32, 32)),
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(32, 32),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            Divider(height: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.15)),
+            Divider(
+              height: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: 0.15),
+            ),
             // Form
             Expanded(
               child: ListView(
@@ -115,12 +134,18 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                   TextField(
                     controller: _titleCtrl,
                     autofocus: true,
-                    decoration: InputDecoration(labelText: l10n.title, prefixIcon: const Icon(Icons.title_rounded)),
+                    decoration: InputDecoration(
+                      labelText: l10n.title,
+                      prefixIcon: const Icon(Icons.title_rounded),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _usernameCtrl,
-                    decoration: InputDecoration(labelText: l10n.username, prefixIcon: const Icon(Icons.person_outline_rounded)),
+                    decoration: InputDecoration(
+                      labelText: l10n.username,
+                      prefixIcon: const Icon(Icons.person_outline_rounded),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -133,14 +158,21 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded, size: 18),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              size: 18,
+                            ),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                           IconButton(
                             icon: const Icon(Icons.casino_outlined, size: 18),
                             tooltip: l10n.generatePassword,
                             onPressed: () async {
-                              final password = await showPasswordGeneratorDialog(context);
+                              final password =
+                                  await showPasswordGeneratorDialog(context);
                               if (password != null) {
                                 _passwordCtrl.text = password;
                               }
@@ -153,13 +185,19 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _urlCtrl,
-                    decoration: InputDecoration(labelText: l10n.url, prefixIcon: const Icon(Icons.link_rounded)),
+                    decoration: InputDecoration(
+                      labelText: l10n.url,
+                      prefixIcon: const Icon(Icons.link_rounded),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _notesCtrl,
                     maxLines: 3,
-                    decoration: InputDecoration(labelText: l10n.notes, prefixIcon: const Icon(Icons.note_outlined)),
+                    decoration: InputDecoration(
+                      labelText: l10n.notes,
+                      prefixIcon: const Icon(Icons.note_outlined),
+                    ),
                   ),
                   // Tags
                   if (_tags.isNotEmpty) ...[
@@ -170,10 +208,14 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                       children: [
                         for (int i = 0; i < _tags.length; i++)
                           Chip(
-                            label: Text(_tags[i], style: TextStyle(fontSize: 13)),
+                            label: Text(
+                              _tags[i],
+                              style: TextStyle(fontSize: 13),
+                            ),
                             visualDensity: VisualDensity.compact,
                             onDeleted: () => setState(() => _tags.removeAt(i)),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ),
                       ],
                     ),
@@ -185,7 +227,9 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                       onPressed: () => _showAddTagDialog(l10n),
                       icon: const Icon(Icons.add_rounded, size: 16),
                       label: ButtonLabel(l10n.addTag),
-                      style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                   ),
                   if (_entry != null) ...[
@@ -242,7 +286,9 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    for (final tag in existingTags.where((t) => !_tags.contains(t)))
+                    for (final tag in existingTags.where(
+                      (t) => !_tags.contains(t),
+                    ))
                       ActionChip(
                         label: Text(tag, style: TextStyle(fontSize: 12)),
                         visualDensity: VisualDensity.compact,
@@ -258,7 +304,10 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: ButtonLabel(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: ButtonLabel(l10n.cancel),
+            ),
             FilledButton(
               onPressed: () {
                 final tag = ctrl.text.trim();
@@ -278,8 +327,13 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
   void _save() {
     if (_entry == null) return;
     _entry!.fields['Title'] = KdbxTextField.fromText(text: _titleCtrl.text);
-    _entry!.fields['UserName'] = KdbxTextField.fromText(text: _usernameCtrl.text);
-    _entry!.fields['Password'] = KdbxTextField.fromText(text: _passwordCtrl.text, protected: true);
+    _entry!.fields['UserName'] = KdbxTextField.fromText(
+      text: _usernameCtrl.text,
+    );
+    _entry!.fields['Password'] = KdbxTextField.fromText(
+      text: _passwordCtrl.text,
+      protected: true,
+    );
     _entry!.fields['URL'] = KdbxTextField.fromText(text: _urlCtrl.text);
     _entry!.fields['Notes'] = KdbxTextField.fromText(text: _notesCtrl.text);
     _entry!.tags = _tags.isEmpty ? null : List.from(_tags);
@@ -344,16 +398,29 @@ class _AddGroupSheetState extends ConsumerState<_AddGroupSheet> {
                         color: colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(9),
                       ),
-                      child: Icon(Icons.create_new_folder_rounded, size: 16, color: colorScheme.primary),
+                      child: Icon(
+                        Icons.create_new_folder_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(width: 10),
-                    Text(l10n.newGroup, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: colorScheme.onSurface)),
+                    Text(
+                      l10n.newGroup,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
                     const Spacer(),
-                    TextButton(onPressed: _save, child: Text(l10n.save)),
+                    TextButton(onPressed: _save, child: ButtonLabel(l10n.save)),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close_rounded, size: 20),
-                      style: IconButton.styleFrom(minimumSize: const Size(32, 32)),
+                      style: IconButton.styleFrom(
+                        minimumSize: const Size(32, 32),
+                      ),
                     ),
                   ],
                 ),

@@ -1,6 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/widgets/button_label.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
@@ -31,9 +33,7 @@ class _GroupEditScreenState extends ConsumerState<GroupEditScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.newGroup),
-        actions: [
-          TextButton(onPressed: _save, child: Text(l10n.save)),
-        ],
+        actions: [TextButton(onPressed: _save, child: ButtonLabel(l10n.save))],
       ),
       body: Center(
         child: ConstrainedBox(
@@ -67,7 +67,11 @@ class _GroupEditScreenState extends ConsumerState<GroupEditScreen> {
                         ),
                       ],
                     ),
-                    child: Icon(Icons.create_new_folder_rounded, size: 34, color: colorScheme.primary),
+                    child: Icon(
+                      Icons.create_new_folder_rounded,
+                      size: 34,
+                      color: colorScheme.primary,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   TextFormField(
@@ -77,7 +81,8 @@ class _GroupEditScreenState extends ConsumerState<GroupEditScreen> {
                       labelText: l10n.groupName,
                       prefixIcon: const Icon(Icons.folder_outlined),
                     ),
-                    validator: (v) => (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
+                    validator: (v) =>
+                        (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
                   ),
                 ],
               ),
