@@ -45,7 +45,7 @@ class ThemeSeedNotifier extends StateNotifier<ThemeSeed> {
   static const _storage = SecureStorageHelper();
   static const _key = 'theme_seed';
 
-  ThemeSeedNotifier() : super(ThemeSeed.indigo) {
+  ThemeSeedNotifier() : super(ThemeSeed.slate) {
     _load();
   }
 

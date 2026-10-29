@@ -11,7 +11,7 @@ TrayServiceBase createTrayServiceDesktop() => TrayServiceDesktop();
 class TrayServiceDesktop implements TrayServiceBase {
   final SystemTray _tray = SystemTray();
   bool _initialized = false;
-  ThemeSeed _seed = ThemeSeed.indigo;
+  ThemeSeed _seed = ThemeSeed.slate;
 
   @override
   Future<void> init({

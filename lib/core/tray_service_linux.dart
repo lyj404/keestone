@@ -11,7 +11,7 @@ TrayServiceBase createTrayServiceLinux() => TrayServiceLinux();
 class TrayServiceLinux implements TrayServiceBase {
   StatusNotifierItemClient? _client;
   bool _initialized = false;
-  ThemeSeed _seed = ThemeSeed.indigo;
+  ThemeSeed _seed = ThemeSeed.slate;
 
   @override
   Future<void> init({

@@ -128,10 +128,10 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
 
-    test('default seed is indigo', () {
+    test('default seed is slate', () {
       debugDefaultTargetPlatformOverride = TargetPlatform.android;
       final scheme = AppTheme.light(locale: const Locale('en')).colorScheme;
-      expect(scheme.primary, ThemeSeed.indigo.colors.primary);
+      expect(scheme.primary, ThemeSeed.slate.colors.primary);
     });
 
     test('seed changes light and dark primary', () {
@@ -169,9 +169,9 @@ void main() {
       expect(indigo.colorScheme.outline, rose.colorScheme.outline);
     });
 
-    test('ThemeSeed.fromId falls back to indigo', () {
-      expect(ThemeSeed.fromId(null), ThemeSeed.indigo);
-      expect(ThemeSeed.fromId('nope'), ThemeSeed.indigo);
+  test('ThemeSeed.fromId falls back to slate', () {
+    expect(ThemeSeed.fromId(null), ThemeSeed.slate);
+    expect(ThemeSeed.fromId('nope'), ThemeSeed.slate);
       expect(ThemeSeed.fromId('sky'), ThemeSeed.sky);
     });
   });

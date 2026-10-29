@@ -345,12 +345,12 @@ class AppTheme {
     }
   }
 
-  static ThemeData light({Locale? locale, ThemeSeed seed = ThemeSeed.indigo}) {
+  static ThemeData light({Locale? locale, ThemeSeed seed = ThemeSeed.slate}) {
     final fontFamily = resolveFontFamily(locale);
     return _lightCache[(seed, fontFamily)] ??= _buildLight(fontFamily, seed);
   }
 
-  static ThemeData dark({Locale? locale, ThemeSeed seed = ThemeSeed.indigo}) {
+  static ThemeData dark({Locale? locale, ThemeSeed seed = ThemeSeed.slate}) {
     final fontFamily = resolveFontFamily(locale);
     return _darkCache[(seed, fontFamily)] ??= _buildDark(fontFamily, seed);
   }

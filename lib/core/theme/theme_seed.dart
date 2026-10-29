@@ -118,6 +118,6 @@ enum ThemeSeed {
     for (final seed in ThemeSeed.values) {
       if (seed.name == id) return seed;
     }
-    return ThemeSeed.indigo;
+    return ThemeSeed.slate;
   }
 }
