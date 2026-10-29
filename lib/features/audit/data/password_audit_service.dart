@@ -102,27 +102,45 @@ class PasswordAuditService {
   final Duration expiringWindow;
 
   /// Scans [entries]. [groupPathOf] resolves the display path for an entry.
+  /// The heavy analysis runs on plain [PasswordAuditEntryData] snapshots so
+  /// callers can execute [analyzeData] inside a background isolate.
   PasswordAuditReport analyze(
     List<KdbxEntry> entries, {
     required String Function(KdbxEntry entry) groupPathOf,
     DateTime? now,
+  }) => analyzeData(
+    [
+      for (final entry in entries)
+        PasswordAuditEntryData(
+          uuid: entry.uuid.string,
+          title: entry.fields['Title']?.text ?? '',
+          groupPath: groupPathOf(entry),
+          password: entry.fields['Password']?.text ?? '',
+          expires: entry.times.expires,
+          expiry: entry.times.expiry.time,
+        ),
+    ],
+    now: now,
+  );
+
+  /// Scans pre-extracted entry snapshots. Only plain Dart values are touched,
+  /// making this safe to run inside [Isolate.run].
+  PasswordAuditReport analyzeData(
+    List<PasswordAuditEntryData> entries, {
+    DateTime? now,
   }) {
     final clock = now ?? DateTime.now();
-    final reuseBuckets = <String, List<KdbxEntry>>{};
-    final passwordOf = <String, String>{};
-
+    final reuseBuckets = <String, List<PasswordAuditEntryData>>{};
     for (final entry in entries) {
-      final password = entry.fields['Password']?.text ?? '';
-      passwordOf[entry.uuid.string] = password;
-      if (password.isEmpty) continue;
-      reuseBuckets.putIfAbsent(password, () => []).add(entry);
+      if (entry.password.isEmpty) continue;
+      reuseBuckets.putIfAbsent(entry.password, () => []).add(entry);
     }
 
     final reuseCount = <String, int>{};
     for (final bucket in reuseBuckets.values) {
       if (bucket.length < 2) continue;
       for (final e in bucket) {
-        reuseCount[e.uuid.string] = bucket.length;
+        reuseCount[e.uuid] = bucket.length;
       }
     }
 
@@ -130,10 +148,10 @@ class PasswordAuditService {
     var healthy = 0;
 
     for (final entry in entries) {
-      final uuid = entry.uuid.string;
-      final title = entry.fields['Title']?.text ?? '';
-      final path = groupPathOf(entry);
-      final password = passwordOf[uuid] ?? '';
+      final uuid = entry.uuid;
+      final title = entry.title;
+      final path = entry.groupPath;
+      final password = entry.password;
       final entryFindings = <PasswordAuditFinding>[];
 
       PasswordAuditFinding finding(
@@ -174,18 +192,14 @@ class PasswordAuditService {
         }
       }
 
-      if (entry.times.expires) {
-        final expiry = entry.times.expiry.time;
-        if (expiry != null) {
-          if (expiry.isBefore(clock)) {
-            entryFindings.add(
-              finding(PasswordIssueKind.expired, expiry: expiry),
-            );
-          } else if (expiry.isBefore(clock.add(expiringWindow))) {
-            entryFindings.add(
-              finding(PasswordIssueKind.expiringSoon, expiry: expiry),
-            );
-          }
+      if (entry.expires && entry.expiry != null) {
+        final expiry = entry.expiry!;
+        if (expiry.isBefore(clock)) {
+          entryFindings.add(finding(PasswordIssueKind.expired, expiry: expiry));
+        } else if (expiry.isBefore(clock.add(expiringWindow))) {
+          entryFindings.add(
+            finding(PasswordIssueKind.expiringSoon, expiry: expiry),
+          );
         }
       }
 
@@ -209,4 +223,23 @@ class PasswordAuditService {
       scannedAt: clock,
     );
   }
+}
+
+/// Sendable snapshot of one vault entry for audit analysis.
+class PasswordAuditEntryData {
+  final String uuid;
+  final String title;
+  final String groupPath;
+  final String password;
+  final bool expires;
+  final DateTime? expiry;
+
+  const PasswordAuditEntryData({
+    required this.uuid,
+    required this.title,
+    required this.groupPath,
+    required this.password,
+    required this.expires,
+    this.expiry,
+  });
 }

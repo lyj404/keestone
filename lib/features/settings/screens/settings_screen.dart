@@ -123,17 +123,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _SettingsCategorySpec(
               icon: Icons.tune_rounded,
               label: l10n.settingsCategoryGeneral,
-              content: _pane(context, _generalCards()),
+              content: Consumer(
+                builder: (context, cardsRef, _) =>
+                    _pane(context, _generalCards(cardsRef)),
+              ),
             ),
             _SettingsCategorySpec(
               icon: Icons.palette_outlined,
               label: l10n.settingsCategoryAppearance,
-              content: _pane(context, _appearanceCards()),
+              content: Consumer(
+                builder: (context, cardsRef, _) =>
+                    _pane(context, _appearanceCards(cardsRef)),
+              ),
             ),
             _SettingsCategorySpec(
               icon: Icons.shield_outlined,
               label: l10n.settingsCategorySecurity,
-              content: _pane(context, _securityCards()),
+              content: Consumer(
+                builder: (context, cardsRef, _) =>
+                    _pane(context, _securityCards(cardsRef)),
+              ),
             ),
             _SettingsCategorySpec(
               icon: Icons.cloud_upload_rounded,
@@ -151,11 +160,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
 
     final children = [
-      ..._withGaps(_generalCards()),
+      _categoryCards(_generalCards),
       const SizedBox(height: 16),
-      ..._withGaps(_appearanceCards()),
+      _categoryCards(_appearanceCards),
       const SizedBox(height: 16),
-      ..._withGaps(_securityCards()),
+      _categoryCards(_securityCards),
       const SizedBox(height: 16),
       // _syncCards() already wraps its content in Form(_formKey).
       ..._withGaps(_syncCards()),
@@ -204,21 +213,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ],
   ];
 
+  /// Rebuild boundary for one settings category: provider watches inside the
+  /// card builders attach to this Consumer instead of the screen's build, so
+  /// toggling one setting no longer rebuilds every category.
+  Widget _categoryCards(List<Widget> Function(WidgetRef ref) buildCards) =>
+      Consumer(
+        builder: (context, ref, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: _withGaps(buildCards(ref)),
+        ),
+      );
+
   // --- General -----------------------------------------------------------
 
-  List<Widget> _generalCards() {
+  List<Widget> _generalCards(WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
     return [
-      _languageCard(brightness, l10n),
-      _autoSaveCard(brightness, l10n),
-      _expirationReminderCard(brightness, l10n),
+      _languageCard(brightness, l10n, ref),
+      _autoSaveCard(brightness, l10n, ref),
+      _expirationReminderCard(brightness, l10n, ref),
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
-        _closeBehaviorCard(brightness, l10n),
+        _closeBehaviorCard(brightness, l10n, ref),
     ];
   }
 
-  Widget _languageCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _languageCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     final currentLocale = ref.watch(localeProvider);
     return _SectionCard(
       brightness: brightness,
@@ -269,7 +293,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _autoSaveCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _autoSaveCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return _SectionCard(
       brightness: brightness,
@@ -315,7 +343,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _expirationReminderCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _expirationReminderCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return _SectionCard(
       brightness: brightness,
       child: Row(
@@ -384,7 +416,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _closeBehaviorCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _closeBehaviorCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return _SectionCard(
       brightness: brightness,
       child: Row(
@@ -442,15 +478,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // --- Appearance --------------------------------------------------------
 
-  List<Widget> _appearanceCards() {
+  List<Widget> _appearanceCards(WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     return [
-      _themeCard(Theme.of(context).brightness, l10n),
-      _themeSeedCard(Theme.of(context).brightness, l10n),
+      _themeCard(Theme.of(context).brightness, l10n, ref),
+      _themeSeedCard(Theme.of(context).brightness, l10n, ref),
     ];
   }
 
-  Widget _themeSeedCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _themeSeedCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     final currentSeed = ref.watch(themeSeedProvider);
     final colorScheme = Theme.of(context).colorScheme;
     return _SectionCard(
@@ -500,7 +540,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _themeCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _themeCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     final currentThemeMode = ref.watch(themeModeProvider);
     return _SectionCard(
       brightness: brightness,
@@ -563,19 +607,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // --- Security ----------------------------------------------------------
 
-  List<Widget> _securityCards() {
+  List<Widget> _securityCards(WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final brightness = Theme.of(context).brightness;
     return [
-      _autoLockCard(brightness, l10n),
-      _privacyCard(brightness, l10n),
+      _autoLockCard(brightness, l10n, ref),
+      _privacyCard(brightness, l10n, ref),
       if ((Platform.isAndroid || Platform.isIOS) &&
           ref.watch(biometricAvailableProvider).value == true)
-        _unlockMethodCard(brightness, l10n),
+        _unlockMethodCard(brightness, l10n, ref),
     ];
   }
 
-  Widget _autoLockCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _autoLockCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return _SectionCard(
       brightness: brightness,
       child: Row(
@@ -629,7 +677,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _privacyCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _privacyCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return _SectionCard(
       brightness: brightness,
       child: Column(
@@ -669,7 +721,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _unlockMethodCard(Brightness brightness, AppLocalizations l10n) {
+  Widget _unlockMethodCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return _SectionCard(
       brightness: brightness,
       child: Column(

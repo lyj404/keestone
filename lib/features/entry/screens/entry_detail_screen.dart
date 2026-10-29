@@ -38,28 +38,21 @@ class EntryDetailScreen extends ConsumerWidget {
     final service = ref.read(databaseServiceProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // Look up entry: try the specified group first (faster, matches explorer list),
-    // fall back to full cache scan.
+    // Look up entry: the uuid cache is O(1); fall back to a group-path scan
+    // only when the entry is not indexed yet.
     KdbxEntry? entry;
     if (entryUuid.isNotEmpty) {
       final uuid = KdbxUuid.fromString(entryUuid);
-      final group = service.findGroupByPath(groupPath);
-      log.d(
-        '[EntryDetail] lookup uuid=$entryUuid groupPath="$groupPath" group=${group?.name} groupEntries=${group?.entries.length}',
-      );
-      entry = group?.entries.where((e) => e.uuid == uuid).firstOrNull;
+      entry = service.findEntryByUuid(uuid);
       if (entry == null) {
-        log.w(
-          '[EntryDetail] not in group, trying findEntryByUuid cacheSize=${service.allEntries.length}',
+        final group = service.findGroupByPath(groupPath);
+        log.d(
+          '[EntryDetail] lookup uuid=$entryUuid groupPath="$groupPath" group=${group?.name} groupEntries=${group?.entries.length}',
         );
-        entry = service.findEntryByUuid(uuid);
+        entry = group?.entries.where((e) => e.uuid == uuid).firstOrNull;
         if (entry == null) {
           log.e(
             '[EntryDetail] ENTRY NOT FOUND uuid=$entryUuid groupPath="$groupPath" dbOpen=${service.isOpen}',
-          );
-        } else {
-          log.i(
-            '[EntryDetail] found via cache, entry parent=${entry.parent?.name}',
           );
         }
       }

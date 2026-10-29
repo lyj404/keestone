@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +23,7 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
   static const _service = PasswordAuditService();
   PasswordIssueKind? _filter;
   PasswordAuditReport? _report;
+  bool _scanning = false;
 
   @override
   void initState() {
@@ -28,24 +31,39 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _rescan());
   }
 
-  void _rescan() {
+  Future<void> _rescan() async {
+    if (_scanning) return;
     final db = ref.read(databaseProvider).value;
     final service = ref.read(databaseServiceProvider);
     if (db == null || !service.isOpen) {
       setState(() => _report = null);
       return;
     }
-    final entries = service.allEntries
-        .where((e) => !service.isInRecycleBin(e))
-        .toList();
-    final report = _service.analyze(
-      entries,
-      groupPathOf: (e) {
-        final parent = e.parent;
-        return parent == null ? '' : service.getGroupPath(parent);
-      },
-    );
-    setState(() => _report = report);
+    setState(() => _scanning = true);
+    try {
+      final data = [
+        for (final e in service.allEntries)
+          if (!service.isInRecycleBin(e))
+            PasswordAuditEntryData(
+              uuid: e.uuid.string,
+              title: e.fields['Title']?.text ?? '',
+              groupPath: e.parent == null
+                  ? ''
+                  : service.getGroupPath(e.parent!),
+              password: e.fields['Password']?.text ?? '',
+              expires: e.times.expires,
+              expiry: e.times.expiry.time,
+            ),
+      ];
+      final report = await Isolate.run(() => _service.analyzeData(data));
+      if (!mounted) return;
+      setState(() {
+        _scanning = false;
+        _report = report;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _scanning = false);
+    }
   }
 
   @override
@@ -53,16 +71,31 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final report = _report;
+    final findings = report == null
+        ? const <PasswordAuditFinding>[]
+        : _visibleFindings(report).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.passwordHealth),
         actions: [
-          IconButton(
-            tooltip: l10n.auditRescan,
-            onPressed: _rescan,
-            icon: const Icon(Icons.refresh_rounded, size: 20),
-          ),
+          if (_scanning)
+            const Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else
+            IconButton(
+              tooltip: l10n.auditRescan,
+              onPressed: _rescan,
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+            ),
         ],
       ),
       body: report == null
@@ -73,35 +106,51 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
           : Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                  children: [
-                    _SummaryCard(report: report, l10n: l10n),
-                    const SizedBox(height: 8),
-                    _FilterBar(
-                      report: report,
-                      selected: _filter,
-                      l10n: l10n,
-                      onSelected: (k) => setState(() => _filter = k),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      sliver: SliverToBoxAdapter(
+                        child: _SummaryCard(report: report, l10n: l10n),
+                      ),
                     ),
-                    const SizedBox(height: 8),
+                    SliverPadding(
+                      padding: const EdgeInsets.only(top: 8),
+                      sliver: SliverToBoxAdapter(
+                        child: _FilterBar(
+                          report: report,
+                          selected: _filter,
+                          l10n: l10n,
+                          onSelected: (k) => setState(() => _filter = k),
+                        ),
+                      ),
+                    ),
                     if (report.findings.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 32),
-                        child: EmptyState(
-                          icon: Icons.verified_rounded,
-                          message: l10n.auditNoIssues,
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 32),
+                          child: EmptyState(
+                            icon: Icons.verified_rounded,
+                            message: l10n.auditNoIssues,
+                          ),
                         ),
                       )
-                    else ...[
-                      for (final finding in _visibleFindings(report))
-                        _FindingCard(
-                          finding: finding,
-                          l10n: l10n,
-                          colorScheme: colorScheme,
-                          onTap: () => _openEntry(finding),
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        sliver: SliverList.builder(
+                          itemCount: findings.length,
+                          itemBuilder: (context, index) {
+                            final finding = findings[index];
+                            return _FindingCard(
+                              finding: finding,
+                              l10n: l10n,
+                              colorScheme: colorScheme,
+                              onTap: () => _openEntry(finding),
+                            );
+                          },
                         ),
-                    ],
+                      ),
                   ],
                 ),
               ),

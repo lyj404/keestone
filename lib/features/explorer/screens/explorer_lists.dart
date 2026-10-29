@@ -427,9 +427,14 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
   bool _searching = false;
   final _searchController = TextEditingController();
   String _query = '';
+  Timer? _debounce;
+  List<KdbxEntry>? _totpCache;
+  int _cacheRevision = -1;
+  String _cacheQuery = '';
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -438,6 +443,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
     setState(() {
       _searching = !_searching;
       if (!_searching) {
+        _debounce?.cancel();
         _searchController.clear();
         _query = '';
       }
@@ -498,27 +504,35 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(explorerListRevisionProvider);
+    final revision = ref.watch(explorerListRevisionProvider);
     final service = ref.read(databaseServiceProvider);
-    final allEntries = service.allEntries;
     final l10n = AppLocalizations.of(context)!;
 
     // Filter with the cheap hasTotp check only; full config parsing is
-    // deferred to each _TotpListTile so per-build cost stays low.
-    final totpEntries = <KdbxEntry>[];
-    for (final entry in allEntries) {
-      if (service.isInRecycleBin(entry)) continue;
-      if (!widget.totpService.hasTotp(entry)) continue;
-      if (_query.isNotEmpty) {
-        final title = entry.fields['Title']?.text ?? '';
-        final username = entry.fields['UserName']?.text ?? '';
-        final q = _query.toLowerCase();
-        if (!title.toLowerCase().contains(q) &&
-            !username.toLowerCase().contains(q)) {
-          continue;
+    // deferred to each _TotpListTile so per-build cost stays low. The result
+    // is memoized per (revision, query) so keystrokes and unrelated rebuilds
+    // do not rescan the vault.
+    final List<KdbxEntry> totpEntries;
+    final cached = _totpCache;
+    if (cached != null && _cacheRevision == revision && _cacheQuery == _query) {
+      totpEntries = cached;
+    } else {
+      final q = _query.toLowerCase();
+      final filtered = <KdbxEntry>[];
+      for (final entry in service.allEntries) {
+        if (service.isInRecycleBin(entry)) continue;
+        if (!widget.totpService.hasTotp(entry)) continue;
+        if (q.isNotEmpty) {
+          final title = entry.fields['Title']?.text.toLowerCase() ?? '';
+          final username = entry.fields['UserName']?.text.toLowerCase() ?? '';
+          if (!title.contains(q) && !username.contains(q)) continue;
         }
+        filtered.add(entry);
       }
-      totpEntries.add(entry);
+      _totpCache = filtered;
+      _cacheRevision = revision;
+      _cacheQuery = _query;
+      totpEntries = filtered;
     }
 
     return Column(
@@ -529,13 +543,19 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
             child: TextField(
               controller: _searchController,
               autofocus: true,
-              onChanged: (v) => setState(() => _query = v),
+              onChanged: (v) {
+                _debounce?.cancel();
+                _debounce = Timer(const Duration(milliseconds: 200), () {
+                  if (mounted) setState(() => _query = v);
+                });
+              },
               decoration: InputDecoration(
                 hintText: l10n.search,
                 prefixIcon: const Icon(Icons.search, size: 20),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.close, size: 20),
                   onPressed: () {
+                    _debounce?.cancel();
                     _searchController.clear();
                     setState(() {
                       _query = '';

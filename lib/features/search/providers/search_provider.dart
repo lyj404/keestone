@@ -18,7 +18,6 @@ final searchResultsProvider = Provider<List<SearchResult>>((ref) {
   // mutation (add/edit/delete) so results stay in sync with current state.
   ref.watch(databaseProvider);
   ref.watch(explorerListRevisionProvider);
-  if (query.isEmpty) return [];
   final service = ref.read(databaseServiceProvider);
   if (query.isEmpty) {
     // No active search: drop the lowercase index. It duplicates the text of

@@ -29,6 +29,7 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
   final Set<KdbxGroup> _expanded = {};
   final Set<KdbxGroup> _dragOverGroups = {};
   KdbxDatabase? _lastDb;
+  List<_GroupItem>? _visibleCache;
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +41,10 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
       _lastDb = db;
       _expanded.clear();
       _expandAll(db.root);
+      _visibleCache = null;
     }
 
-    final visible = _flattenVisible(db.root);
+    final visible = _visibleCache ??= _flattenVisible(db.root);
 
     return ListView.builder(
       addAutomaticKeepAlives: false,
@@ -207,6 +209,7 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
                           } else {
                             _expanded.add(group);
                           }
+                          _visibleCache = null;
                         }),
                         child: Icon(
                           isExpanded

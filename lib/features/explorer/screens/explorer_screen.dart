@@ -183,9 +183,12 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
     // A local database can also be uploaded once WebDAV is configured and
     // enabled, by linking it to the active profile. The sync-up affordance is
     // therefore shown whenever cloud is already active OR a profile is ready.
-    final webDavConfig = ref.watch(webDavConfigProvider).asData?.value;
-    final canSyncToCloud =
-        isOpenedFromCloud || (webDavConfig?.enabled ?? false);
+    // Only the enabled flag matters here; watching the whole config would
+    // rebuild the explorer whenever any WebDAV profile field changes.
+    final webDavEnabled = ref.watch(
+      webDavConfigProvider.select((v) => v.asData?.value?.enabled ?? false),
+    );
+    final canSyncToCloud = isOpenedFromCloud || webDavEnabled;
     final isDirty = ref.watch(isDirtyProvider);
     final isSaving = ref.watch(isSavingProvider);
     final selectedEntry = ref.watch(selectedEntryProvider);
