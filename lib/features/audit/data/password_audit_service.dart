@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:kpasslib/kpasslib.dart';
 
 import '../../../core/utils/password_strength.dart';
@@ -243,3 +245,12 @@ class PasswordAuditEntryData {
     this.expiry,
   });
 }
+
+/// Runs the audit analysis on a background isolate. The [Isolate.run] closure
+/// is created at top level on purpose: a closure made inside a widget state or
+/// service method would drag its whole lexical context (widget refs, live
+/// Kdbx graphs, service futures) into the isolate message and fail with
+/// "object is unsendable". Here the context only holds the sendable snapshots.
+Future<PasswordAuditReport> analyzePasswordAuditSnapshots(
+  List<PasswordAuditEntryData> snapshots,
+) => Isolate.run(() => const PasswordAuditService().analyzeData(snapshots));

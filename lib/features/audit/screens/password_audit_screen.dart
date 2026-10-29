@@ -1,9 +1,8 @@
-import 'dart:isolate';
-
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/utils/logger.dart';
 import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/section_card.dart';
@@ -20,7 +19,6 @@ class PasswordAuditScreen extends ConsumerStatefulWidget {
 }
 
 class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
-  static const _service = PasswordAuditService();
   PasswordIssueKind? _filter;
   PasswordAuditReport? _report;
   bool _scanning = false;
@@ -55,13 +53,14 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
               expiry: e.times.expiry.time,
             ),
       ];
-      final report = await Isolate.run(() => _service.analyzeData(data));
+      final report = await analyzePasswordAuditSnapshots(data);
       if (!mounted) return;
       setState(() {
         _scanning = false;
         _report = report;
       });
-    } catch (_) {
+    } catch (e, st) {
+      log.e('Password audit scan failed', error: e, stackTrace: st);
       if (mounted) setState(() => _scanning = false);
     }
   }
