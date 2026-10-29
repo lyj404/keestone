@@ -94,7 +94,8 @@ void main() {
       expect(scheme.onSurfaceVariant, ClayColors.onSurfaceVariantDark);
       expect(
         scheme.onPrimary,
-        ThemeSeed.indigo.colors.onPrimaryDark,
+        // The shipped default seed; onPrimary pairs with its dark label color.
+        ThemeSeed.slate.colors.onPrimaryDark,
       );
     });
 
