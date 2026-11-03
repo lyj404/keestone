@@ -247,32 +247,38 @@ class _WideLayout extends StatelessWidget {
                               : null,
                         ),
                       ] else ...[
-                        _SortButton(
-                          sortOption: sortOption,
-                          onSortChanged: onSortChanged,
-                        ),
-                        _ToolbarButton(
-                          icon: Icons.add_rounded,
-                          tooltip: l10n.addEntry,
-                          onPressed: currentGroup != null ? onAddEntry : null,
-                        ),
-                        _ToolbarButton(
-                          icon: Icons.create_new_folder_rounded,
-                          tooltip: l10n.addGroup,
-                          onPressed: currentGroup != null ? onAddGroup : null,
-                        ),
-                        if (isOpenedFromCloud)
-                          _ToolbarButton(
-                            icon: Icons.sync_rounded,
-                            tooltip: l10n.syncFromCloud,
-                            onPressed: () => _syncFromCloud(context),
-                          ),
                         _ToolbarButton(
                           icon: Icons.save_outlined,
                           tooltip: l10n.save,
                           onPressed: onSave,
                           showDot: isDirty,
                           isLoading: isSaving,
+                        ),
+                        if (canSyncToCloud)
+                          _ToolbarButton(
+                            icon: Icons.cloud_upload_outlined,
+                            tooltip: l10n.syncToCloud,
+                            onPressed: () => _syncToCloud(context),
+                          ),
+                        _ToolbarButton(
+                          icon: Icons.file_upload_outlined,
+                          tooltip: l10n.importCsv,
+                          onPressed: onImportCsv,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.file_download_outlined,
+                          tooltip: l10n.exportCsv,
+                          onPressed: onExportCsv,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.save_as_outlined,
+                          tooltip: l10n.exportKdbx,
+                          onPressed: onExportKdbx,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.health_and_safety_outlined,
+                          tooltip: l10n.passwordHealth,
+                          onPressed: () => context.push('/audit'),
                         ),
                         PopupMenuButton<String>(
                           tooltip: l10n.more,
@@ -283,18 +289,8 @@ class _WideLayout extends StatelessWidget {
                           ),
                           onSelected: (v) {
                             switch (v) {
-                              case 'sync_up':
-                                _syncToCloud(context);
                               case 'sync_down':
                                 _syncFromCloud(context);
-                              case 'import_csv':
-                                onImportCsv?.call();
-                              case 'export_csv':
-                                onExportCsv?.call();
-                              case 'export_kdbx':
-                                onExportKdbx?.call();
-                              case 'password_audit':
-                                context.push('/audit');
                               case 'settings':
                                 context.push('/settings');
                               case 'about':
@@ -306,18 +302,6 @@ class _WideLayout extends StatelessWidget {
                             }
                           },
                           itemBuilder: (_) => [
-                            if (canSyncToCloud)
-                              PopupMenuItem(
-                                value: 'sync_up',
-                                child: ListTile(
-                                  leading: const Icon(
-                                    Icons.cloud_upload_rounded,
-                                  ),
-                                  title: Text(l10n.syncToCloud),
-                                  dense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
                             if (isOpenedFromCloud)
                               PopupMenuItem(
                                 value: 'sync_down',
@@ -330,47 +314,6 @@ class _WideLayout extends StatelessWidget {
                                   contentPadding: EdgeInsets.zero,
                                 ),
                               ),
-                            const PopupMenuDivider(),
-                            PopupMenuItem(
-                              value: 'import_csv',
-                              child: ListTile(
-                                leading: const Icon(Icons.file_upload_rounded),
-                                title: Text(l10n.importCsv),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'export_csv',
-                              child: ListTile(
-                                leading: const Icon(
-                                  Icons.file_download_rounded,
-                                ),
-                                title: Text(l10n.exportCsv),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'export_kdbx',
-                              child: ListTile(
-                                leading: const Icon(Icons.save_as_rounded),
-                                title: Text(l10n.exportKdbx),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'password_audit',
-                              child: ListTile(
-                                leading: const Icon(
-                                  Icons.health_and_safety_outlined,
-                                ),
-                                title: Text(l10n.passwordHealth),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
                             const PopupMenuDivider(),
                             PopupMenuItem(
                               value: 'settings',
@@ -386,15 +329,6 @@ class _WideLayout extends StatelessWidget {
                               child: ListTile(
                                 leading: const Icon(Icons.info_outline_rounded),
                                 title: Text(l10n.about),
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                            ),
-                            PopupMenuItem(
-                              value: 'batch_select',
-                              child: ListTile(
-                                leading: const Icon(Icons.checklist_rounded),
-                                title: Text(l10n.batchSelect),
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
                               ),
@@ -420,9 +354,72 @@ class _WideLayout extends StatelessWidget {
                 ),
                 if (isOpenedFromCloud && isCloudOfflineMode)
                   _CloudOfflineBanner(reason: cloudOfflineReason),
-                // Tag filter bar
-                _TagFilterBar(),
-                // Entry list
+                Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: isMultiSelect
+                            ? Text(l10n.selectedCount(selectedEntries.length))
+                            : _BreadcrumbBar(breadcrumbs: breadcrumbs),
+                      ),
+                      if (isMultiSelect) ...[
+                        _ToolbarButton(
+                          icon: Icons.select_all_rounded,
+                          tooltip: l10n.selectAll,
+                          onPressed: onSelectAll,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.delete_outline_rounded,
+                          tooltip: l10n.batchDelete,
+                          onPressed: selectedEntries.isNotEmpty
+                              ? onBatchDelete
+                              : null,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.drive_file_move_rounded,
+                          tooltip: l10n.batchMove,
+                          onPressed: selectedEntries.isNotEmpty
+                              ? onBatchMove
+                              : null,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.label_outline_rounded,
+                          tooltip: l10n.batchTag,
+                          onPressed: selectedEntries.isNotEmpty
+                              ? onBatchTag
+                              : null,
+                        ),
+                      ] else ...[
+                        _SortButton(
+                          sortOption: sortOption,
+                          onSortChanged: onSortChanged,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.add_rounded,
+                          tooltip: l10n.addEntry,
+                          onPressed: currentGroup != null ? onAddEntry : null,
+                        ),
+                        _ToolbarButton(
+                          icon: Icons.create_new_folder_rounded,
+                          tooltip: l10n.addGroup,
+                          onPressed: currentGroup != null ? onAddGroup : null,
+                        ),
+                      ],
+                      _ToolbarButton(
+                        icon: isMultiSelect
+                            ? Icons.close_rounded
+                            : Icons.checklist_rounded,
+                        tooltip: isMultiSelect ? l10n.cancel : l10n.batchSelect,
+                        onPressed: isMultiSelect
+                            ? onCancelSelection
+                            : onToggleMultiSelect,
+                      ),
+                    ],
+                  ),
+                ),
+                const _TagFilterBar(),
                 Expanded(
                   child: _EntryListBody(
                     entries: entries,
@@ -438,11 +435,62 @@ class _WideLayout extends StatelessWidget {
                     isDraggable: !isRecycleBin,
                   ),
                 ),
-                // Shortcut hint bar (hidden on mobile where keyboard shortcuts are unavailable)
-                if (selectedEntry != null &&
-                    !Platform.isAndroid &&
-                    !Platform.isIOS)
+                if (selectedEntry != null)
                   _ShortcutHintBar(entry: selectedEntry!),
+                if (isOpenedFromCloud)
+                  Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        top: BorderSide(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.35,
+                          ),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.cloud_outlined,
+                          size: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          l10n.cloudDatabase,
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        if (isDirty) ...[
+                          const SizedBox(width: 12),
+                          Text(
+                            l10n.unsavedChanges,
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+                        if (isOpenedFromCloud)
+                          TextButton.icon(
+                            onPressed: () => _syncToCloud(context),
+                            icon: const Icon(
+                              Icons.cloud_upload_outlined,
+                              size: 17,
+                            ),
+                            label: Text(l10n.syncToCloud),
+                          ),
+                        if (isDirty)
+                          TextButton.icon(
+                            onPressed: onSave,
+                            icon: const Icon(Icons.save_outlined, size: 17),
+                            label: Text(l10n.save),
+                          ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
