@@ -12,7 +12,7 @@ Pod::Spec.new do |s|
   s.author           = { 'lyj404' => 'lyj404@proton.me' }
   s.source           = { :path => '.' }
 
-  s.osx.deployment_target = '10.14'
+  s.osx.deployment_target = '12.0'
   s.swift_version         = '5.0'
 
   # Build the universal Rust dynamic library before the pod is integrated.

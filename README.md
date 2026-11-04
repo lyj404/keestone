@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/lyj404/keestone)](https://github.com/lyj404/keestone/releases)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Android-lightgrey)]()
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-lightgrey)]()
 
 A cross-platform KeePass-compatible password manager built with Flutter.
 
@@ -32,7 +32,12 @@ Download from [Releases](https://github.com/lyj404/keestone/releases).
 | Windows         | Download `KeeStone-*-windows-x64.zip`, extract and run `keestone.exe`  |
 | Debian / Ubuntu | `sudo apt install ./keestone_*_amd64.deb`                              |
 | Arch Linux      | `yay -S keestone-bin` or `paru -S keestone-bin`                        |
+| macOS           | Download the matching `KeeStone-*-macos-arm64.zip` or `KeeStone-*-macos-x64.zip`, extract the app, and move it to Applications |
 | Android         | Install the APK for your arch (`arm64-v8a` / `armeabi-v7a` / `x86_64`). APKs are not distributed via any app store — download them only from GitHub Releases |
+
+macOS builds are provided for Apple Silicon (arm64) and Intel (x64). The author
+does not own an Apple device, so macOS builds have limited device testing and
+may contain bugs. Bug reports and feedback are welcome via [GitHub Issues](https://github.com/lyj404/keestone/issues).
 
 ## Build from Source
 
@@ -42,7 +47,7 @@ Requires Flutter / Dart SDK >= 3.13.0
 git clone https://github.com/lyj404/keestone
 cd keestone
 flutter pub get
-flutter run -d windows    # or linux / android
+flutter run -d windows    # or linux / macos / android
 ```
 
 ## Tech Stack

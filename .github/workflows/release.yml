@@ -256,6 +256,76 @@ jobs:
             KeeStone-*-linux-${{ matrix.arch }}.tar.gz
             keestone_*_${{ matrix.deb_arch }}.deb
 
+  build-macos:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: macos-15-intel
+            rust_target: x86_64-apple-darwin
+            binary_arch: x86_64
+          - arch: arm64
+            runner: macos-15
+            rust_target: aarch64-apple-darwin
+            binary_arch: arm64
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@1.90.0
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            native/kreepto-rust/target
+          key: macos-${{ matrix.arch }}-cargo-${{ hashFiles('native/kreepto-rust/Cargo.toml') }}
+          restore-keys: macos-${{ matrix.arch }}-cargo-
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+
+      - run: flutter pub get
+
+      - name: Build universal kreepto library
+        run: sh macos/scripts/build_kreepto_macos.sh
+
+      - name: Verify native library architectures
+        run: |
+          lipo -info macos/build/macos/libkreepto.dylib
+          lipo macos/build/macos/libkreepto.dylib -verify_arch arm64 x86_64
+
+      - name: Build Flutter macOS app
+        run: flutter build macos --release
+
+      - name: Verify app architecture and package ZIP
+        run: |
+          app="build/macos/Build/Products/Release/keestone.app"
+          executable="$app/Contents/MacOS/keestone"
+          dylib="$app/Contents/Frameworks/libkreepto.dylib"
+          test -d "$app"
+          test -f "$executable"
+          test -f "$dylib"
+          lipo "$executable" -verify_arch "${{ matrix.binary_arch }}"
+          lipo "$dylib" -verify_arch "${{ matrix.binary_arch }}"
+          tag="${GITHUB_REF_NAME//\//-}"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "KeeStone-${tag}-macos-${{ matrix.arch }}.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: KeeStone-*-macos-${{ matrix.arch }}.zip
+
   build-android:
     runs-on: ubuntu-latest
     steps:
@@ -362,7 +432,7 @@ jobs:
           path: KeeStone-*.apk
 
   release:
-    needs: [build-windows, build-linux, build-android]
+    needs: [build-windows, build-linux, build-macos, build-android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -397,6 +467,7 @@ jobs:
             KeeStone-*.zip
             KeeStone-*.tar.gz
             KeeStone-*.apk
+            KeeStone-*-macos-*.zip
             KeeStone-*-setup.exe
             keestone_*.deb
             SHA256SUMS
