@@ -9,6 +9,7 @@ final currentGroupPathProvider = StateProvider<String>((ref) => '');
 final currentGroupProvider = Provider<KdbxGroup?>((ref) {
   final db = ref.watch(databaseProvider).value;
   if (db == null) return null;
+  ref.watch(explorerListRevisionProvider);
   final path = ref.watch(currentGroupPathProvider);
   final service = ref.read(databaseServiceProvider);
   return service.findGroupByPath(path) ?? db.root;

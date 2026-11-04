@@ -16,6 +16,7 @@ import '../../../core/widgets/section_card.dart';
 import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../database/data/database_service.dart';
 import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
 import '../../totp/data/totp_service.dart';
@@ -76,6 +77,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
   DateTime? _expiryDate;
   TotpConfig? _totpConfig;
   final _totpService = TotpService();
+  DatabaseService? _databaseService;
 
   @override
   void initState() {
@@ -136,6 +138,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
 
   void _loadEntry() {
     final service = ref.read(databaseServiceProvider);
+    _databaseService = service;
 
     // Look up by UUID if provided
     if (widget.entryUuid != null && widget.entryUuid!.isNotEmpty) {
@@ -201,12 +204,14 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     // If creating a new entry was abandoned, permanently discard the draft
     // (do not soft-delete into recycle bin).
     if (!_saved && !_isEdit && _entry != null) {
-      final service = ref.read(databaseServiceProvider);
-      service.discardItem(_entry!);
-      if (!_wasDirtyBeforeCreate) {
-        service.markClean();
+      final service = _databaseService;
+      if (service != null) {
+        service.discardItem(_entry!);
+        if (!_wasDirtyBeforeCreate) {
+          service.markClean();
+        }
+        service.rebuildEntryCache();
       }
-      service.rebuildEntryCache();
     }
     _titleCtrl.dispose();
     _usernameCtrl.dispose();

@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:kpasslib/kpasslib.dart';
 
@@ -11,6 +12,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/widgets/entry_list_tile.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../database/data/database_service.dart';
 import '../../database/providers/database_provider.dart';
 import '../providers/search_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
@@ -27,6 +29,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _keyboardFocusNode = FocusNode();
   Timer? _debounce;
   KdbxEntry? _selectedEntry;
+  late final StateController<String> _searchQueryController;
+  late final DatabaseService _databaseService;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchQueryController = ref.read(searchQueryProvider.notifier);
+    _databaseService = ref.read(databaseServiceProvider);
+  }
 
   @override
   void dispose() {
@@ -34,11 +45,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     // computation) does not survive the page for the next visit. Also drop
     // the lowercase search index: it duplicates the text of every entry and
     // is only worth keeping while a search session is active.
-    ref.read(searchQueryProvider.notifier).state = '';
-    ref.read(databaseServiceProvider).clearSearchIndex();
+    _debounce?.cancel();
+    _searchQueryController.state = '';
+    _databaseService.clearSearchIndex();
     _searchCtrl.dispose();
     _keyboardFocusNode.dispose();
-    _debounce?.cancel();
     super.dispose();
   }
 

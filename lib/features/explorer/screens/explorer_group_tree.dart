@@ -30,9 +30,11 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
   final Set<KdbxGroup> _dragOverGroups = {};
   KdbxDatabase? _lastDb;
   List<_GroupItem>? _visibleCache;
+  int _cacheRevision = -1;
 
   @override
   Widget build(BuildContext context) {
+    final revision = ref.watch(explorerListRevisionProvider);
     final db = ref.watch(databaseProvider).value;
     if (db == null) return const SizedBox.shrink();
 
@@ -41,6 +43,10 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
       _lastDb = db;
       _expanded.clear();
       _expandAll(db.root);
+      _visibleCache = null;
+    }
+    if (_cacheRevision != revision) {
+      _cacheRevision = revision;
       _visibleCache = null;
     }
 
