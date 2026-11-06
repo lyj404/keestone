@@ -459,10 +459,39 @@ jobs:
       - name: Generate checksums
         run: find . -maxdepth 1 -type f \( -name 'KeeStone-*' -o -name 'keestone_*' \) -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
 
+      - name: Generate download instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          version="${tag#v}"
+          base="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$tag"
+          for asset in \
+            "KeeStone-$tag-windows-x64.zip" "KeeStone-$tag-windows-arm64.zip" \
+            "KeeStone-$tag-windows-x64-setup.exe" "KeeStone-$tag-windows-arm64-setup.exe" \
+            "keestone_${version}_amd64.deb" "keestone_${version}_arm64.deb" \
+            "KeeStone-$tag-macos-arm64.zip" "KeeStone-$tag-macos-x64.zip" \
+            "KeeStone-$tag-android-arm64-v8a.apk" "KeeStone-$tag-android-armeabi-v7a.apk" \
+            "KeeStone-$tag-android-x86_64.apk"; do
+            test -f "$asset" || { echo "Missing release asset: $asset" >&2; exit 1; }
+          done
+          cat > release-notes.md <<EOF
+          ## Downloads / 下载
+
+          | Platform / 平台 | Download / 下载 |
+          | --- | --- |
+          | ![Windows](https://img.shields.io/badge/Windows-555?style=flat-square&logo=windows&logoColor=white) | ZIP / 压缩包: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)]($base/KeeStone-$tag-windows-x64.zip) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)]($base/KeeStone-$tag-windows-arm64.zip)<br>Installer / 安装程序: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)]($base/KeeStone-$tag-windows-x64-setup.exe) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)]($base/KeeStone-$tag-windows-arm64-setup.exe) |
+          | ![Debian / Ubuntu](https://img.shields.io/badge/Debian%20%2F%20Ubuntu-555?style=flat-square&logo=debian&logoColor=white) | [![amd64](https://img.shields.io/badge/amd64-555?style=flat-square)]($base/keestone_${version}_amd64.deb) [![arm64](https://img.shields.io/badge/arm64-555?style=flat-square)]($base/keestone_${version}_arm64.deb) |
+          | ![Arch Linux](https://img.shields.io/badge/Arch%20Linux-555?style=flat-square&logo=archlinux&logoColor=white) | \`yay -S keestone-bin\` or / 或 \`paru -S keestone-bin\` |
+          | ![macOS](https://img.shields.io/badge/macOS-555?style=flat-square&logo=apple&logoColor=white) | [![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-555?style=flat-square)]($base/KeeStone-$tag-macos-arm64.zip) [![Intel](https://img.shields.io/badge/Intel-555?style=flat-square)]($base/KeeStone-$tag-macos-x64.zip) |
+          | ![Android](https://img.shields.io/badge/Android-555?style=flat-square&logo=android&logoColor=white) | [![arm64-v8a](https://img.shields.io/badge/arm64--v8a-555?style=flat-square)]($base/KeeStone-$tag-android-arm64-v8a.apk) [![armeabi-v7a](https://img.shields.io/badge/armeabi--v7a-555?style=flat-square)]($base/KeeStone-$tag-android-armeabi-v7a.apk) [![x86_64](https://img.shields.io/badge/x86__64-555?style=flat-square)]($base/KeeStone-$tag-android-x86_64.apk) |
+          EOF
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
+          body_path: release-notes.md
           files: |
             KeeStone-*.zip
             KeeStone-*.tar.gz

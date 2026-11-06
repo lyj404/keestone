@@ -24,15 +24,14 @@
 
 ## 安装
 
-从 [Releases](https://github.com/lyj404/keestone/releases) 下载对应平台安装包。
-
-| 平台            | 说明                                                           |
-| --------------- | -------------------------------------------------------------- |
-| Windows         | 下载 `KeeStone-*-windows-x64.zip`，解压运行 `keestone.exe`     |
-| Debian / Ubuntu | `sudo apt install ./keestone_*_amd64.deb`                      |
-| Arch Linux      | `yay -S keestone-bin` 或 `paru -S keestone-bin`                |
-| macOS           | 下载对应架构的 `KeeStone-*-macos-arm64.zip` 或 `KeeStone-*-macos-x64.zip`，解压后将 App 移至「应用程序」目录 |
-| Android         | 下载对应架构 APK（`arm64-v8a` / `armeabi-v7a` / `x86_64`）安装。APK 未上架任何应用商店，请仅从 GitHub Releases 下载 |
+下载适用于对应平台的 0.9.6 版本：
+| 平台 | 下载 |
+| --- | --- |
+| ![Windows](https://img.shields.io/badge/Windows-555?style=flat-square&logo=windows&logoColor=white) | 压缩包: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-windows-x64.zip) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-windows-arm64.zip)<br>安装程序: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-windows-x64-setup.exe) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-windows-arm64-setup.exe) |
+| ![Debian%20%2F%20Ubuntu](https://img.shields.io/badge/Debian%20%2F%20Ubuntu-555?style=flat-square&logo=debian&logoColor=white) | [![amd64](https://img.shields.io/badge/amd64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/keestone_0.9.6_amd64.deb) [![arm64](https://img.shields.io/badge/arm64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/keestone_0.9.6_arm64.deb) |
+| ![Arch Linux](https://img.shields.io/badge/Arch%20Linux-555?style=flat-square&logo=archlinux&logoColor=white) | `yay -S keestone-bin` 或 `paru -S keestone-bin` |
+| ![macOS](https://img.shields.io/badge/macOS-555?style=flat-square&logo=apple&logoColor=white) | [![Apple%20Silicon](https://img.shields.io/badge/Apple%20Silicon-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-macos-arm64.zip) [![Intel](https://img.shields.io/badge/Intel-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-macos-x64.zip) |
+| ![Android](https://img.shields.io/badge/Android-555?style=flat-square&logo=android&logoColor=white) | [![arm64--v8a](https://img.shields.io/badge/arm64--v8a-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-android-arm64-v8a.apk) [![armeabi--v7a](https://img.shields.io/badge/armeabi--v7a-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-android-armeabi-v7a.apk) [![x86__64](https://img.shields.io/badge/x86__64-555?style=flat-square)](https://github.com/lyj404/keestone/releases/download/v0.9.6/KeeStone-v0.9.6-android-x86_64.apk) |
 
 macOS 提供 Apple Silicon（arm64）和 Intel（x64）版本。作者本人没有 Apple
 设备，macOS 版本缺少真实设备测试，因此可能存在问题。欢迎通过
