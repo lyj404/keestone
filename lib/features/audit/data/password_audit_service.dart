@@ -110,20 +110,17 @@ class PasswordAuditService {
     List<KdbxEntry> entries, {
     required String Function(KdbxEntry entry) groupPathOf,
     DateTime? now,
-  }) => analyzeData(
-    [
-      for (final entry in entries)
-        PasswordAuditEntryData(
-          uuid: entry.uuid.string,
-          title: entry.fields['Title']?.text ?? '',
-          groupPath: groupPathOf(entry),
-          password: entry.fields['Password']?.text ?? '',
-          expires: entry.times.expires,
-          expiry: entry.times.expiry.time,
-        ),
-    ],
-    now: now,
-  );
+  }) => analyzeData([
+    for (final entry in entries)
+      PasswordAuditEntryData(
+        uuid: entry.uuid.string,
+        title: entry.fields['Title']?.text ?? '',
+        groupPath: groupPathOf(entry),
+        password: entry.fields['Password']?.text ?? '',
+        expires: entry.times.expires,
+        expiry: entry.times.expiry.time,
+      ),
+  ], now: now);
 
   /// Scans pre-extracted entry snapshots. Only plain Dart values are touched,
   /// making this safe to run inside [Isolate.run].
@@ -131,6 +128,12 @@ class PasswordAuditService {
     List<PasswordAuditEntryData> entries, {
     DateTime? now,
   }) {
+    entries = entries
+        .where(
+          (entry) =>
+              entry.groupPath != 'TOTP' && !entry.groupPath.startsWith('TOTP/'),
+        )
+        .toList();
     final clock = now ?? DateTime.now();
     final reuseBuckets = <String, List<PasswordAuditEntryData>>{};
     for (final entry in entries) {

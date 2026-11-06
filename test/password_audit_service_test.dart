@@ -9,9 +9,7 @@ KdbxEntry _entry({
   bool expires = false,
 }) {
   final db = KdbxDatabase.create(
-    credentials: KdbxCredentials(
-      password: ProtectedData.fromString('master'),
-    ),
+    credentials: KdbxCredentials(password: ProtectedData.fromString('master')),
     name: 'audit-test',
   );
   final entry = db.createEntry(parent: db.root);
@@ -26,11 +24,38 @@ KdbxEntry _entry({
 }
 
 void main() {
-  const service = PasswordAuditService(
-    expiringWindow: Duration(days: 7),
-  );
+  const service = PasswordAuditService(expiringWindow: Duration(days: 7));
   final now = DateTime(2026, 1, 15);
   String pathOf(KdbxEntry e) => e.parent?.name ?? '';
+
+  test('excludes the root TOTP group and its descendants from all results', () {
+    PasswordAuditEntryData entry(String id, String path, String password) =>
+        PasswordAuditEntryData(
+          uuid: id,
+          title: id,
+          groupPath: path,
+          password: password,
+          expires: true,
+          expiry: now.subtract(const Duration(days: 1)),
+        );
+
+    final report = service.analyzeData([
+      entry('totp', 'TOTP', 'shared'),
+      entry('nested', 'TOTP/nested', ''),
+      entry('normal', 'Accounts', 'shared'),
+      entry('similar', 'TOTP accounts', ''),
+      entry('other', 'Accounts/TOTP', ''),
+    ], now: now);
+
+    expect(report.totalEntries, 3);
+    expect(report.countOf(PasswordIssueKind.reused), 0);
+    expect(report.countOf(PasswordIssueKind.expired), 3);
+    expect(report.findings.map((f) => f.entryUuid).toSet(), {
+      'normal',
+      'similar',
+      'other',
+    });
+  });
 
   test('flags empty, weak, and fair passwords', () {
     final report = service.analyze(
@@ -108,11 +133,7 @@ void main() {
   });
 
   test('health score is 100 for empty vault and clean entries', () {
-    final empty = service.analyze(
-      [],
-      groupPathOf: pathOf,
-      now: now,
-    );
+    final empty = service.analyze([], groupPathOf: pathOf, now: now);
     expect(empty.healthScore, 100);
 
     final clean = service.analyze(
@@ -140,10 +161,7 @@ void main() {
       now: now,
     );
 
-    expect(
-      report.findings.first.kind,
-      PasswordIssueKind.empty,
-    );
+    expect(report.findings.first.kind, PasswordIssueKind.empty);
     expect(
       report.findings.map((f) => f.kind).toList(),
       containsAllInOrder([
