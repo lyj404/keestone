@@ -1,7 +1,10 @@
+// The window_manager 0.6 compatibility bridge preserves existing window behavior.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_manager/legacy.dart';
 
 import 'logger.dart';
 

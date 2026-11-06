@@ -1160,6 +1160,24 @@ abstract class AppLocalizations {
   /// **'回收站'**
   String get recycleBin;
 
+  /// No description provided for @emptyRecycleBin.
+  ///
+  /// In zh, this message translates to:
+  /// **'清空回收站'**
+  String get emptyRecycleBin;
+
+  /// No description provided for @emptyRecycleBinConfirm.
+  ///
+  /// In zh, this message translates to:
+  /// **'确定永久删除回收站中的所有条目和分组？此操作无法撤销。'**
+  String get emptyRecycleBinConfirm;
+
+  /// No description provided for @recycleBinEmptied.
+  ///
+  /// In zh, this message translates to:
+  /// **'回收站已清空'**
+  String get recycleBinEmptied;
+
   /// No description provided for @noPasswordCannotReload.
   ///
   /// In zh, this message translates to:

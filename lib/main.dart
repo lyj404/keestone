@@ -1,9 +1,12 @@
 import 'dart:async';
+// The window_manager 0.6 compatibility bridge preserves existing window behavior.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:window_manager/window_manager.dart';
+import 'package:window_manager/legacy.dart';
 
 import 'app.dart';
 import 'core/crypto/crypto_service.dart';

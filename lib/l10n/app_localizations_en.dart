@@ -566,6 +566,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get recycleBin => 'Recycle Bin';
 
   @override
+  String get emptyRecycleBin => 'Empty Recycle Bin';
+
+  @override
+  String get emptyRecycleBinConfirm =>
+      'Permanently delete all entries and groups in the recycle bin? This cannot be undone.';
+
+  @override
+  String get recycleBinEmptied => 'Recycle bin emptied';
+
+  @override
   String get noPasswordCannotReload => 'No password available, cannot reload';
 
   @override

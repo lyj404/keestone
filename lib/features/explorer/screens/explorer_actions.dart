@@ -716,8 +716,6 @@ extension _ExplorerActions on _ExplorerBodyState {
       final savePath = await FilePicker.saveFile(
         dialogTitle: l10n.exportCsv,
         fileName: 'passwords.csv',
-        type: FileType.custom,
-        allowedExtensions: ['csv'],
         bytes: csvBytes,
       );
       if (savePath == null || !context.mounted) return;
@@ -735,12 +733,9 @@ extension _ExplorerActions on _ExplorerBodyState {
 
     try {
       final bytes = await dbService.saveToBytes();
-      final isMobile = Platform.isAndroid || Platform.isIOS;
       final savePath = await FilePicker.saveFile(
         dialogTitle: l10n.exportKdbx,
         fileName: 'database.kdbx',
-        type: isMobile ? FileType.any : FileType.custom,
-        allowedExtensions: isMobile ? null : ['kdbx'],
         bytes: bytes,
       );
       if (savePath == null || !context.mounted) return;

@@ -168,7 +168,7 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               onTap: () => widget.onGroupTap(group),
-              onSecondaryTapUp: canDelete
+              onSecondaryTapUp: canDelete || isTrashGroup
                   ? (details) {
                       if (group == widget.currentGroup) {
                         _showContextMenu(
@@ -301,7 +301,9 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
     KdbxGroup group,
   ) {
     final l10n = AppLocalizations.of(context)!;
-    final isTrashGroup = group.icon == KdbxIcon.trashBin;
+    final isTrashGroup = ref
+        .read(databaseServiceProvider)
+        .isRecycleBinGroup(group);
     final overlay =
         Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (overlay == null) return;
@@ -316,6 +318,17 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
       context: context,
       position: position,
       items: [
+        if (isTrashGroup)
+          PopupMenuItem(
+            value: 'empty_recycle_bin',
+            enabled: group.entries.isNotEmpty || group.groups.isNotEmpty,
+            child: ListTile(
+              leading: const Icon(Icons.delete_forever_rounded),
+              title: Text(l10n.emptyRecycleBin),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
         if (!widget.isRecycleBin && !isTrashGroup) ...[
           PopupMenuItem(
             value: 'rename',
@@ -359,6 +372,7 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
       ],
     ).then((value) {
       if (!context.mounted) return;
+      if (value == 'empty_recycle_bin') _emptyRecycleBin(group);
       if (value == 'rename') widget.onRenameGroup(group);
       if (value == 'delete') widget.onDeleteGroup(group);
       if (value == 'restore') widget.onRestoreGroup?.call(group);
@@ -366,6 +380,21 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
         widget.onPermanentDeleteGroup?.call(group);
       }
     });
+  }
+
+  Future<void> _emptyRecycleBin(KdbxGroup group) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showPermanentDeleteDialog(
+      context: context,
+      title: l10n.emptyRecycleBin,
+      message: l10n.emptyRecycleBinConfirm,
+    );
+    if (!confirmed || !mounted) return;
+    final service = ref.read(databaseServiceProvider);
+    service.emptyRecycleBin(group);
+    ref.read(activeEntryProvider.notifier).state = null;
+    refreshExplorerLists(ref);
+    if (context.mounted) showToast(context, l10n.recycleBinEmptied);
   }
 }
 

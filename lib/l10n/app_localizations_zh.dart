@@ -557,6 +557,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get recycleBin => '回收站';
 
   @override
+  String get emptyRecycleBin => '清空回收站';
+
+  @override
+  String get emptyRecycleBinConfirm => '确定永久删除回收站中的所有条目和分组？此操作无法撤销。';
+
+  @override
+  String get recycleBinEmptied => '回收站已清空';
+
+  @override
   String get noPasswordCannotReload => '无密码信息，无法重新加载';
 
   @override

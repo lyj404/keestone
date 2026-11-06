@@ -223,8 +223,6 @@ class _CreateDatabaseScreenState extends ConsumerState<CreateDatabaseScreen> {
     final result = await FilePicker.saveFile(
       dialogTitle: l10n.saveDatabase,
       fileName: '${_nameController.text}${AppConstants.kdbxExtension}',
-      type: FileType.custom,
-      allowedExtensions: ['kdbx'],
       // Path-pick only: the real database is written later by DatabaseService.
       bytes: Uint8List(0),
     );

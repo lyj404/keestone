@@ -37,6 +37,9 @@ class _SettingsWideLayoutState extends State<_SettingsWideLayout> {
         Container(
           width: 220,
           decoration: BoxDecoration(
+            color: brightness == Brightness.dark
+                ? ClayColors.surfaceCardDark
+                : ClayColors.surfaceCardLight,
             boxShadow: ClayDecoration.sidebarShadow(brightness),
           ),
           child: ListView(

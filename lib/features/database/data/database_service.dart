@@ -621,6 +621,17 @@ class DatabaseService {
     _allEntriesCache = null;
   }
 
+  /// Permanently removes the contents of the recycle bin, keeping the bin.
+  void emptyRecycleBin(KdbxGroup group) {
+    if (_db == null || !isRecycleBinGroup(group)) return;
+    final items = <KdbxItem>[...group.entries, ...group.groups];
+    if (items.isEmpty) return;
+    for (final item in items) {
+      discardItem(item);
+    }
+    markDirty();
+  }
+
   /// Restores an item from the recycle bin to its previous parent group.
   /// Returns true if restored successfully, false if previous parent not found.
   bool restoreItem(KdbxItem item) {

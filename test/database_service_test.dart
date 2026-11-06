@@ -21,6 +21,37 @@ void main() {
       if (await directory.exists()) await directory.delete(recursive: true);
     });
 
+    test('empties the recycle bin including nested groups', () async {
+      await service.createDatabase('Test vault', 'test-password', databasePath);
+      final root = service.db!.root;
+      final keep = service.createEntry(root);
+      final deleted = service.createEntry(root);
+      service.deleteItem(deleted);
+      final bin = root.groups.singleWhere(service.isRecycleBinGroup);
+      final nested = service.createGroup(bin, 'Nested');
+      service.createEntry(nested);
+      expect(service.allEntries, hasLength(3));
+      service.markClean();
+
+      service.emptyRecycleBin(bin);
+
+      expect(bin.entries, isEmpty);
+      expect(bin.groups, isEmpty);
+      expect(root.groups, contains(bin));
+      expect(service.allEntries, [keep]);
+      expect(service.isDirty, isTrue);
+      final bytes = await service.saveToBytes();
+      await File(databasePath).writeAsBytes(bytes, flush: true);
+      service.close();
+      await service.openFile(databasePath, 'test-password');
+      final reopenedBin = service.db!.root.groups.singleWhere(
+        service.isRecycleBinGroup,
+      );
+      expect(reopenedBin.entries, isEmpty);
+      expect(reopenedBin.groups, isEmpty);
+      expect(service.allEntries, hasLength(1));
+    });
+
     test('creates, indexes, searches, and closes a database', () async {
       await service.createDatabase('Test vault', 'test-password', databasePath);
       final root = service.db!.root;
@@ -138,14 +169,8 @@ void main() {
       expect(joined, isNot(contains('remote-super-secret')));
       expect(joined, isNot(contains('local-token-secret')));
       expect(joined, isNot(contains('remote-token-secret')));
-      expect(
-        change.localValues['Password'],
-        DatabaseService.maskedAuditValue,
-      );
-      expect(
-        change.remoteValues['Password'],
-        DatabaseService.maskedAuditValue,
-      );
+      expect(change.localValues['Password'], DatabaseService.maskedAuditValue);
+      expect(change.remoteValues['Password'], DatabaseService.maskedAuditValue);
     });
   });
 }

@@ -29,10 +29,16 @@ Future<bool> showConfirmDeleteDialog({
                 backgroundColor: colorScheme.error,
                 foregroundColor: colorScheme.onError,
                 visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
               ),
               onPressed: () => Navigator.pop(ctx, true),
-              child: ButtonLabel(
+              child: Text(
                 isPermanent ? l10n.permanentDelete : l10n.delete,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

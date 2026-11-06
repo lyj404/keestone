@@ -120,6 +120,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     // Desktop: category sidebar + detail panes. Mobile: single column.
     if (ClayLayout.isWide(context)) {
       return Scaffold(
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? ClayColors.surfaceDark
+            : ClayColors.surfaceLight,
         appBar: AppBar(title: Text(l10n.settings)),
         body: _SettingsWideLayout(
           categories: [
