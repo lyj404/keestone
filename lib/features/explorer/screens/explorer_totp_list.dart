@@ -301,9 +301,9 @@ class _TotpListTileState extends State<_TotpListTile> {
         color: isDark
             ? ClayColors.surfaceCardDark
             : ClayColors.surfaceCardLight,
-        borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
-          borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
+          borderRadius: BorderRadius.circular(18),
           onTap: widget.onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -359,9 +359,7 @@ class _TotpListTileState extends State<_TotpListTile> {
                         fontWeight: FontWeight.w700,
                         fontFamily: 'monospace',
                         fontFeatures: const [FontFeature.tabularFigures()],
-                        color: isLow
-                            ? colorScheme.error
-                            : colorScheme.onSurface,
+                        color: isLow ? colorScheme.error : colorScheme.primary,
                         letterSpacing: 2,
                       ),
                     ),

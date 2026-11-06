@@ -20,6 +20,7 @@ class EntryListTile extends StatefulWidget {
   final bool showCheckbox;
   final bool isChecked;
   final bool draggable;
+  final bool mobileStyle;
 
   static final _totpService = TotpService();
 
@@ -36,6 +37,7 @@ class EntryListTile extends StatefulWidget {
     this.showCheckbox = false,
     this.isChecked = false,
     this.draggable = false,
+    this.mobileStyle = false,
   });
 
   @override
@@ -278,7 +280,7 @@ class _EntryListTileState extends State<EntryListTile> {
     final l10n = AppLocalizations.of(context)!;
     final displayTitle = _title.isEmpty ? l10n.untitled : _title;
     final dense = ClayLayout.isDesktopPlatform(context);
-    final radius = ClayLayout.radiusLg;
+    final radius = widget.mobileStyle ? 16.0 : ClayLayout.radiusLg;
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     final tile = Padding(
@@ -309,7 +311,11 @@ class _EntryListTileState extends State<EntryListTile> {
                       alpha: brightness == Brightness.dark ? 0.55 : 0.35,
                     ),
                   )
-                : Border.all(color: colorScheme.outline),
+                : Border.all(
+                    color: widget.mobileStyle
+                        ? colorScheme.outlineVariant.withValues(alpha: 0.35)
+                        : colorScheme.outline,
+                  ),
           ),
           child: Material(
             color: Colors.transparent,
@@ -377,7 +383,8 @@ class _EntryListTileState extends State<EntryListTile> {
                               colorScheme,
                               textTheme,
                             ),
-                            if (_username.isNotEmpty) ...[
+                            if (!widget.mobileStyle &&
+                                _username.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Text(
                                 _username,

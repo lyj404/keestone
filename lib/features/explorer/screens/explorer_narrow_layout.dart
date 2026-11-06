@@ -128,11 +128,15 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
         child: _buildBody(context, l10n, colorScheme, isDark, tabIndex),
       ),
       bottomNavigationBar: NavigationBar(
+        backgroundColor: colorScheme.surface,
+        indicatorColor: colorScheme.primaryContainer,
         selectedIndex: tabIndex,
         onDestinationSelected: (i) {
           ref.read(mobileTabIndexProvider.notifier).state = i;
           _closeFab();
           if (i == 2) {
+            _searchDebounce?.cancel();
+            _searchController.clear();
             ref.read(searchQueryProvider.notifier).state = '';
           }
         },
@@ -167,13 +171,13 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
             label: l10n.searchTab,
           ),
           NavigationDestination(
-            icon: const Icon(Icons.build_outlined, size: 22),
+            icon: const Icon(Icons.settings_outlined, size: 22),
             selectedIcon: Icon(
-              Icons.build_rounded,
+              Icons.settings_rounded,
               size: 22,
               color: colorScheme.primary,
             ),
-            label: l10n.toolsTab,
+            label: l10n.settings,
           ),
         ],
       ),
@@ -219,7 +223,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
       case 2:
         return _buildSearchAppBar(context, l10n, colorScheme);
       case 3:
-        return AppBar(title: Text(l10n.toolsTab));
+        return AppBar(title: Text(l10n.settings));
       default:
         return AppBar(title: Text(l10n.entriesTab));
     }
@@ -426,7 +430,18 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
             size: 20,
             color: colorScheme.onSurfaceVariant,
           ),
-          filled: false,
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest.withValues(
+            alpha: 0.55,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: colorScheme.primary),
+          ),
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
         onChanged: _onSearchChanged,

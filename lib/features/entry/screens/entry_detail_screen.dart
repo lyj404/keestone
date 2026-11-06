@@ -76,6 +76,7 @@ class EntryDetailScreen extends ConsumerWidget {
     });
     final title = matchedEntry.fields['Title']?.text ?? '';
     final colorScheme = Theme.of(context).colorScheme;
+    final isNarrow = MediaQuery.sizeOf(context).width < 600;
     final group = matchedEntry.parent;
     // Check recycle bin using database metadata instead of icon comparison.
     final db = ref.read(databaseServiceProvider).db;
@@ -142,8 +143,32 @@ class EntryDetailScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
-          // Title card
-          if (title.isNotEmpty)
+          if (isNarrow && title.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(
+                  Icons.key_rounded,
+                  color: colorScheme.onPrimaryContainer,
+                  size: 28,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 24),
+          ],
+          if (!isNarrow && title.isNotEmpty)
             _SectionCard(
               children: [_FieldRow(label: l10n.title, value: title)],
             ),
@@ -218,6 +243,22 @@ class EntryDetailScreen extends ConsumerWidget {
               entry: matchedEntry,
               service: ref.read(databaseServiceProvider),
               readOnly: true,
+            ),
+          ],
+          if (isNarrow && !isInRecycleBin) ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.push(
+                '/entry/edit?uuid=${Uri.encodeComponent(entryUuid)}&groupPath=${Uri.encodeComponent(groupPath)}',
+              ),
+              icon: const Icon(Icons.edit_outlined),
+              label: Text(l10n.edit),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
             ),
           ],
         ],

@@ -176,27 +176,63 @@ class _MobileEntryListBody extends StatelessWidget {
       addAutomaticKeepAlives: false,
       scrollCacheExtent: const ScrollCacheExtent.pixels(200),
       padding: const EdgeInsets.symmetric(vertical: 6),
-      itemCount: subGroups.length + entries.length + 1,
+      itemCount:
+          (subGroups.isNotEmpty ? 1 : 0) +
+          (entries.isNotEmpty ? 1 : 0) +
+          entries.length +
+          1,
       itemBuilder: (context, index) {
-        if (index < subGroups.length) {
-          return RepaintBoundary(
-            child: _MobileGroupTile(
-              group: subGroups[index],
-              onTap: () => onGroupTap(subGroups[index]),
-              onDeleteGroup: onDeleteGroup,
-              onRenameGroup: onRenameGroup,
-              onRestoreGroup: onRestoreGroup,
-              onPermanentDeleteGroup: onPermanentDeleteGroup,
+        if (subGroups.isNotEmpty && index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                child: Text(
+                  l10n.groups,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              SizedBox(
+                height: 104,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  itemCount: subGroups.length,
+                  itemBuilder: (context, i) => SizedBox(
+                    width: 126,
+                    child: _MobileGroupTile(
+                      group: subGroups[i],
+                      onTap: () => onGroupTap(subGroups[i]),
+                      onDeleteGroup: onDeleteGroup,
+                      onRenameGroup: onRenameGroup,
+                      onRestoreGroup: onRestoreGroup,
+                      onPermanentDeleteGroup: onPermanentDeleteGroup,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        final offset = subGroups.isNotEmpty ? 1 : 0;
+        if (entries.isNotEmpty && index == offset) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            child: Text(
+              l10n.entries,
+              style: Theme.of(context).textTheme.titleSmall,
             ),
           );
         }
-        final entryIndex = index - subGroups.length;
+        final entryIndex = index - offset - (entries.isNotEmpty ? 1 : 0);
         if (entryIndex == entries.length) return const SizedBox(height: 80);
         final e = entries[entryIndex];
         return RepaintBoundary(
           child: EntryListTile(
             key: ValueKey(e.uuid),
             entry: e,
+            mobileStyle: true,
             isSelected: e == selectedEntry,
             onTap: isMultiSelect
                 ? () => onToggleEntrySelection(e)
@@ -234,7 +270,6 @@ class _MobileGroupTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasMenu =
         onDeleteGroup != null ||
         onRenameGroup != null ||
@@ -242,12 +277,10 @@ class _MobileGroupTile extends StatelessWidget {
         onPermanentDeleteGroup != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       child: Material(
-        color: isDark
-            ? ClayColors.surfaceCardDark
-            : ClayColors.surfaceCardLight,
-        borderRadius: BorderRadius.circular(12),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
           onLongPress: hasMenu
@@ -261,11 +294,12 @@ class _MobileGroupTile extends StatelessWidget {
                   );
                 }
               : null,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   width: 34,
@@ -286,39 +320,15 @@ class _MobileGroupTile extends StatelessWidget {
                         : colorScheme.primary,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        group.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      if (group.groups.isNotEmpty || group.entries.isNotEmpty)
-                        Text(
-                          _groupSubtitle(context, group),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
+                Text(
+                  group.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurface,
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -326,18 +336,6 @@ class _MobileGroupTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _groupSubtitle(BuildContext context, KdbxGroup group) {
-    final l10n = AppLocalizations.of(context)!;
-    final parts = <String>[];
-    if (group.groups.isNotEmpty) {
-      parts.add('${group.groups.length} ${l10n.groups}');
-    }
-    if (group.entries.isNotEmpty) {
-      parts.add('${group.entries.length} ${l10n.entries}');
-    }
-    return parts.join(' · ');
   }
 
   void _showContextMenu(BuildContext context, Offset globalPos) {
@@ -443,6 +441,7 @@ class _MobileSearchTab extends ConsumerWidget {
           child: EntryListTile(
             key: ValueKey(entry.uuid),
             entry: entry,
+            mobileStyle: true,
             query: query,
             onTap: () {},
             onOpen: () {
@@ -572,7 +571,6 @@ class _MobileToolsPanel extends StatelessWidget {
                 iconBg: colorScheme.surfaceContainerLow,
                 iconColor: colorScheme.onSurfaceVariant,
                 title: l10n.passwordHealth,
-                subtitle: l10n.passwordHealthSubtitle,
                 onTap: () => context.push('/audit'),
               ),
             ],
@@ -640,15 +638,15 @@ class _ToolsSection extends StatelessWidget {
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
         const SizedBox(height: 8),
         Container(
-          decoration: ClayDecoration.card(brightness: brightness),
+          decoration: ClayDecoration.card(brightness: brightness, radius: 18),
           child: Column(
             children: [
               for (int i = 0; i < children.length; i++) ...[
@@ -672,7 +670,6 @@ class _ToolTile extends StatelessWidget {
   final Color iconBg;
   final Color iconColor;
   final String title;
-  final String? subtitle;
   final VoidCallback? onTap;
 
   const _ToolTile({
@@ -680,7 +677,6 @@ class _ToolTile extends StatelessWidget {
     required this.iconBg,
     required this.iconColor,
     required this.title,
-    this.subtitle,
     this.onTap,
   });
 
@@ -719,16 +715,6 @@ class _ToolTile extends StatelessWidget {
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
