@@ -187,31 +187,21 @@ class _MobileEntryListBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
                 child: Text(
-                  l10n.groups,
+                  '${subGroups.length} ${l10n.groups}',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              SizedBox(
-                height: 104,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
-                  itemCount: subGroups.length,
-                  itemBuilder: (context, i) => SizedBox(
-                    width: 126,
-                    child: _MobileGroupTile(
-                      group: subGroups[i],
-                      onTap: () => onGroupTap(subGroups[i]),
-                      onDeleteGroup: onDeleteGroup,
-                      onRenameGroup: onRenameGroup,
-                      onRestoreGroup: onRestoreGroup,
-                      onPermanentDeleteGroup: onPermanentDeleteGroup,
-                    ),
-                  ),
+              for (final group in subGroups)
+                _MobileGroupTile(
+                  group: group,
+                  onTap: () => onGroupTap(group),
+                  onDeleteGroup: onDeleteGroup,
+                  onRenameGroup: onRenameGroup,
+                  onRestoreGroup: onRestoreGroup,
+                  onPermanentDeleteGroup: onPermanentDeleteGroup,
                 ),
-              ),
             ],
           );
         }
@@ -220,7 +210,7 @@ class _MobileEntryListBody extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
             child: Text(
-              l10n.entries,
+              '${entries.length} ${l10n.entries}',
               style: Theme.of(context).textTheme.titleSmall,
             ),
           );
@@ -277,7 +267,7 @@ class _MobileGroupTile extends StatelessWidget {
         onPermanentDeleteGroup != null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Material(
         color: colorScheme.primaryContainer.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(16),
@@ -295,11 +285,9 @@ class _MobileGroupTile extends StatelessWidget {
                 }
               : null,
           borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
               children: [
                 Container(
                   width: 34,
@@ -320,15 +308,23 @@ class _MobileGroupTile extends StatelessWidget {
                         : colorScheme.primary,
                   ),
                 ),
-                Text(
-                  group.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    group.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 20,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
@@ -578,7 +574,7 @@ class _MobileToolsPanel extends StatelessWidget {
           const SizedBox(height: 16),
           _ToolsSection(
             brightness: brightness,
-            title: l10n.settings,
+            title: l10n.more,
             children: [
               _ToolTile(
                 icon: Icons.settings_rounded,

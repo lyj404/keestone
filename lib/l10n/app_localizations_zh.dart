@@ -951,6 +951,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportFailed => '导出失败';
 
   @override
+  String get exportLogs => '导出日志';
+
+  @override
+  String get exportLogsDescription => '通过系统分享面板发送应用日志文件';
+
+  @override
+  String get noLogsToExport => '暂无日志文件';
+
+  @override
   String get noEntriesToExport => '没有可导出的条目';
 
   @override
@@ -1224,6 +1233,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get groupsTab => '分组';
+
+  @override
+  String get homeTab => '首页';
 
   @override
   String get entriesTab => '条目';

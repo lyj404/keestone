@@ -1904,6 +1904,24 @@ abstract class AppLocalizations {
   /// **'导出失败'**
   String get exportFailed;
 
+  /// No description provided for @exportLogs.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出日志'**
+  String get exportLogs;
+
+  /// No description provided for @exportLogsDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'通过系统分享面板发送应用日志文件'**
+  String get exportLogsDescription;
+
+  /// No description provided for @noLogsToExport.
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无日志文件'**
+  String get noLogsToExport;
+
   /// No description provided for @noEntriesToExport.
   ///
   /// In zh, this message translates to:
@@ -2437,6 +2455,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'分组'**
   String get groupsTab;
+
+  /// No description provided for @homeTab.
+  ///
+  /// In zh, this message translates to:
+  /// **'首页'**
+  String get homeTab;
 
   /// No description provided for @entriesTab.
   ///

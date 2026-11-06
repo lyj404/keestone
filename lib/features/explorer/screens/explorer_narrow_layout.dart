@@ -150,7 +150,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
               size: 22,
               color: colorScheme.primary,
             ),
-            label: l10n.entriesTab,
+            label: l10n.homeTab,
           ),
           NavigationDestination(
             icon: const Icon(Icons.timer_outlined, size: 22),

@@ -245,22 +245,6 @@ class EntryDetailScreen extends ConsumerWidget {
               readOnly: true,
             ),
           ],
-          if (isNarrow && !isInRecycleBin) ...[
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () => context.push(
-                '/entry/edit?uuid=${Uri.encodeComponent(entryUuid)}&groupPath=${Uri.encodeComponent(groupPath)}',
-              ),
-              icon: const Icon(Icons.edit_outlined),
-              label: Text(l10n.edit),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );

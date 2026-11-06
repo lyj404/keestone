@@ -969,6 +969,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportFailed => 'Export failed';
 
   @override
+  String get exportLogs => 'Export Logs';
+
+  @override
+  String get exportLogsDescription =>
+      'Share the app log files via the system share sheet';
+
+  @override
+  String get noLogsToExport => 'No log files found';
+
+  @override
   String get noEntriesToExport => 'No entries to export';
 
   @override
@@ -1254,6 +1264,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get groupsTab => 'Groups';
+
+  @override
+  String get homeTab => 'Home';
 
   @override
   String get entriesTab => 'Entries';
