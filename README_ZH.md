@@ -52,6 +52,26 @@ flutter run -d windows    # 或 linux / macos / android
 
 [Flutter](https://flutter.dev) · [Riverpod](https://pub.dev/packages/flutter_riverpod) · [go_router](https://pub.dev/packages/go_router) · [kpasslib](https://pub.dev/packages/kpasslib) · [WebDAV](https://pub.dev/packages/webdav_client) · [local_auth](https://pub.dev/packages/local_auth)
 
+## 日志
+
+反馈 Bug 时附上日志文件能帮助快速定位。KeeStone 记录 **warning 和 error**
+级别的日志，单文件 2 MB 滚动轮转，最多保留 5 代（共 10 MB），超限自动删除
+最旧的文件。
+
+日志文件名为 `keestone-error.log`（以及更早的 `.1`–`.4` 代），位置：
+
+| 平台 | 位置 |
+| ---- | ---- |
+| Windows | `C:\Users\<用户名>\Documents\KeeStone\logs\`¹ |
+| Linux | `~/Documents/KeeStone/logs/` |
+| macOS | `~/Library/Containers/com.keestone.keestone/Data/Documents/KeeStone/logs/`（应用沙盒内） |
+| Android | `/storage/emulated/0/Android/data/com.keestone.keestone/files/KeeStone/logs/` |
+
+¹ 跟随系统的「文档」文件夹，若该文件夹被重定向则路径不同。
+
+**macOS 和 Android** 上路径不易手动访问，可使用
+**设置 → 通用 → 导出日志**，通过系统分享面板发送日志文件。
+
 ## 密码健康
 
 在**工具**、更多菜单或**设置**中打开「密码健康」（桌面端与移动端均可）。扫描完全在本地进行，不会上传任何数据。

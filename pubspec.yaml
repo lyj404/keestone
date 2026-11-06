@@ -1,7 +1,7 @@
 name: keestone
 description: "A KeePass-compatible password manager built with Flutter."
 publish_to: 'none'
-version: 0.9.7+22
+version: 0.9.8+23
 environment:
   sdk: ^3.13.0
 
@@ -69,6 +69,7 @@ dependencies:
   material_ui: ^1.1.0
   image: ^4.10.1
   zxing_lib: ^1.1.4
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:

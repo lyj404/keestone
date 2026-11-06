@@ -53,6 +53,29 @@ flutter run -d windows    # or linux / macos / android
 
 [Flutter](https://flutter.dev) · [Riverpod](https://pub.dev/packages/flutter_riverpod) · [go_router](https://pub.dev/packages/go_router) · [kpasslib](https://pub.dev/packages/kpasslib) · [WebDAV](https://pub.dev/packages/webdav_client) · [local_auth](https://pub.dev/packages/local_auth)
 
+## Logs
+
+When reporting a bug, attaching the log file helps a lot. KeeStone records
+**warning and error** level messages, rotating at 2 MB per file with 5
+generations kept (10 MB total) — the oldest files are removed automatically.
+
+Log files are named `keestone-error.log` (plus older generations
+`.1`–`.4`), located at:
+
+| Platform | Location |
+| -------- | -------- |
+| Windows | `C:\Users\<user>\Documents\KeeStone\logs\`¹ |
+| Linux | `~/Documents/KeeStone/logs/` |
+| macOS | `~/Library/Containers/com.keestone.keestone/Data/Documents/KeeStone/logs/` (app sandbox) |
+| Android | `/storage/emulated/0/Android/data/com.keestone.keestone/files/KeeStone/logs/` |
+
+¹ Follows the system "Documents" known folder, which may differ if it has been
+relocated.
+
+On **macOS and Android**, where the path is hard to reach manually, use
+**Settings → General → Export Logs** to share the log files via the system
+share sheet.
+
 ## Password Health
 
 Open **Password Health** from Tools, the overflow menu, or Settings (available on desktop and mobile). The scan is fully local — nothing leaves the device.

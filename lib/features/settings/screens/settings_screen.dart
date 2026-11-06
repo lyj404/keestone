@@ -21,6 +21,7 @@ import '../../../core/providers/close_behavior_provider.dart';
 import '../../../core/providers/expiration_reminder_provider.dart';
 import '../../../core/providers/biometric_provider.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../core/services/log_export_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../sync/data/git_config.dart';
 import '../data/webdav_config.dart';
@@ -239,6 +240,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _languageCard(brightness, l10n, ref),
       _autoSaveCard(brightness, l10n, ref),
       _expirationReminderCard(brightness, l10n, ref),
+      if (Platform.isMacOS || Platform.isAndroid)
+        _logExportCard(brightness, l10n),
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
         _closeBehaviorCard(brightness, l10n, ref),
     ];
@@ -480,6 +483,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _logExportCard(Brightness brightness, AppLocalizations l10n) {
+    return _SectionCard(
+      brightness: brightness,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: ClayDecoration.iconContainer(brightness: brightness),
+            child: Icon(
+              Icons.ios_share_rounded,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.exportLogs,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  l10n.exportLogsDescription,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: _exportLogs,
+            child: ButtonLabel(l10n.exportLogs),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportLogs() async {
+    final l10n = AppLocalizations.of(context)!;
+    try {
+      final exported = await LogExportService.export();
+      if (!mounted) return;
+      showToast(context, exported ? l10n.exportSuccess : l10n.noLogsToExport);
+    } catch (e) {
+      log.w('Export logs failed', error: e);
+      if (mounted) {
+        showToast(context, l10n.exportFailed, isError: true);
+      }
+    }
   }
 
   Future<void> _setUnlockMethod(

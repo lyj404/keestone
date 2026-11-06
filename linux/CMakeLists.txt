@@ -126,12 +126,17 @@ if(EXISTS "${KREEPTO_LIB}")
 endif()
 
 # Copy the native assets provided by the build.dart from all packages.
+# Checked at install time (not configure time): on a first build the hooks
+# that produce these files run after CMake has already been configured, so an
+# if(EXISTS) here would skip the rule and leave the bundle without the .so.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
-if(EXISTS "${NATIVE_ASSETS_DIR}")
-  install(DIRECTORY "${NATIVE_ASSETS_DIR}"
-     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
-     COMPONENT Runtime)
-endif()
+install(CODE "
+  if(EXISTS \"${NATIVE_ASSETS_DIR}\")
+    file(COPY \"${NATIVE_ASSETS_DIR}/\"
+      DESTINATION \"${INSTALL_BUNDLE_LIB_DIR}\"
+      FILES_MATCHING PATTERN \"*.so*\")
+  endif()
+" COMPONENT Runtime)
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
