@@ -230,6 +230,13 @@ class SyncService {
             return null;
           case SyncErrorType.conflict:
             return null;
+          case SyncErrorType.network:
+          case SyncErrorType.timeout:
+            // Server unreachable (DNS, routing, firewall) — the ping
+            // fallback would fail the same way, so report the friendly
+            // network message instead of a raw transport dump.
+            log.e('Network failed', error: e);
+            return 'network_failed';
           default:
             // Distinguish "server reachable, path bad" from "server unreachable".
             try {
