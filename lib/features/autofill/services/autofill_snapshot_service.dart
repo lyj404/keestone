@@ -15,6 +15,10 @@ import '../data/autofill_matcher.dart';
 const _appGroupId = 'group.com.keestone.keestone';
 const _channel = MethodChannel('com.keestone.keestone/app_group');
 const _snapshotFileName = 'keestone_autofill_snapshot.bin';
+/// Android only: the AES key next to the snapshot file so the Kotlin
+/// AutofillService can decrypt it without going through the (often frozen)
+/// Dart engine. App-private directory, same uid — not readable by others.
+const _androidKeyFileName = 'keestone_autofill_snapshot.key';
 const _keyStorageKey = 'autofill_snapshot_key';
 const _keyStorage = FlutterSecureStorage(
   iOptions: IOSOptions(
@@ -81,6 +85,10 @@ class AutofillSnapshotService {
         final file = File(filePath);
         await file.parent.create(recursive: true);
         await file.writeAsBytes(wrapped, flush: true);
+        // Mirror the key to an app-private file so the Kotlin autofill
+        // service can decrypt the snapshot directly (no Dart involved).
+        final keyFile = File(_joinPath(file.parent.path, _androidKeyFileName));
+        await keyFile.writeAsBytes(key, flush: true);
       }
     } catch (e, st) {
       log.e('Autofill snapshot write failed', error: e, stackTrace: st);
@@ -131,6 +139,8 @@ class AutofillSnapshotService {
         final dir = await getApplicationSupportDirectory();
         final file = File(_joinPath(dir.path, _snapshotFileName));
         if (await file.exists()) await file.delete();
+        final keyFile = File(_joinPath(dir.path, _androidKeyFileName));
+        if (await keyFile.exists()) await keyFile.delete();
       }
     } catch (_) {
       // Storage unavailable — nothing to delete.

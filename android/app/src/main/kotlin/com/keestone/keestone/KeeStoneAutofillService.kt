@@ -28,6 +28,8 @@ private const val TAG = "KeeStoneAutofill"
 private const val CHANNEL = "com.keestone.keestone/autofill"
 private const val CHANNEL_TIMEOUT_MS = 4000L
 private const val MAX_DATASETS = 10
+private const val SNAPSHOT_NAME = "keestone_autofill_snapshot.bin"
+private const val KEY_NAME = "keestone_autofill_snapshot.key"
 
 @RequiresApi(Build.VERSION_CODES.O)
 class KeeStoneAutofillService : AutofillService() {
@@ -51,6 +53,23 @@ class KeeStoneAutofillService : AutofillService() {
             return
         }
 
+        // Primary path: decrypt the snapshot directly. OEM process managers
+        // (e.g. OPPO HansManager) freeze background apps within seconds, so
+        // the Dart engine usually cannot answer the channel in time.
+        val candidates = querySnapshot(target.packageName, target.domain)
+        if (candidates.isNotEmpty()) {
+            buildDatasetsResponse(target, candidates)?.let { callback.onSuccess(it) }
+                ?: callback.onSuccess(buildOpenAppResponse(target))
+            return
+        }
+        if (snapshotExists()) {
+            // Snapshot present but nothing matched this app/domain.
+            callback.onSuccess(null)
+            return
+        }
+
+        // Fallback: ask the live engine (also covers "vault open but no
+        // snapshot yet"); on timeout offer to open the app.
         val result = queryEngine(target.packageName, target.domain)
         if (result == null) {
             callback.onSuccess(buildOpenAppResponse(target))
@@ -60,17 +79,17 @@ class KeeStoneAutofillService : AutofillService() {
         when (result.getString("status")) {
             "unlocked" -> {
                 @Suppress("UNCHECKED_CAST")
-                val candidates =
+                val engineCandidates =
                     (result.get("candidates") as? List<Map<String, Any?>>) ?: emptyList()
-                if (candidates.isEmpty()) {
-                    callback.onSuccess(buildOpenAppResponse(target))
+                if (engineCandidates.isEmpty()) {
+                    callback.onSuccess(null)
                 } else {
-                    buildDatasetsResponse(target, candidates)?.let { callback.onSuccess(it) }
-                        ?: callback.onSuccess(buildOpenAppResponse(target))
+                    buildDatasetsResponse(target, engineCandidates)?.let { callback.onSuccess(it) }
+                        ?: callback.onSuccess(null)
                 }
             }
             "locked" -> callback.onSuccess(buildUnlockResponse(target, result.getString("filePath")))
-            else -> callback.onSuccess(buildOpenAppResponse(target))
+            else -> callback.onSuccess(null)
         }
     }
 
@@ -152,6 +171,87 @@ class KeeStoneAutofillService : AutofillService() {
     } catch (_: Exception) {
         null
     }
+
+    // ── Snapshot (no Dart involvement) ────────────────────────────────────────
+
+    /**
+     * Decrypts and matches the snapshot file written by Dart on unlock.
+     * Same process/uid as the app, so the app-private files dir is readable
+     * even while the Dart engine is frozen by OEM process managers.
+     */
+    private fun querySnapshot(packageId: String, domain: String?): List<Map<String, Any?>> {
+        val snapshotFile = java.io.File(filesDir, SNAPSHOT_NAME)
+        if (!snapshotFile.exists()) return emptyList()
+        val keyFile = java.io.File(filesDir, KEY_NAME)
+        if (!keyFile.exists()) return emptyList()
+        return try {
+            val bytes = snapshotFile.readBytes()
+            if (bytes.size < 5 + 12 + 16 ||
+                !(bytes[0] == 'K'.code.toByte() && bytes[1] == 'V'.code.toByte() &&
+                    bytes[2] == 'A'.code.toByte() && bytes[3] == 'F'.code.toByte())
+            ) {
+                return emptyList()
+            }
+            val key = keyFile.readBytes()
+            if (key.size != 32) return emptyList()
+            val combined = bytes.copyOfRange(5, bytes.size)
+            val secretKey = javax.crypto.spec.SecretKeySpec(key, "AES")
+            val cipher = javax.crypto.Cipher.getInstance("AES/GCM/NoPadding")
+            // GCM spec parameter: nonce(12) prefix + 128-bit tag appended.
+            val spec = javax.crypto.spec.GCMParameterSpec(128, combined, 0, 12)
+            cipher.init(javax.crypto.Cipher.DECRYPT_MODE, secretKey, spec)
+            val clear = cipher.doFinal(combined, 12, combined.size - 12)
+            val json = org.json.JSONObject(String(clear, Charsets.UTF_8))
+            val entries = json.optJSONArray("entries") ?: return emptyList()
+            val lowerPackage = packageId.lowercase()
+            val lowerDomain = domain?.lowercase()
+            data class Scored(val entry: org.json.JSONObject, val score: Int)
+            val scored = mutableListOf<Scored>()
+            for (i in 0 until entries.length()) {
+                val e = entries.optJSONObject(i) ?: continue
+                var best = 0
+                val pkgs = e.optJSONArray("packageIds")
+                if (pkgs != null) {
+                    for (j in 0 until pkgs.length()) {
+                        val pkg = pkgs.optString(j).lowercase()
+                        when {
+                            pkg == lowerPackage -> best = maxOf(best, 100)
+                            lowerPackage.endsWith(".$pkg") ||
+                                pkg.endsWith(".$lowerPackage") -> best = maxOf(best, 40)
+                        }
+                    }
+                }
+                val doms = e.optJSONArray("domains")
+                if (doms != null && lowerDomain != null) {
+                    for (j in 0 until doms.length()) {
+                        val dom = doms.optString(j).lowercase()
+                        when {
+                            dom == lowerDomain -> best = maxOf(best, 100)
+                            lowerDomain.endsWith(".$dom") ||
+                                dom.endsWith(".$lowerDomain") -> best = maxOf(best, 60)
+                        }
+                    }
+                }
+                if (best > 0) scored.add(Scored(e, best))
+            }
+            scored.sortByDescending { it.score }
+            scored.take(MAX_DATASETS).map { s ->
+                val e = s.entry
+                mapOf(
+                    "uuid" to e.optString("uuid"),
+                    "title" to e.optString("title"),
+                    "username" to e.optString("username"),
+                    "password" to e.optString("password"),
+                )
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "snapshot decrypt/match failed: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private fun snapshotExists(): Boolean =
+        java.io.File(filesDir, SNAPSHOT_NAME).exists()
 
     // ── Engine IPC ────────────────────────────────────────────────────────────
 
