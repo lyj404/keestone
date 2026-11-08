@@ -1434,6 +1434,214 @@ class AppLocalizationsEn extends AppLocalizations {
       'Open a database to run a password health scan';
 
   @override
+  String get auditIssuePwned => 'Breached password';
+
+  @override
+  String get hibpCheckAction => 'Check for breaches';
+
+  @override
+  String get hibpConfirmTitle => 'Check passwords against known breaches?';
+
+  @override
+  String get hibpConfirmBody =>
+      'Connects to haveibeenpwned.com using k-anonymity to check whether vault passwords appear in known data breaches. Only the first 5 characters of each password\'s SHA-1 hash are sent — the password itself and its full hash never leave this device.';
+
+  @override
+  String get hibpConfirmRun => 'Start check';
+
+  @override
+  String hibpSeenCount(Object count) {
+    return 'Seen $count times in known breaches';
+  }
+
+  @override
+  String get hibpCheckFailed =>
+      'Breach check failed — check your network connection and try again';
+
+  @override
+  String hibpProgress(Object progress, Object total) {
+    return 'Checking $progress/$total';
+  }
+
+  @override
+  String hibpDoneAllSafe(Object count) {
+    return 'Check complete: $count passwords not found in known breaches';
+  }
+
+  @override
+  String hibpDoneWithHits(Object count) {
+    return 'Check complete: $count breached password(s) found — change them now';
+  }
+
+  @override
+  String hibpDonePartial(Object count) {
+    return 'Check finished, but $count entries failed due to network errors — try again later';
+  }
+
+  @override
+  String get addFavorite => 'Add to Favorites';
+
+  @override
+  String get removeFavorite => 'Remove from Favorites';
+
+  @override
+  String get favorites => 'Favorites';
+
+  @override
+  String get noFavorites =>
+      'No favorites yet — long-press or right-click an entry to add one';
+
+  @override
+  String get pinEntry => 'Pin to Top';
+
+  @override
+  String get unpinEntry => 'Unpin';
+
+  @override
+  String get chooseTemplate => 'Choose Template';
+
+  @override
+  String get tplLogin => 'Login';
+
+  @override
+  String get tplBankAccount => 'Bank Account';
+
+  @override
+  String get tplCreditCard => 'Credit Card';
+
+  @override
+  String get tplSecureNote => 'Secure Note';
+
+  @override
+  String get tplServer => 'Server';
+
+  @override
+  String get tplIdentity => 'Identity';
+
+  @override
+  String get tplSoftwareLicense => 'Software License';
+
+  @override
+  String get tplBankName => 'Bank Name';
+
+  @override
+  String get tplAccountHolder => 'Account Holder';
+
+  @override
+  String get tplAccountNumber => 'Account Number';
+
+  @override
+  String get tplRoutingNumber => 'Routing Number';
+
+  @override
+  String get tplSwift => 'SWIFT Code';
+
+  @override
+  String get tplIban => 'IBAN';
+
+  @override
+  String get tplCardName => 'Card Name';
+
+  @override
+  String get tplCardType => 'Card Type';
+
+  @override
+  String get tplCardNumber => 'Card Number';
+
+  @override
+  String get tplCardholderName => 'Cardholder Name';
+
+  @override
+  String get tplExpirationDate => 'Expiration Date';
+
+  @override
+  String get tplCvv => 'CVV';
+
+  @override
+  String get tplPin => 'PIN';
+
+  @override
+  String get tplNoteContent => 'Note Content';
+
+  @override
+  String get tplServerName => 'Server Name';
+
+  @override
+  String get tplHost => 'Host';
+
+  @override
+  String get tplPort => 'Port';
+
+  @override
+  String get tplAdminUsername => 'Admin Username';
+
+  @override
+  String get tplAdminPassword => 'Admin Password';
+
+  @override
+  String get tplIdentityName => 'Identity Name';
+
+  @override
+  String get tplFullName => 'Full Name';
+
+  @override
+  String get tplIdNumber => 'ID Number';
+
+  @override
+  String get tplPhoneNumber => 'Phone Number';
+
+  @override
+  String get tplEmail => 'Email';
+
+  @override
+  String get tplAddress => 'Address';
+
+  @override
+  String get tplSoftwareName => 'Software Name';
+
+  @override
+  String get tplLicenseKey => 'License Key';
+
+  @override
+  String get tplLicensedTo => 'Licensed To';
+
+  @override
+  String get tplVersion => 'Version';
+
+  @override
+  String get tplPurchaseDate => 'Purchase Date';
+
+  @override
+  String get autofill => 'Autofill';
+
+  @override
+  String get autofillDescription =>
+      'Let KeeStone suggest credentials in other apps and browsers.';
+
+  @override
+  String get enableAutofill => 'Enable Autofill';
+
+  @override
+  String get setAsAutofillService => 'Set as Autofill Service';
+
+  @override
+  String get autofillIsDefault => 'KeeStone is your autofill service.';
+
+  @override
+  String get autofillNotDefault =>
+      'KeeStone is not the system autofill service. Tap to set it as default.';
+
+  @override
+  String get autofillIosHint =>
+      'On iOS, enable KeeStone under Settings → Passwords → Password Options.';
+
+  @override
+  String get autofillOpenApp => 'Open KeeStone';
+
+  @override
+  String get autofillUnlock => 'Unlock KeeStone';
+
+  @override
   String get syncBackend => 'Sync Backend';
 
   @override

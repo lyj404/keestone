@@ -1,16 +1,37 @@
 package com.keestone.keestone
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.view.WindowManager
+import android.view.autofill.AutofillManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
+
+    private fun isDefaultAutofillService(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        val manager = getSystemService(AutofillManager::class.java) ?: return false
+        return manager.hasEnabledAutofillServices()
+    }
+
+    private fun requestSetAutofillService() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        try {
+            startActivity(Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE).apply {
+                data = Uri.parse("package:$packageName")
+            })
+        } catch (_: ActivityNotFoundException) {
+        }
+    }
+
     override fun provideFlutterEngine(context: Context): FlutterEngine? {
         return FlutterEngineCache.getInstance().get(KeeStoneApplication.ENGINE_ID)
     }
@@ -37,6 +58,22 @@ class MainActivity : FlutterFragmentActivity() {
                     runOnUiThread {
                         result.success(moveTaskToBack(true))
                     }
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.keestone.keestone/autofill_control",
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "isDefaultService" -> {
+                    result.success(isDefaultAutofillService())
+                }
+                "requestSetDefault" -> {
+                    requestSetAutofillService()
+                    result.success(null)
                 }
                 else -> result.notImplemented()
             }

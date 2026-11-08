@@ -113,7 +113,15 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
 
   void _flattenChildren(KdbxGroup group, int depth, List<_GroupItem> result) {
     if (!_expanded.contains(group)) return;
-    for (final child in group.groups) {
+    final service = ref.read(databaseServiceProvider);
+    // The recycle bin always sorts first among siblings.
+    final children = [...group.groups]..sort((a, b) {
+      final aBin = service.isRecycleBinGroup(a) ? 0 : 1;
+      final bBin = service.isRecycleBinGroup(b) ? 0 : 1;
+      if (aBin != bBin) return aBin - bBin;
+      return 0;
+    });
+    for (final child in children) {
       result.add(_GroupItem(child, depth));
       _flattenChildren(child, depth + 1, result);
     }
@@ -241,7 +249,9 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
                                 ? Icons.folder_rounded
                                 : Icons.folder_outlined),
                       size: 18,
-                      color: isSelected
+                      color: isTrashGroup
+                          ? colorScheme.error
+                          : isSelected
                           ? colorScheme.primary
                           : colorScheme.onSurfaceVariant,
                     ),
@@ -256,7 +266,9 @@ class _GroupTreeViewState extends ConsumerState<_GroupTreeView> {
                           fontWeight: isSelected
                               ? FontWeight.w700
                               : FontWeight.w500,
-                          color: isSelected
+                          color: isTrashGroup
+                              ? colorScheme.error
+                              : isSelected
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSurface,
                         ),

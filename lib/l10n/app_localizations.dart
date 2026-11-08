@@ -2756,6 +2756,390 @@ abstract class AppLocalizations {
   /// **'请先打开密码库再进行健康扫描'**
   String get auditOpenDatabaseFirst;
 
+  /// No description provided for @auditIssuePwned.
+  ///
+  /// In zh, this message translates to:
+  /// **'已泄露密码'**
+  String get auditIssuePwned;
+
+  /// No description provided for @hibpCheckAction.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查泄露'**
+  String get hibpCheckAction;
+
+  /// No description provided for @hibpConfirmTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'联网检查密码泄露？'**
+  String get hibpConfirmTitle;
+
+  /// No description provided for @hibpConfirmBody.
+  ///
+  /// In zh, this message translates to:
+  /// **'将使用 k-匿名协议连接 haveibeenpwned.com 检查库内密码是否出现在已知数据泄露中。设备只会发送密码 SHA-1 哈希的前 5 位，密码本身和完整哈希不会离开设备。'**
+  String get hibpConfirmBody;
+
+  /// No description provided for @hibpConfirmRun.
+  ///
+  /// In zh, this message translates to:
+  /// **'开始检查'**
+  String get hibpConfirmRun;
+
+  /// No description provided for @hibpSeenCount.
+  ///
+  /// In zh, this message translates to:
+  /// **'在已知泄露中出现 {count} 次'**
+  String hibpSeenCount(Object count);
+
+  /// No description provided for @hibpCheckFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'泄露检查失败，请检查网络连接后重试'**
+  String get hibpCheckFailed;
+
+  /// No description provided for @hibpProgress.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查中 {progress}/{total}'**
+  String hibpProgress(Object progress, Object total);
+
+  /// No description provided for @hibpDoneAllSafe.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查完成：{count} 个密码均未出现在已知泄露中'**
+  String hibpDoneAllSafe(Object count);
+
+  /// No description provided for @hibpDoneWithHits.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查完成：发现 {count} 个已泄露密码，请立即更换'**
+  String hibpDoneWithHits(Object count);
+
+  /// No description provided for @hibpDonePartial.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查完成，但有 {count} 条因网络失败未检查，可稍后重试'**
+  String hibpDonePartial(Object count);
+
+  /// No description provided for @addFavorite.
+  ///
+  /// In zh, this message translates to:
+  /// **'添加到收藏'**
+  String get addFavorite;
+
+  /// No description provided for @removeFavorite.
+  ///
+  /// In zh, this message translates to:
+  /// **'从收藏中移除'**
+  String get removeFavorite;
+
+  /// No description provided for @favorites.
+  ///
+  /// In zh, this message translates to:
+  /// **'收藏'**
+  String get favorites;
+
+  /// No description provided for @noFavorites.
+  ///
+  /// In zh, this message translates to:
+  /// **'还没有收藏的条目，长按或右键条目可添加收藏'**
+  String get noFavorites;
+
+  /// No description provided for @pinEntry.
+  ///
+  /// In zh, this message translates to:
+  /// **'置顶'**
+  String get pinEntry;
+
+  /// No description provided for @unpinEntry.
+  ///
+  /// In zh, this message translates to:
+  /// **'取消置顶'**
+  String get unpinEntry;
+
+  /// No description provided for @chooseTemplate.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择模板'**
+  String get chooseTemplate;
+
+  /// No description provided for @tplLogin.
+  ///
+  /// In zh, this message translates to:
+  /// **'登录'**
+  String get tplLogin;
+
+  /// No description provided for @tplBankAccount.
+  ///
+  /// In zh, this message translates to:
+  /// **'银行账户'**
+  String get tplBankAccount;
+
+  /// No description provided for @tplCreditCard.
+  ///
+  /// In zh, this message translates to:
+  /// **'银行卡'**
+  String get tplCreditCard;
+
+  /// No description provided for @tplSecureNote.
+  ///
+  /// In zh, this message translates to:
+  /// **'安全笔记'**
+  String get tplSecureNote;
+
+  /// No description provided for @tplServer.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器'**
+  String get tplServer;
+
+  /// No description provided for @tplIdentity.
+  ///
+  /// In zh, this message translates to:
+  /// **'身份信息'**
+  String get tplIdentity;
+
+  /// No description provided for @tplSoftwareLicense.
+  ///
+  /// In zh, this message translates to:
+  /// **'软件许可'**
+  String get tplSoftwareLicense;
+
+  /// No description provided for @tplBankName.
+  ///
+  /// In zh, this message translates to:
+  /// **'银行名称'**
+  String get tplBankName;
+
+  /// No description provided for @tplAccountHolder.
+  ///
+  /// In zh, this message translates to:
+  /// **'账户持有人'**
+  String get tplAccountHolder;
+
+  /// No description provided for @tplAccountNumber.
+  ///
+  /// In zh, this message translates to:
+  /// **'账号'**
+  String get tplAccountNumber;
+
+  /// No description provided for @tplRoutingNumber.
+  ///
+  /// In zh, this message translates to:
+  /// **'路由号'**
+  String get tplRoutingNumber;
+
+  /// No description provided for @tplSwift.
+  ///
+  /// In zh, this message translates to:
+  /// **'SWIFT 代码'**
+  String get tplSwift;
+
+  /// No description provided for @tplIban.
+  ///
+  /// In zh, this message translates to:
+  /// **'IBAN'**
+  String get tplIban;
+
+  /// No description provided for @tplCardName.
+  ///
+  /// In zh, this message translates to:
+  /// **'卡片名称'**
+  String get tplCardName;
+
+  /// No description provided for @tplCardType.
+  ///
+  /// In zh, this message translates to:
+  /// **'卡类型'**
+  String get tplCardType;
+
+  /// No description provided for @tplCardNumber.
+  ///
+  /// In zh, this message translates to:
+  /// **'卡号'**
+  String get tplCardNumber;
+
+  /// No description provided for @tplCardholderName.
+  ///
+  /// In zh, this message translates to:
+  /// **'持卡人姓名'**
+  String get tplCardholderName;
+
+  /// No description provided for @tplExpirationDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'有效期'**
+  String get tplExpirationDate;
+
+  /// No description provided for @tplCvv.
+  ///
+  /// In zh, this message translates to:
+  /// **'CVV'**
+  String get tplCvv;
+
+  /// No description provided for @tplPin.
+  ///
+  /// In zh, this message translates to:
+  /// **'PIN 码'**
+  String get tplPin;
+
+  /// No description provided for @tplNoteContent.
+  ///
+  /// In zh, this message translates to:
+  /// **'笔记内容'**
+  String get tplNoteContent;
+
+  /// No description provided for @tplServerName.
+  ///
+  /// In zh, this message translates to:
+  /// **'服务器名称'**
+  String get tplServerName;
+
+  /// No description provided for @tplHost.
+  ///
+  /// In zh, this message translates to:
+  /// **'主机地址'**
+  String get tplHost;
+
+  /// No description provided for @tplPort.
+  ///
+  /// In zh, this message translates to:
+  /// **'端口'**
+  String get tplPort;
+
+  /// No description provided for @tplAdminUsername.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理员用户名'**
+  String get tplAdminUsername;
+
+  /// No description provided for @tplAdminPassword.
+  ///
+  /// In zh, this message translates to:
+  /// **'管理员密码'**
+  String get tplAdminPassword;
+
+  /// No description provided for @tplIdentityName.
+  ///
+  /// In zh, this message translates to:
+  /// **'身份名称'**
+  String get tplIdentityName;
+
+  /// No description provided for @tplFullName.
+  ///
+  /// In zh, this message translates to:
+  /// **'姓名'**
+  String get tplFullName;
+
+  /// No description provided for @tplIdNumber.
+  ///
+  /// In zh, this message translates to:
+  /// **'证件号码'**
+  String get tplIdNumber;
+
+  /// No description provided for @tplPhoneNumber.
+  ///
+  /// In zh, this message translates to:
+  /// **'电话号码'**
+  String get tplPhoneNumber;
+
+  /// No description provided for @tplEmail.
+  ///
+  /// In zh, this message translates to:
+  /// **'电子邮箱'**
+  String get tplEmail;
+
+  /// No description provided for @tplAddress.
+  ///
+  /// In zh, this message translates to:
+  /// **'地址'**
+  String get tplAddress;
+
+  /// No description provided for @tplSoftwareName.
+  ///
+  /// In zh, this message translates to:
+  /// **'软件名称'**
+  String get tplSoftwareName;
+
+  /// No description provided for @tplLicenseKey.
+  ///
+  /// In zh, this message translates to:
+  /// **'许可密钥'**
+  String get tplLicenseKey;
+
+  /// No description provided for @tplLicensedTo.
+  ///
+  /// In zh, this message translates to:
+  /// **'授权给'**
+  String get tplLicensedTo;
+
+  /// No description provided for @tplVersion.
+  ///
+  /// In zh, this message translates to:
+  /// **'版本'**
+  String get tplVersion;
+
+  /// No description provided for @tplPurchaseDate.
+  ///
+  /// In zh, this message translates to:
+  /// **'购买日期'**
+  String get tplPurchaseDate;
+
+  /// No description provided for @autofill.
+  ///
+  /// In zh, this message translates to:
+  /// **'自动填充'**
+  String get autofill;
+
+  /// No description provided for @autofillDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'让 KeeStone 在其他应用和浏览器中自动填充密码。'**
+  String get autofillDescription;
+
+  /// No description provided for @enableAutofill.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用自动填充'**
+  String get enableAutofill;
+
+  /// No description provided for @setAsAutofillService.
+  ///
+  /// In zh, this message translates to:
+  /// **'设为自动填充服务'**
+  String get setAsAutofillService;
+
+  /// No description provided for @autofillIsDefault.
+  ///
+  /// In zh, this message translates to:
+  /// **'KeeStone 已是当前自动填充服务。'**
+  String get autofillIsDefault;
+
+  /// No description provided for @autofillNotDefault.
+  ///
+  /// In zh, this message translates to:
+  /// **'KeeStone 不是系统自动填充服务，点击设为默认。'**
+  String get autofillNotDefault;
+
+  /// No description provided for @autofillIosHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'在 iOS 上，请在 设置 → 密码 → 密码选项 中启用 KeeStone。'**
+  String get autofillIosHint;
+
+  /// No description provided for @autofillOpenApp.
+  ///
+  /// In zh, this message translates to:
+  /// **'打开 KeeStone'**
+  String get autofillOpenApp;
+
+  /// No description provided for @autofillUnlock.
+  ///
+  /// In zh, this message translates to:
+  /// **'解锁 KeeStone'**
+  String get autofillUnlock;
+
   /// No description provided for @syncBackend.
   ///
   /// In zh, this message translates to:

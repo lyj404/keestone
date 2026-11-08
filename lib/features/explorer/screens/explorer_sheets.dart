@@ -21,6 +21,11 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
   bool _wasDirtyBeforeCreate = false;
   late final DatabaseService _service;
 
+  /// Chosen template (null = plain login form). Standard fields still map to
+  /// Title/UserName/…; template-only fields go to the custom-field controllers.
+  EntryTemplate? _template;
+  final Map<String, TextEditingController> _templateFieldCtrls = {};
+
   @override
   void initState() {
     super.initState();
@@ -47,7 +52,56 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
     _passwordCtrl.dispose();
     _urlCtrl.dispose();
     _notesCtrl.dispose();
+    for (final ctrl in _templateFieldCtrls.values) {
+      ctrl.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _chooseTemplate() async {
+    final template = await pickTemplate(context, ref);
+    if (!mounted) return;
+    setState(() {
+      for (final ctrl in _templateFieldCtrls.values) {
+        ctrl.dispose();
+      }
+      _templateFieldCtrls.clear();
+      _template = template.id == 'login' ? null : template;
+    });
+  }
+
+  /// True when [key] is one of the five standard form fields (already shown
+  /// as dedicated inputs); template-only fields get their own controllers.
+  bool _isStandardField(String key) =>
+      key == 'Title' ||
+      key == 'UserName' ||
+      key == 'Password' ||
+      key == 'URL' ||
+      key == 'Notes';
+
+  TextEditingController _templateCtrl(String key) {
+    return _templateFieldCtrls.putIfAbsent(
+      key,
+      () => TextEditingController(),
+    );
+  }
+
+  Widget _templateFieldInput(TemplateField field, AppLocalizations l10n) {
+    final obscure = field.protected;
+    return TextField(
+      controller: _templateCtrl(field.key),
+      obscureText: obscure,
+      maxLines: field.multiline ? 3 : 1,
+      decoration: InputDecoration(
+        labelText: field.label(l10n),
+        prefixIcon: Icon(
+          obscure
+              ? Icons.lock_outline_rounded
+              : Icons.text_fields_rounded,
+          size: 20,
+        ),
+      ),
+    );
   }
 
   @override
@@ -131,6 +185,58 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                 controller: scrollCtrl,
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
                 children: [
+                  // Template picker
+                  InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: _chooseTemplate,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          Icon(
+                            _template == null
+                                ? Icons.key_rounded
+                                : templateIcon(_template!.icon),
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            _template == null
+                                ? l10n.tplLogin
+                                : templateDisplayName(_template!, l10n),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            l10n.chooseTemplate,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: colorScheme.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.expand_more_rounded,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Template-only fields (standard keys use the inputs below)
+                  for (final field
+                      in _template?.fields ?? const <TemplateField>[])
+                    if (!_isStandardField(field.key)) ...[
+                      _templateFieldInput(field, l10n),
+                      const SizedBox(height: 12),
+                    ],
                   TextField(
                     controller: _titleCtrl,
                     autofocus: true,
@@ -336,6 +442,16 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
     );
     _entry!.fields['URL'] = KdbxTextField.fromText(text: _urlCtrl.text);
     _entry!.fields['Notes'] = KdbxTextField.fromText(text: _notesCtrl.text);
+    // Template-only fields become custom fields on the entry.
+    for (final field in _template?.fields ?? const <TemplateField>[]) {
+      if (_isStandardField(field.key)) continue;
+      final value = _templateFieldCtrls[field.key]?.text ?? '';
+      if (value.isEmpty) continue;
+      _entry!.fields[field.key] = KdbxTextField.fromText(
+        text: value,
+        protected: field.protected,
+      );
+    }
     _entry!.tags = _tags.isEmpty ? null : List.from(_tags);
     _saved = true;
     final service = ref.read(databaseServiceProvider);

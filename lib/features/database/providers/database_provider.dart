@@ -15,6 +15,8 @@ export '../data/csv_service.dart' show CsvEntry;
 import '../../../core/providers/auto_lock_provider.dart';
 import '../../../core/providers/auto_save_provider.dart';
 import '../../../core/providers/expiration_reminder_provider.dart';
+import '../../autofill/providers/autofill_provider.dart';
+import '../../autofill/services/autofill_snapshot_service.dart';
 import '../../explorer/providers/explorer_provider.dart'
     show activeEntryProvider;
 import '../../settings/data/webdav_config.dart';
@@ -132,6 +134,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       }
       state = AsyncValue.data(db);
       _ref.read(autoLockProvider.notifier).resetTimer();
+      _maybeWriteAutofillSnapshot();
       unawaited(
         (() async {
           final recentSvc = _ref.read(recentFilesServiceProvider);
@@ -229,6 +232,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       ]);
       state = AsyncValue.data(db);
       _ref.read(autoLockProvider.notifier).resetTimer();
+      _maybeWriteAutofillSnapshot();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -364,6 +368,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         return false;
       }
     }
+    _maybeWriteAutofillSnapshot();
     return true;
   }
 
@@ -566,6 +571,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     unawaited(
       _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
     );
+    _maybeWriteAutofillSnapshot();
 
     if (_ref.read(openedFromCloudProvider)) {
       await forceUpload(savedBytes: savedBytes);
@@ -808,6 +814,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     _ref.read(activeEntryProvider.notifier).state = null;
     _ref.read(openedFromCloudProvider.notifier).state = false;
     _ref.read(syncStateProvider.notifier).state = SyncState.idle;
+    _maybeDeleteAutofillSnapshot();
     if (clearLastOpened) {
       unawaited(_ref.read(recentFilesServiceProvider).clearLastOpenedFile());
     }
@@ -815,6 +822,29 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     _ref.read(autoSaveProvider.notifier).cancelTimer();
     _ref.read(syncServiceProvider).clearCache();
     _ref.invalidate(recentFilesProvider);
+  }
+
+  void _maybeWriteAutofillSnapshot() {
+    // The snapshot is consumed only by the iOS Credential Provider Extension;
+    // on other platforms writeFor is a no-op but we skip the channel round-trip
+    // entirely here to avoid overhead on every save.
+    if (!Platform.isIOS) return;
+    if (!_ref.read(autofillEnabledProvider)) return;
+    unawaited(
+      AutofillSnapshotService().writeFor(_service).catchError((e, st) {
+        log.w('Autofill snapshot write failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  void _maybeDeleteAutofillSnapshot() {
+    // Always attempt cleanup on lock/close so a stale snapshot can never
+    // outlive the session even if the user later disables autofill.
+    unawaited(
+      AutofillSnapshotService().delete().catchError((e, st) {
+        log.w('Autofill snapshot delete failed', error: e, stackTrace: st);
+      }),
+    );
   }
 
   Future<void> reloadFromCloud() async {
@@ -832,6 +862,7 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
     unawaited(
       _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
     );
+    _maybeWriteAutofillSnapshot();
     if (_service.filePath != null) {
       final recentSvc = _ref.read(recentFilesServiceProvider);
       final existing = await recentSvc.getRecentFiles();

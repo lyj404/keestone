@@ -45,9 +45,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     // computation) does not survive the page for the next visit. Also drop
     // the lowercase search index: it duplicates the text of every entry and
     // is only worth keeping while a search session is active.
+    // Deferred: modifying a provider synchronously inside dispose is
+    // forbidden while the widget tree is being finalized (Riverpod debug
+    // assert), so the reset runs after the current build phase ends.
+    final queryController = _searchQueryController;
+    final databaseService = _databaseService;
     _debounce?.cancel();
-    _searchQueryController.state = '';
-    _databaseService.clearSearchIndex();
+    Future.microtask(() {
+      queryController.state = '';
+      databaseService.clearSearchIndex();
+    });
     _searchCtrl.dispose();
     _keyboardFocusNode.dispose();
     super.dispose();

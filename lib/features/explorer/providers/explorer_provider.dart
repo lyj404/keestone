@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:kpasslib/kpasslib.dart';
 
 import '../../database/providers/database_provider.dart';
+import '../../favorite/data/favorite_service.dart';
 
 final currentGroupPathProvider = StateProvider<String>((ref) => '');
 
@@ -53,8 +54,8 @@ final entriesProvider = Provider<List<KdbxEntry>>((ref) {
         .where((e) => e.tags?.contains(selectedTag) ?? false)
         .toList();
   }
-  // Apply sorting
-  entries.sort((a, b) {
+  // Apply sorting (favorites always float to the top within a group).
+  int compareEntries(KdbxEntry a, KdbxEntry b) {
     switch (sortOption) {
       case EntrySortOption.titleAsc:
         return (a.fields['Title']?.text ?? '').compareTo(
@@ -94,6 +95,14 @@ final entriesProvider = Provider<List<KdbxEntry>>((ref) {
           bExpired ?? DateTime(2100),
         );
     }
+  }
+
+  entries.sort((a, b) {
+    // Pins float above favorites above everything else, within the group.
+    final aRank = isPinnedEntry(a) ? 0 : (isFavoriteEntry(a) ? 1 : 2);
+    final bRank = isPinnedEntry(b) ? 0 : (isFavoriteEntry(b) ? 1 : 2);
+    if (aRank != bRank) return aRank - bRank;
+    return compareEntries(a, b);
   });
   return entries;
 });

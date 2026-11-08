@@ -7,6 +7,7 @@ import '../../features/totp/data/totp_service.dart';
 import '../../l10n/app_localizations.dart';
 import 'toast.dart';
 import '../utils/fuzzy_match.dart';
+import '../../features/favorite/data/favorite_service.dart';
 
 class EntryListTile extends StatefulWidget {
   final KdbxEntry entry;
@@ -16,11 +17,17 @@ class EntryListTile extends StatefulWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onRestore;
   final VoidCallback? onMove;
+  final VoidCallback? onToggleFavorite;
+  final VoidCallback? onTogglePin;
   final String? query;
   final bool showCheckbox;
   final bool isChecked;
   final bool draggable;
   final bool mobileStyle;
+
+  /// Optional secondary line (e.g. group path in the favorites view). Shown
+  /// instead of the username when set.
+  final String? subtitle;
 
   static final _totpService = TotpService();
 
@@ -33,11 +40,14 @@ class EntryListTile extends StatefulWidget {
     this.onDelete,
     this.onRestore,
     this.onMove,
+    this.onToggleFavorite,
+    this.onTogglePin,
     this.query,
     this.showCheckbox = false,
     this.isChecked = false,
     this.draggable = false,
     this.mobileStyle = false,
+    this.subtitle,
   });
 
   @override
@@ -125,7 +135,38 @@ class _EntryListTileState extends State<EntryListTile> {
       screenSize.height - globalPos.dy,
     );
     final l10n = AppLocalizations.of(context)!;
+    final isFavorite = isFavoriteEntry(widget.entry);
+    final isPinned = isPinnedEntry(widget.entry);
+    final pinColor = Theme.of(context).colorScheme.primary;
     final items = <PopupMenuEntry<String>>[
+      if (widget.onTogglePin != null)
+        PopupMenuItem(
+          value: 'toggle_pin',
+          child: ListTile(
+            leading: Icon(
+              isPinned
+                  ? Icons.push_pin_rounded
+                  : Icons.push_pin_outlined,
+              color: isPinned ? pinColor : null,
+            ),
+            title: Text(isPinned ? l10n.unpinEntry : l10n.pinEntry),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+      if (widget.onToggleFavorite != null)
+        PopupMenuItem(
+          value: 'toggle_favorite',
+          child: ListTile(
+            leading: Icon(
+              isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+              color: isFavorite ? const Color(0xFFF59E0B) : null,
+            ),
+            title: Text(isFavorite ? l10n.removeFavorite : l10n.addFavorite),
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
       PopupMenuItem(
         value: 'copy_password',
         child: ListTile(
@@ -219,6 +260,10 @@ class _EntryListTileState extends State<EntryListTile> {
     ) {
       if (value == null || !context.mounted) return;
       switch (value) {
+        case 'toggle_pin':
+          widget.onTogglePin?.call();
+        case 'toggle_favorite':
+          widget.onToggleFavorite?.call();
         case 'copy_password':
           copyToClipboardWithAutoClear(_password);
           showToast(context, l10n.copiedPassword);
@@ -251,6 +296,7 @@ class _EntryListTileState extends State<EntryListTile> {
     required IconData icon,
     required double iconSize,
     required VoidCallback? onTap,
+    Color? iconColor,
   }) {
     return SizedBox(
       width: ClayLayout.iconButton,
@@ -264,7 +310,7 @@ class _EntryListTileState extends State<EntryListTile> {
           child: Icon(
             icon,
             size: iconSize,
-            color: colorScheme.onSurfaceVariant,
+            color: iconColor ?? colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -384,10 +430,12 @@ class _EntryListTileState extends State<EntryListTile> {
                               textTheme,
                             ),
                             if (!widget.mobileStyle &&
-                                _username.isNotEmpty) ...[
+                                (widget.subtitle != null
+                                    ? widget.subtitle!.isNotEmpty
+                                    : _username.isNotEmpty)) ...[
                               const SizedBox(height: 2),
                               Text(
-                                _username,
+                                widget.subtitle ?? _username,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: textTheme.bodySmall,
@@ -425,6 +473,30 @@ class _EntryListTileState extends State<EntryListTile> {
                           ],
                         ),
                       ),
+                      if (widget.onTogglePin != null)
+                        _actionButton(
+                          colorScheme: colorScheme,
+                          icon: isPinnedEntry(widget.entry)
+                              ? Icons.push_pin_rounded
+                              : Icons.push_pin_outlined,
+                          iconSize: 15,
+                          iconColor: isPinnedEntry(widget.entry)
+                              ? colorScheme.primary
+                              : null,
+                          onTap: widget.onTogglePin,
+                        ),
+                      if (widget.onToggleFavorite != null)
+                        _actionButton(
+                          colorScheme: colorScheme,
+                          icon: isFavoriteEntry(widget.entry)
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          iconSize: 16,
+                          iconColor: isFavoriteEntry(widget.entry)
+                              ? const Color(0xFFF59E0B)
+                              : null,
+                          onTap: widget.onToggleFavorite,
+                        ),
                       if (_isExpired) ...[
                         Container(
                           padding: const EdgeInsets.symmetric(

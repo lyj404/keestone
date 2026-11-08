@@ -18,6 +18,9 @@ class _NarrowLayout extends ConsumerStatefulWidget {
   final ValueChanged<KdbxEntry> onDeleteEntry;
   final ValueChanged<KdbxEntry>? onRestoreEntry;
   final ValueChanged<KdbxEntry>? onMoveEntry;
+  final ValueChanged<KdbxEntry>? onToggleFavoriteEntry;
+  final ValueChanged<KdbxEntry>? onTogglePinEntry;
+  final VoidCallback? onToggleFavoritesView;
   final ValueChanged<KdbxGroup>? onDeleteGroup;
   final ValueChanged<KdbxGroup>? onRenameGroup;
   final ValueChanged<KdbxGroup>? onRestoreGroup;
@@ -61,6 +64,9 @@ class _NarrowLayout extends ConsumerStatefulWidget {
     required this.onDeleteEntry,
     this.onRestoreEntry,
     this.onMoveEntry,
+    this.onToggleFavoriteEntry,
+    this.onTogglePinEntry,
+    this.onToggleFavoritesView,
     this.onDeleteGroup,
     this.onRenameGroup,
     this.onRestoreGroup,
@@ -96,6 +102,8 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
   final _totpService = TotpService();
   final _totpTabKey = GlobalKey();
   bool _fabExpanded = false;
+
+  bool get _showFavoritesView => ref.watch(favoritesViewProvider);
 
   @override
   void dispose() {
@@ -280,6 +288,20 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
           : null,
       title: Text(widget.breadcrumbs.last, overflow: TextOverflow.ellipsis),
       actions: [
+        if (widget.onToggleFavoritesView != null)
+          IconButton(
+            icon: Icon(
+              _showFavoritesView
+                  ? Icons.star_rounded
+                  : Icons.star_outline_rounded,
+              size: 20,
+              color: _showFavoritesView
+                  ? const Color(0xFFF59E0B)
+                  : colorScheme.onSurfaceVariant,
+            ),
+            tooltip: l10n.favorites,
+            onPressed: widget.onToggleFavoritesView,
+          ),
         if (widget.isOpenedFromCloud)
           IconButton(
             icon: const Icon(Icons.sync_rounded, size: 20),
@@ -457,9 +479,18 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
       children: [
         if (widget.isOpenedFromCloud && widget.isCloudOfflineMode)
           _CloudOfflineBanner(reason: widget.cloudOfflineReason),
-        _TagFilterBar(),
+        if (!_showFavoritesView) _TagFilterBar(),
         Expanded(
-          child: _MobileEntryListBody(
+          child: _showFavoritesView
+              ? FavoritesView(
+                  mobileStyle: true,
+                  selectedEntry: widget.selectedEntry,
+                  onEntrySelect: widget.onEntrySelect,
+                  onEntryOpen: widget.onEntryOpen,
+                  onDeleteEntry: widget.onDeleteEntry,
+                  onToggleFavoriteEntry: widget.onToggleFavoriteEntry ?? (_) {},
+                )
+              : _MobileEntryListBody(
             currentGroup: widget.currentGroup,
             entries: widget.entries,
             selectedEntry: widget.selectedEntry,
@@ -469,6 +500,8 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
             onDeleteEntry: widget.onDeleteEntry,
             onRestoreEntry: widget.onRestoreEntry,
             onMoveEntry: widget.onMoveEntry,
+            onToggleFavoriteEntry: widget.onToggleFavoriteEntry,
+            onTogglePinEntry: widget.onTogglePinEntry,
             onDeleteGroup: widget.onDeleteGroup,
             onRenameGroup: widget.onRenameGroup,
             onRestoreGroup: widget.onRestoreGroup,

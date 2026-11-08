@@ -1,6 +1,6 @@
 part of 'explorer_screen.dart';
 
-class _WideLayout extends StatelessWidget {
+class _WideLayout extends ConsumerWidget {
   final List<String> breadcrumbs;
   final KdbxGroup? currentGroup;
   final List<KdbxEntry> entries;
@@ -18,6 +18,9 @@ class _WideLayout extends StatelessWidget {
   final ValueChanged<KdbxEntry> onDeleteEntry;
   final ValueChanged<KdbxEntry>? onRestoreEntry;
   final ValueChanged<KdbxEntry>? onMoveEntry;
+  final ValueChanged<KdbxEntry>? onToggleFavoriteEntry;
+  final ValueChanged<KdbxEntry>? onTogglePinEntry;
+  final VoidCallback? onToggleFavoritesView;
   final ValueChanged<KdbxGroup>? onDeleteGroup;
   final ValueChanged<KdbxGroup>? onRenameGroup;
   final ValueChanged<KdbxGroup>? onRestoreGroup;
@@ -62,6 +65,7 @@ class _WideLayout extends StatelessWidget {
     required this.onDeleteEntry,
     this.onRestoreEntry,
     this.onMoveEntry,
+    this.onToggleFavoriteEntry,
     this.onDeleteGroup,
     this.onRenameGroup,
     this.onRestoreGroup,
@@ -86,11 +90,12 @@ class _WideLayout extends StatelessWidget {
     required this.onBatchDelete,
     required this.onBatchMove,
     required this.onBatchTag,
+    this.onTogglePinEntry,
+    this.onToggleFavoritesView,
     this.onEntryDropped,
   });
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
@@ -127,6 +132,28 @@ class _WideLayout extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: IconButton(
+                          icon: Icon(
+                            ref.watch(favoritesViewProvider)
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            size: 18,
+                            color: ref.watch(favoritesViewProvider)
+                                ? const Color(0xFFF59E0B)
+                                : colorScheme.onSurfaceVariant,
+                          ),
+                          tooltip: l10n.favorites,
+                          onPressed: onToggleFavoritesView,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       Container(
                         width: 34,
                         height: 34,
@@ -419,9 +446,17 @@ class _WideLayout extends StatelessWidget {
                     ],
                   ),
                 ),
-                const _TagFilterBar(),
+                if (!ref.watch(favoritesViewProvider)) const _TagFilterBar(),
                 Expanded(
-                  child: _EntryListBody(
+                  child: ref.watch(favoritesViewProvider)
+                      ? FavoritesView(
+                          selectedEntry: selectedEntry,
+                          onEntrySelect: onEntrySelect,
+                          onEntryOpen: onEntryOpen,
+                          onDeleteEntry: onDeleteEntry,
+                          onToggleFavoriteEntry: onToggleFavoriteEntry ?? (_) {},
+                        )
+                      : _EntryListBody(
                     entries: entries,
                     selectedEntry: selectedEntry,
                     onEntrySelect: onEntrySelect,
@@ -429,6 +464,8 @@ class _WideLayout extends StatelessWidget {
                     onDeleteEntry: onDeleteEntry,
                     onRestoreEntry: onRestoreEntry,
                     onMoveEntry: onMoveEntry,
+                    onToggleFavoriteEntry: onToggleFavoriteEntry,
+                    onTogglePinEntry: onTogglePinEntry,
                     isMultiSelect: isMultiSelect,
                     selectedEntries: selectedEntries,
                     onToggleEntrySelection: onToggleEntrySelection,

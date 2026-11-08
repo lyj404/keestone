@@ -23,6 +23,8 @@ import '../../../core/providers/biometric_provider.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/services/log_export_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../autofill/providers/autofill_provider.dart';
+import '../../autofill/services/autofill_control.dart';
 import '../../sync/data/git_config.dart';
 import '../data/webdav_config.dart';
 import '../providers/settings_provider.dart';
@@ -240,6 +242,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       _languageCard(brightness, l10n, ref),
       _autoSaveCard(brightness, l10n, ref),
       _expirationReminderCard(brightness, l10n, ref),
+      if (Platform.isAndroid || Platform.isIOS)
+        _autofillCard(brightness, l10n, ref),
       if (Platform.isMacOS || Platform.isAndroid)
         _logExportCard(brightness, l10n),
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
@@ -420,6 +424,73 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _autofillCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = ref.watch(autofillEnabledProvider);
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                child: Icon(
+                  Icons.password_rounded,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.autofill,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      l10n.autofillDescription,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: enabled,
+                onChanged: (v) => ref
+                    .read(autofillEnabledProvider.notifier)
+                    .setEnabled(v),
+              ),
+            ],
+          ),
+          if (enabled) ...[
+            if (Platform.isAndroid)
+              _AutofillDefaultStatusTile(l10n: l10n)
+            else if (Platform.isIOS)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  l10n.autofillIosHint,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -642,5 +713,62 @@ class _SectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionCard(children: [child]);
+  }
+}
+
+class _AutofillDefaultStatusTile extends StatefulWidget {
+  final AppLocalizations l10n;
+
+  const _AutofillDefaultStatusTile({required this.l10n});
+
+  @override
+  State<_AutofillDefaultStatusTile> createState() =>
+      _AutofillDefaultStatusTileState();
+}
+
+class _AutofillDefaultStatusTileState extends State<_AutofillDefaultStatusTile> {
+  bool? _isDefault; // null = unknown / not checked yet
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshDefault();
+  }
+
+  Future<void> _refreshDefault() async {
+    final value = await AutofillControl.isDefaultService();
+    if (mounted) setState(() => _isDefault = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = widget.l10n;
+    return ListTile(
+      dense: true,
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(
+        _isDefault == true
+            ? Icons.check_circle_rounded
+            : Icons.info_outline_rounded,
+        size: 20,
+        color: _isDefault == true ? colorScheme.primary : null,
+      ),
+      title: Text(
+        _isDefault == true ? l10n.autofillIsDefault : l10n.autofillNotDefault,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      trailing: _isDefault == true
+          ? null
+          : TextButton(
+              onPressed: () async {
+                await AutofillControl.requestSetDefault();
+                // The system prompt is async; re-check after a beat.
+                await Future.delayed(const Duration(milliseconds: 500));
+                if (mounted) await _refreshDefault();
+              },
+              child: Text(l10n.setAsAutofillService),
+            ),
+    );
   }
 }

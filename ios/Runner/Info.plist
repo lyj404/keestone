@@ -56,5 +56,16 @@
 	<string>We need camera access to scan TOTP QR codes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to pick key file images.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.keestone.keestone.unlock</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>keestone</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -1,34 +1,22 @@
 # KeeStone Autofill — iOS Credential Provider Extension
 
-Headless edits cannot add a new Xcode target or wire capabilities, so the
-following one-time setup must be performed in Xcode. The extension source,
-Info.plist, and entitlements files already exist in this directory.
+The extension target is already wired into `ios/Runner.xcodeproj` (target
+`CredentialProvider`, embedded in Runner, entitlements and Info.plist set up).
+The Swift sources, Info.plist, and entitlements live in this directory.
 
-## 1. Add the extension target
+## One-time Xcode/Apple Developer setup (cannot be done from files alone)
 
-1. Open `ios/Runner.xcworkspace` in Xcode.
-2. File → New → Target… → **Credential Provider Extension** (iOS).
-3. Name it `CredentialProvider`, language Swift, embed in Runner.
-4. Replace the generated `*.swift`/`Info.plist` with the files in this folder:
-   `CredentialProviderViewController.swift`, `SnapshotStore.swift`,
-   `Matcher.swift`, `Info.plist`.
-5. Set the target's Info.plist to `CredentialProvider/Info.plist` and the
-   principal class to `CredentialProviderViewController`.
-6. Add `import CryptoKit` (available iOS 13+, already used by `SnapshotStore`).
+1. Open `ios/Runner.xcworkspace` in Xcode and select the **CredentialProvider**
+   target. Under **Signing & Capabilities**, pick your development team and let
+   Xcode register the `com.keestone.keestone.CredentialProvider` bundle id with
+   the App Group / Keychain capabilities (files
+   `CredentialProvider.entitlements` / `Runner.entitlements` already declare
+   `group.com.keestone.keestone` for both targets).
+2. If Xcode complains about the App Group or keychain access group not being
+   registered on your Apple Developer account, add
+   `group.com.keestone.keestone` there (Identifiers → App Groups).
 
-## 2. Capabilities (Runner AND CredentialProvider)
-
-Enable on **both** the Runner app target and the CredentialProvider target:
-
-- **App Groups** → add `group.com.keestone.keestone`
-- **Keychain Sharing** → group name `group.com.keestone.keestone`
-
-This makes `Runner.entitlements` and `CredentialProvider.entitlements`
-(provided here) take effect. If Xcode regenerates its own entitlements files,
-ensure the `application-groups` and `keychain-access-groups` entries above are
-present in both.
-
-## 3. Access-group alignment (IMPORTANT)
+## Access-group alignment (IMPORTANT)
 
 The AES snapshot key is written to the shared Keychain by the Dart side via
 `flutter_secure_storage` with `IOSOptions(groupId: "group.com.keestone.keestone")`,
@@ -41,14 +29,14 @@ team-prefixed (`<TEAMID>group.com.keestone.keestone`). In that case change
 to the identical prefixed string, and update the App Group id accordingly.
 Both sides must use the exact same string.
 
-## 4. URL scheme (optional)
+## URL scheme (already registered)
 
-To let the extension offer "Open KeeStone" when the vault is locked, register
-a `keestone` URL scheme on the Runner target and handle it in
-`AppDelegate.swift` (route to the unlock screen). The extension calls
-`keestone://unlock`.
+The `keestone` URL scheme is registered in `Runner/Info.plist`
+(`CFBundleURLTypes`). go_router maps `keestone://unlock` to the `/unlock`
+route, which falls back to the last-opened vault. The extension calls
+`keestone://unlock` when the snapshot is missing.
 
-## 5. Verify
+## Verify
 
 Build to a device, unlock the vault with autofill enabled, then trigger iOS
 autofill in Safari on a login page. KeeStone should appear under

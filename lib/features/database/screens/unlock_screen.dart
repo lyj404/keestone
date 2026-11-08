@@ -46,19 +46,55 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
   bool _biometricTriggered = false;
   bool _lastUnlockUsedBiometric = false;
 
+  /// Resolved target for deep-link entry (keestone://unlock from the iOS
+  /// Credential Provider extension arrives with no path). Null resolution
+  /// means nothing was opened before and we bounce to /welcome.
+  String _filePath = '';
+  bool _isCloud = false;
+  String? _webDavProfileId;
+  String? _syncedETag;
+  bool _deepLinkResolved = false;
+
   @override
   void initState() {
     super.initState();
+    if (widget.filePath.isEmpty) {
+      _resolveDeepLink();
+    } else {
+      _deepLinkResolved = true;
+      _filePath = widget.filePath;
+      _isCloud = widget.isCloud;
+      _webDavProfileId = widget.webDavProfileId;
+      _syncedETag = widget.syncedETag;
+    }
     // Fire-and-forget preload: a missing/unreadable file must not surface as
     // an unhandled async exception here — openFile reports it properly.
     unawaited(
       ref
           .read(databaseProvider.notifier)
-          .preloadFile(widget.filePath)
+          .preloadFile(_filePath)
           .catchError((Object e) {
-            log.w('Preload failed for ${widget.filePath}', error: e);
+            log.w('Preload failed for $_filePath', error: e);
           }),
     );
+  }
+
+  Future<void> _resolveDeepLink() async {
+    final lastOpened = await ref
+        .read(recentFilesServiceProvider)
+        .getLastOpenedFile();
+    if (!mounted) return;
+    if (lastOpened == null) {
+      context.go('/welcome');
+      return;
+    }
+    setState(() {
+      _deepLinkResolved = true;
+      _filePath = lastOpened.path;
+      _isCloud = lastOpened.isCloud;
+      _webDavProfileId = lastOpened.webDavProfileId;
+      _syncedETag = lastOpened.lastSyncedETag;
+    });
   }
 
   @override
@@ -67,7 +103,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     super.dispose();
   }
 
-  String get _fileName => widget.filePath.split(Platform.pathSeparator).last;
+  String get _fileName => _filePath.split(Platform.pathSeparator).last;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +129,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
               !_lastUnlockUsedBiometric &&
               _passwordController.text.isNotEmpty) {
             BiometricService().storeCredentials(
-              widget.filePath,
+              _filePath,
               _passwordController.text,
               keyData: _keyData,
               keyFileName: _keyFileName,
@@ -111,6 +147,12 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
         }
       }
     });
+
+    // Deep-link (keestone://unlock) resolution is async: show nothing until
+    // the target vault is known (resolution itself redirects when none).
+    if (!_deepLinkResolved) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -186,7 +228,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.isCloud ? l10n.cloudDatabase : widget.filePath,
+                        _isCloud ? l10n.cloudDatabase : _filePath,
                         style: Theme.of(context).textTheme.bodySmall
                             ?.copyWith(color: colorScheme.onSurfaceVariant),
                         textAlign: TextAlign.center,
@@ -336,11 +378,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     ref
         .read(databaseProvider.notifier)
         .openFile(
-          widget.filePath,
+          _filePath,
           _passwordController.text,
-          isCloud: widget.isCloud,
-          webDavProfileId: widget.webDavProfileId,
-          syncedETag: widget.syncedETag,
+          isCloud: _isCloud,
+          webDavProfileId: _webDavProfileId,
+          syncedETag: _syncedETag,
           keyData: _keyData,
         );
   }
@@ -355,7 +397,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
     if (!authenticated) return;
 
     final storedCredentials = await biometricService.getStoredCredentials(
-      widget.filePath,
+      _filePath,
     );
     if (storedCredentials == null) {
       // No stored password, need to unlock with password first
@@ -377,11 +419,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
       ref
           .read(databaseProvider.notifier)
           .openFile(
-            widget.filePath,
+            _filePath,
             storedCredentials.password,
-            isCloud: widget.isCloud,
-            webDavProfileId: widget.webDavProfileId,
-            syncedETag: widget.syncedETag,
+            isCloud: _isCloud,
+            webDavProfileId: _webDavProfileId,
+            syncedETag: _syncedETag,
             keyData: storedCredentials.keyData,
           ),
     );
@@ -410,7 +452,7 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
   Future<void> _offerBackupRestore() async {
     final l10n = AppLocalizations.of(context)!;
     final backupService = BackupService();
-    final backups = await backupService.listBackupsFor(widget.filePath);
+    final backups = await backupService.listBackupsFor(_filePath);
     if (!mounted || backups.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -458,12 +500,12 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
           keyData: _keyData,
         );
         await const AtomicFileStore().commit(
-          widget.filePath,
+          _filePath,
           backupBytes,
           backup: () async {
-            if (!await File(widget.filePath).exists()) return;
+            if (!await File(_filePath).exists()) return;
             final currentBackup = await backupService.createBackup(
-              widget.filePath,
+              _filePath,
             );
             if (currentBackup == null) {
               throw const FileSystemException(

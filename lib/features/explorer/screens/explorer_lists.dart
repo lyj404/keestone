@@ -63,6 +63,8 @@ class _EntryListBody extends StatelessWidget {
   final ValueChanged<KdbxEntry> onDeleteEntry;
   final ValueChanged<KdbxEntry>? onRestoreEntry;
   final ValueChanged<KdbxEntry>? onMoveEntry;
+  final ValueChanged<KdbxEntry>? onToggleFavoriteEntry;
+  final ValueChanged<KdbxEntry>? onTogglePinEntry;
   final bool isMultiSelect;
   final Set<KdbxEntry> selectedEntries;
   final ValueChanged<KdbxEntry> onToggleEntrySelection;
@@ -76,6 +78,8 @@ class _EntryListBody extends StatelessWidget {
     required this.onDeleteEntry,
     this.onRestoreEntry,
     this.onMoveEntry,
+    this.onToggleFavoriteEntry,
+    this.onTogglePinEntry,
     this.isMultiSelect = false,
     this.selectedEntries = const {},
     required this.onToggleEntrySelection,
@@ -111,6 +115,12 @@ class _EntryListBody extends StatelessWidget {
             onDelete: () => onDeleteEntry(e),
             onRestore: onRestoreEntry != null ? () => onRestoreEntry!(e) : null,
             onMove: onMoveEntry != null ? () => onMoveEntry!(e) : null,
+            onToggleFavorite: onToggleFavoriteEntry != null
+                ? () => onToggleFavoriteEntry!(e)
+                : null,
+            onTogglePin: onTogglePinEntry != null
+                ? () => onTogglePinEntry!(e)
+                : null,
             showCheckbox: isMultiSelect,
             isChecked: selectedEntries.contains(e),
             draggable: isDraggable,
@@ -123,7 +133,7 @@ class _EntryListBody extends StatelessWidget {
 
 // ─── Mobile entry list with group navigation ──────────────────────────────
 
-class _MobileEntryListBody extends StatelessWidget {
+class _MobileEntryListBody extends ConsumerWidget {
   final KdbxGroup? currentGroup;
   final List<KdbxEntry> entries;
   final KdbxEntry? selectedEntry;
@@ -133,6 +143,8 @@ class _MobileEntryListBody extends StatelessWidget {
   final ValueChanged<KdbxEntry> onDeleteEntry;
   final ValueChanged<KdbxEntry>? onRestoreEntry;
   final ValueChanged<KdbxEntry>? onMoveEntry;
+  final ValueChanged<KdbxEntry>? onToggleFavoriteEntry;
+  final ValueChanged<KdbxEntry>? onTogglePinEntry;
   final ValueChanged<KdbxGroup>? onDeleteGroup;
   final ValueChanged<KdbxGroup>? onRenameGroup;
   final ValueChanged<KdbxGroup>? onRestoreGroup;
@@ -151,6 +163,8 @@ class _MobileEntryListBody extends StatelessWidget {
     required this.onDeleteEntry,
     this.onRestoreEntry,
     this.onMoveEntry,
+    this.onToggleFavoriteEntry,
+    this.onTogglePinEntry,
     this.onDeleteGroup,
     this.onRenameGroup,
     this.onRestoreGroup,
@@ -161,7 +175,7 @@ class _MobileEntryListBody extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final subGroups = currentGroup?.groups ?? [];
     final l10n = AppLocalizations.of(context)!;
 
@@ -183,6 +197,14 @@ class _MobileEntryListBody extends StatelessWidget {
           1,
       itemBuilder: (context, index) {
         if (subGroups.isNotEmpty && index == 0) {
+          final service = ref.read(databaseServiceProvider);
+          // The recycle bin always sorts first among sibling groups.
+          final sortedGroups = [...subGroups]..sort((a, b) {
+            final aBin = service.isRecycleBinGroup(a) ? 0 : 1;
+            final bBin = service.isRecycleBinGroup(b) ? 0 : 1;
+            if (aBin != bBin) return aBin - bBin;
+            return 0;
+          });
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -193,9 +215,10 @@ class _MobileEntryListBody extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
               ),
-              for (final group in subGroups)
+              for (final group in sortedGroups)
                 _MobileGroupTile(
                   group: group,
+                  isRecycleBin: service.isRecycleBinGroup(group),
                   onTap: () => onGroupTap(group),
                   onDeleteGroup: onDeleteGroup,
                   onRenameGroup: onRenameGroup,
@@ -231,6 +254,12 @@ class _MobileEntryListBody extends StatelessWidget {
             onDelete: () => onDeleteEntry(e),
             onRestore: onRestoreEntry != null ? () => onRestoreEntry!(e) : null,
             onMove: onMoveEntry != null ? () => onMoveEntry!(e) : null,
+            onToggleFavorite: onToggleFavoriteEntry != null
+                ? () => onToggleFavoriteEntry!(e)
+                : null,
+            onTogglePin: onTogglePinEntry != null
+                ? () => onTogglePinEntry!(e)
+                : null,
             showCheckbox: isMultiSelect,
             isChecked: selectedEntries.contains(e),
           ),
@@ -242,6 +271,7 @@ class _MobileEntryListBody extends StatelessWidget {
 
 class _MobileGroupTile extends StatelessWidget {
   final KdbxGroup group;
+  final bool isRecycleBin;
   final VoidCallback onTap;
   final ValueChanged<KdbxGroup>? onDeleteGroup;
   final ValueChanged<KdbxGroup>? onRenameGroup;
@@ -251,6 +281,7 @@ class _MobileGroupTile extends StatelessWidget {
   const _MobileGroupTile({
     required this.group,
     required this.onTap,
+    this.isRecycleBin = false,
     this.onDeleteGroup,
     this.onRenameGroup,
     this.onRestoreGroup,
@@ -260,6 +291,8 @@ class _MobileGroupTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final displayName = isRecycleBin ? l10n.recycleBin : group.name;
     final hasMenu =
         onDeleteGroup != null ||
         onRenameGroup != null ||
@@ -293,31 +326,33 @@ class _MobileGroupTile extends StatelessWidget {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: group.icon == KdbxIcon.trashBin
+                    color: isRecycleBin
                         ? colorScheme.errorContainer
                         : colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Icon(
-                    group.icon == KdbxIcon.trashBin
+                    isRecycleBin
                         ? Icons.delete_outline_rounded
                         : Icons.folder_outlined,
                     size: 18,
-                    color: group.icon == KdbxIcon.trashBin
-                        ? colorScheme.onErrorContainer
+                    color: isRecycleBin
+                        ? colorScheme.error
                         : colorScheme.primary,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    group.name,
+                    displayName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
+                      color: isRecycleBin
+                          ? colorScheme.error
+                          : colorScheme.onSurface,
                     ),
                   ),
                 ),

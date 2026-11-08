@@ -23,6 +23,10 @@ enum PasswordIssueKind {
 
   /// Expiry date is within [PasswordAuditService.expiringWindow].
   expiringSoon,
+
+  /// Password appears in the Have I Been Pwned breach corpus. Only produced
+  /// by the explicit (networked) breach check, never the local scan.
+  pwned,
 }
 
 extension PasswordIssueKindSeverity on PasswordIssueKind {
@@ -41,6 +45,9 @@ extension PasswordIssueKindSeverity on PasswordIssueKind {
         return 4;
       case PasswordIssueKind.expiringSoon:
         return 5;
+      case PasswordIssueKind.pwned:
+        // Known-breached passwords are the most urgent finding.
+        return 0;
     }
   }
 }
@@ -55,6 +62,10 @@ class PasswordAuditFinding {
   final DateTime? expiry;
   final int sharedCount;
 
+  /// For [PasswordIssueKind.pwned]: how many times the password appears in
+  /// known breaches. Null for other kinds.
+  final int? pwnedCount;
+
   const PasswordAuditFinding({
     required this.entryUuid,
     required this.title,
@@ -63,6 +74,7 @@ class PasswordAuditFinding {
     this.strength,
     this.expiry,
     this.sharedCount = 1,
+    this.pwnedCount,
   });
 
   @override

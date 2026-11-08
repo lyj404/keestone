@@ -1393,6 +1393,209 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auditOpenDatabaseFirst => '请先打开密码库再进行健康扫描';
 
   @override
+  String get auditIssuePwned => '已泄露密码';
+
+  @override
+  String get hibpCheckAction => '检查泄露';
+
+  @override
+  String get hibpConfirmTitle => '联网检查密码泄露？';
+
+  @override
+  String get hibpConfirmBody =>
+      '将使用 k-匿名协议连接 haveibeenpwned.com 检查库内密码是否出现在已知数据泄露中。设备只会发送密码 SHA-1 哈希的前 5 位，密码本身和完整哈希不会离开设备。';
+
+  @override
+  String get hibpConfirmRun => '开始检查';
+
+  @override
+  String hibpSeenCount(Object count) {
+    return '在已知泄露中出现 $count 次';
+  }
+
+  @override
+  String get hibpCheckFailed => '泄露检查失败，请检查网络连接后重试';
+
+  @override
+  String hibpProgress(Object progress, Object total) {
+    return '检查中 $progress/$total';
+  }
+
+  @override
+  String hibpDoneAllSafe(Object count) {
+    return '检查完成：$count 个密码均未出现在已知泄露中';
+  }
+
+  @override
+  String hibpDoneWithHits(Object count) {
+    return '检查完成：发现 $count 个已泄露密码，请立即更换';
+  }
+
+  @override
+  String hibpDonePartial(Object count) {
+    return '检查完成，但有 $count 条因网络失败未检查，可稍后重试';
+  }
+
+  @override
+  String get addFavorite => '添加到收藏';
+
+  @override
+  String get removeFavorite => '从收藏中移除';
+
+  @override
+  String get favorites => '收藏';
+
+  @override
+  String get noFavorites => '还没有收藏的条目，长按或右键条目可添加收藏';
+
+  @override
+  String get pinEntry => '置顶';
+
+  @override
+  String get unpinEntry => '取消置顶';
+
+  @override
+  String get chooseTemplate => '选择模板';
+
+  @override
+  String get tplLogin => '登录';
+
+  @override
+  String get tplBankAccount => '银行账户';
+
+  @override
+  String get tplCreditCard => '银行卡';
+
+  @override
+  String get tplSecureNote => '安全笔记';
+
+  @override
+  String get tplServer => '服务器';
+
+  @override
+  String get tplIdentity => '身份信息';
+
+  @override
+  String get tplSoftwareLicense => '软件许可';
+
+  @override
+  String get tplBankName => '银行名称';
+
+  @override
+  String get tplAccountHolder => '账户持有人';
+
+  @override
+  String get tplAccountNumber => '账号';
+
+  @override
+  String get tplRoutingNumber => '路由号';
+
+  @override
+  String get tplSwift => 'SWIFT 代码';
+
+  @override
+  String get tplIban => 'IBAN';
+
+  @override
+  String get tplCardName => '卡片名称';
+
+  @override
+  String get tplCardType => '卡类型';
+
+  @override
+  String get tplCardNumber => '卡号';
+
+  @override
+  String get tplCardholderName => '持卡人姓名';
+
+  @override
+  String get tplExpirationDate => '有效期';
+
+  @override
+  String get tplCvv => 'CVV';
+
+  @override
+  String get tplPin => 'PIN 码';
+
+  @override
+  String get tplNoteContent => '笔记内容';
+
+  @override
+  String get tplServerName => '服务器名称';
+
+  @override
+  String get tplHost => '主机地址';
+
+  @override
+  String get tplPort => '端口';
+
+  @override
+  String get tplAdminUsername => '管理员用户名';
+
+  @override
+  String get tplAdminPassword => '管理员密码';
+
+  @override
+  String get tplIdentityName => '身份名称';
+
+  @override
+  String get tplFullName => '姓名';
+
+  @override
+  String get tplIdNumber => '证件号码';
+
+  @override
+  String get tplPhoneNumber => '电话号码';
+
+  @override
+  String get tplEmail => '电子邮箱';
+
+  @override
+  String get tplAddress => '地址';
+
+  @override
+  String get tplSoftwareName => '软件名称';
+
+  @override
+  String get tplLicenseKey => '许可密钥';
+
+  @override
+  String get tplLicensedTo => '授权给';
+
+  @override
+  String get tplVersion => '版本';
+
+  @override
+  String get tplPurchaseDate => '购买日期';
+
+  @override
+  String get autofill => '自动填充';
+
+  @override
+  String get autofillDescription => '让 KeeStone 在其他应用和浏览器中自动填充密码。';
+
+  @override
+  String get enableAutofill => '启用自动填充';
+
+  @override
+  String get setAsAutofillService => '设为自动填充服务';
+
+  @override
+  String get autofillIsDefault => 'KeeStone 已是当前自动填充服务。';
+
+  @override
+  String get autofillNotDefault => 'KeeStone 不是系统自动填充服务，点击设为默认。';
+
+  @override
+  String get autofillIosHint => '在 iOS 上，请在 设置 → 密码 → 密码选项 中启用 KeeStone。';
+
+  @override
+  String get autofillOpenApp => '打开 KeeStone';
+
+  @override
+  String get autofillUnlock => '解锁 KeeStone';
+
+  @override
   String get syncBackend => '同步后端';
 
   @override

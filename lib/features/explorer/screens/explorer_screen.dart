@@ -28,6 +28,9 @@ import '../../../l10n/app_localizations.dart';
 import '../../database/data/database_service.dart'
     show DatabaseService, SyncAuditChange, SyncAuditReport;
 import '../../database/providers/database_provider.dart';
+import '../../favorite/data/favorite_service.dart';
+import '../../favorite/widgets/favorites_view.dart';
+import '../../template/data/template_service.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../sync/providers/sync_provider.dart';
 import '../../sync/data/sync_service.dart' show SyncException, SyncErrorType;
@@ -247,6 +250,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
           onGroupTap: (group) {
             ref.read(selectedEntryProvider.notifier).state = null;
             ref.read(activeEntryProvider.notifier).state = null;
+            ref.read(favoritesViewProvider.notifier).state = false;
             final path = service.getGroupPath(group);
             ref.read(currentGroupPathProvider.notifier).state = path;
           },
@@ -261,6 +265,16 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
           onMoveEntry: isRecycleBin
               ? null
               : (entry) => _moveEntry(context, ref, entry, currentGroup!),
+          onToggleFavoriteEntry: isRecycleBin
+              ? null
+              : (entry) => _toggleFavorite(context, ref, entry),
+          onTogglePinEntry: isRecycleBin
+              ? null
+              : (entry) => _togglePin(context, ref, entry),
+          onToggleFavoritesView: isRecycleBin
+              ? null
+              : () => ref.read(favoritesViewProvider.notifier).state =
+                    !ref.read(favoritesViewProvider),
           onDeleteGroup: isRecycleBin
               ? null
               : (group) => _deleteGroup(context, ref, group),
@@ -346,6 +360,7 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         onGroupTap: (group) {
           ref.read(selectedEntryProvider.notifier).state = null;
           ref.read(activeEntryProvider.notifier).state = null;
+          ref.read(favoritesViewProvider.notifier).state = false;
           final path = service.getGroupPath(group);
           ref.read(currentGroupPathProvider.notifier).state = path;
         },
@@ -360,6 +375,16 @@ class _ExplorerBodyState extends ConsumerState<_ExplorerBody>
         onMoveEntry: isRecycleBin
             ? null
             : (entry) => _moveEntry(context, ref, entry, currentGroup!),
+        onToggleFavoriteEntry: isRecycleBin
+            ? null
+            : (entry) => _toggleFavorite(context, ref, entry),
+        onTogglePinEntry: isRecycleBin
+            ? null
+            : (entry) => _togglePin(context, ref, entry),
+        onToggleFavoritesView: isRecycleBin
+            ? null
+            : () => ref.read(favoritesViewProvider.notifier).state =
+                  !ref.read(favoritesViewProvider),
         onDeleteGroup: isRecycleBin
             ? null
             : (group) => _deleteGroup(context, ref, group),

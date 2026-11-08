@@ -15,6 +15,7 @@ import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
+import '../../favorite/data/favorite_service.dart';
 import '../../totp/widgets/totp_display_widget.dart';
 
 class EntryDetailScreen extends ConsumerWidget {
@@ -103,6 +104,40 @@ class EntryDetailScreen extends ConsumerWidget {
               onPressed: () => _restoreEntry(context, ref, matchedEntry),
             )
           else ...[
+            IconButton(
+              icon: Icon(
+                isPinnedEntry(matchedEntry)
+                    ? Icons.push_pin_rounded
+                    : Icons.push_pin_outlined,
+                size: 20,
+                color: isPinnedEntry(matchedEntry)
+                    ? colorScheme.primary
+                    : null,
+              ),
+              tooltip: isPinnedEntry(matchedEntry)
+                  ? l10n.unpinEntry
+                  : l10n.pinEntry,
+              onPressed: () {
+                togglePin(ref, matchedEntry);
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                isFavoriteEntry(matchedEntry)
+                    ? Icons.star_rounded
+                    : Icons.star_outline_rounded,
+                size: 20,
+                color: isFavoriteEntry(matchedEntry)
+                    ? const Color(0xFFF59E0B)
+                    : null,
+              ),
+              tooltip: isFavoriteEntry(matchedEntry)
+                  ? l10n.removeFavorite
+                  : l10n.addFavorite,
+              onPressed: () {
+                toggleFavorite(ref, matchedEntry);
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.history_rounded, size: 20),
               tooltip: l10n.history,

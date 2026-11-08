@@ -6,8 +6,10 @@ import '../../../core/utils/logger.dart';
 import '../../../core/widgets/button_label.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/section_card.dart';
+import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../database/providers/database_provider.dart';
+import '../data/hibp_service.dart';
 import '../data/password_audit_service.dart';
 
 class PasswordAuditScreen extends ConsumerStatefulWidget {
@@ -22,6 +24,13 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
   PasswordIssueKind? _filter;
   PasswordAuditReport? _report;
   bool _scanning = false;
+  bool _checkingBreaches = false;
+  Map<String, int>? _pwnedCounts;
+  bool _breachCheckFailed = false;
+  int _breachProgress = 0;
+  int _breachTotal = 0;
+
+  final _hibpService = HibpService();
 
   @override
   void initState() {
@@ -58,6 +67,8 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
       setState(() {
         _scanning = false;
         _report = report;
+        _pwnedCounts = null;
+        _breachCheckFailed = false;
       });
     } catch (e, st) {
       log.e('Password audit scan failed', error: e, stackTrace: st);
@@ -65,11 +76,162 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
     }
   }
 
+  /// Explicit, networked breach check (HIBP, k-anonymity). Prompts before
+  /// any traffic leaves the device, then checks every non-bin entry with a
+  /// password and caches pwned counts for [_reportWithBreaches] to merge.
+  Future<void> _checkBreaches() async {
+    if (_checkingBreaches || _scanning) return;
+    final l10n = AppLocalizations.of(context)!;
+    final db = ref.read(databaseProvider).value;
+    final service = ref.read(databaseServiceProvider);
+    if (db == null || !service.isOpen) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.hibpConfirmTitle),
+        content: Text(l10n.hibpConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: ButtonLabel(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: ButtonLabel(l10n.hibpConfirmRun),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final candidates = <(String, String)>[];
+    for (final e in service.allEntries) {
+      if (service.isInRecycleBin(e)) continue;
+      final password = e.fields['Password']?.text ?? '';
+      if (password.isEmpty) continue;
+      candidates.add((e.uuid.string, password));
+    }
+
+    setState(() {
+      _checkingBreaches = true;
+      _breachProgress = 0;
+      _breachTotal = candidates.length;
+    });
+    try {
+
+      // Bounded concurrency: 6 parallel requests keeps well under the HIBP
+      // rate limit (~30 req/s) while turning a multi-minute sequential scan
+      // into ~30s for a few hundred entries. Individual failures are
+      // tolerated and counted; only a complete failure marks the run failed.
+      const concurrency = 6;
+      final counts = <String, int>{};
+      var checked = 0;
+      var failedCount = 0;
+      var cursor = 0;
+      Future<void> worker() async {
+        while (cursor < candidates.length) {
+          if (!mounted) return;
+          final index = cursor++;
+          final (uuid, password) = candidates[index];
+          final result = await _hibpService.checkPassword(password);
+          if (result.errored) {
+            failedCount++;
+          } else if (result.pwned) {
+            counts[uuid] = result.occurrenceCount;
+          }
+          checked++;
+          if (mounted) setState(() => _breachProgress = checked);
+        }
+      }
+
+      await Future.wait([
+        for (var i = 0; i < concurrency; i++) worker(),
+      ]);
+
+      // Give up only when nothing at all could be checked (e.g. offline).
+      final failed = checked == 0 && failedCount > 0;
+      final partial = failedCount > 0;
+
+      if (!mounted) return;
+      setState(() {
+        _checkingBreaches = false;
+        _breachCheckFailed = failed;
+        _pwnedCounts = counts.isEmpty ? null : counts;
+      });
+
+      // Completion feedback: summary toast, or an error hint on failure.
+      final pwnedCount = counts.length;
+      if (failed) {
+        showToast(context, l10n.hibpCheckFailed, isError: true);
+      } else if (pwnedCount > 0) {
+        showToast(
+          context,
+          l10n.hibpDoneWithHits(pwnedCount),
+          isError: true,
+        );
+      } else if (partial) {
+        showToast(context, l10n.hibpDonePartial(failedCount), isError: true);
+      } else {
+        showToast(context, l10n.hibpDoneAllSafe(candidates.length));
+      }
+    } catch (e, st) {
+      log.e('HIBP breach check failed', error: e, stackTrace: st);
+      if (mounted) {
+        setState(() {
+          _checkingBreaches = false;
+          _breachCheckFailed = true;
+        });
+      }
+    }
+  }
+
+  /// Merges cached breach-check results into the current report as
+  /// [PasswordIssueKind.pwned] findings.
+  PasswordAuditReport _reportWithBreaches(PasswordAuditReport report) {
+    final counts = _pwnedCounts;
+    if (counts == null || counts.isEmpty) return report;
+    final entries = {for (final f in report.findings) f.entryUuid: f};
+    final pwnedFindings = <PasswordAuditFinding>[];
+    for (final entry in counts.entries) {
+      final known = entries[entry.key];
+      pwnedFindings.add(
+        PasswordAuditFinding(
+          entryUuid: entry.key,
+          title: known?.title ?? '',
+          groupPath: known?.groupPath ?? '',
+          kind: PasswordIssueKind.pwned,
+          pwnedCount: entry.value,
+        ),
+      );
+    }
+    final existing = report.findings
+        .where((f) => f.kind != PasswordIssueKind.pwned)
+        .toList();
+    final findings = [...pwnedFindings, ...existing]
+      ..sort((a, b) {
+        final byKind = a.kind.severityRank.compareTo(b.kind.severityRank);
+        if (byKind != 0) return byKind;
+        return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      });
+    final healthyExtra = report.totalEntries - counts.length;
+    return PasswordAuditReport(
+      totalEntries: report.totalEntries,
+      healthyEntries: healthyExtra < 0 ? 0 : healthyExtra,
+      findings: findings,
+      scannedAt: report.scannedAt,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
-    final report = _report;
+    final rawReport = _report;
+    final report = rawReport == null ? null : _reportWithBreaches(rawReport);
     final findings = report == null
         ? const <PasswordAuditFinding>[]
         : _visibleFindings(report).toList();
@@ -78,6 +240,22 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
       appBar: AppBar(
         title: Text(l10n.passwordHealth),
         actions: [
+          if (_checkingBreaches)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: _BreachProgressIndicator(
+                  progress: _breachProgress,
+                  total: _breachTotal,
+                ),
+              ),
+            )
+          else
+            IconButton(
+              tooltip: l10n.hibpCheckAction,
+              onPressed: _report == null ? null : _checkBreaches,
+              icon: const Icon(Icons.travel_explore_rounded, size: 20),
+            ),
           if (_scanning)
             const Padding(
               padding: EdgeInsets.only(right: 16),
@@ -124,6 +302,13 @@ class _PasswordAuditScreenState extends ConsumerState<PasswordAuditScreen> {
                         ),
                       ),
                     ),
+                    if (_breachCheckFailed)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                          child: _BreachErrorBanner(l10n: l10n),
+                        ),
+                      ),
                     if (report.findings.isEmpty)
                       SliverToBoxAdapter(
                         child: Padding(
@@ -269,6 +454,10 @@ class _SummaryCard extends StatelessWidget {
                         report.countOf(PasswordIssueKind.expired) +
                         report.countOf(PasswordIssueKind.expiringSoon),
                   ),
+                  _StatChip(
+                    label: l10n.auditIssuePwned,
+                    count: report.countOf(PasswordIssueKind.pwned),
+                  ),
                 ],
               ),
             ],
@@ -333,25 +522,26 @@ class _FilterBar extends StatelessWidget {
       PasswordIssueKind.expired: l10n.auditIssueExpired,
       PasswordIssueKind.expiringSoon: l10n.auditIssueExpiringSoon,
       PasswordIssueKind.fair: l10n.auditIssueFair,
+      if (report.countOf(PasswordIssueKind.pwned) > 0)
+        PasswordIssueKind.pwned: l10n.auditIssuePwned,
     };
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: ChoiceChip(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            ChoiceChip(
               label: ButtonLabel(l10n.auditAll),
               selected: selected == null,
               onSelected: (_) => onSelected(null),
             ),
-          ),
-          for (final kind in labels.keys)
-            if (report.countOf(kind) > 0)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: ChoiceChip(
+            for (final kind in labels.keys)
+              if (report.countOf(kind) > 0)
+                ChoiceChip(
                   label: ButtonLabel(
                     '${labels[kind]} · ${report.countOf(kind)}',
                   ),
@@ -359,8 +549,8 @@ class _FilterBar extends StatelessWidget {
                   selectedColor: colorScheme.primaryContainer,
                   onSelected: (_) => onSelected(kind),
                 ),
-              ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -393,6 +583,8 @@ class _FindingCard extends StatelessWidget {
         return l10n.auditIssueExpired;
       case PasswordIssueKind.expiringSoon:
         return l10n.auditIssueExpiringSoon;
+      case PasswordIssueKind.pwned:
+        return l10n.auditIssuePwned;
     }
   }
 
@@ -400,6 +592,9 @@ class _FindingCard extends StatelessWidget {
     switch (finding.kind) {
       case PasswordIssueKind.empty:
       case PasswordIssueKind.expired:
+        return const Color(0xFFDC2626);
+      case PasswordIssueKind.pwned:
+        // Breached passwords outrank every other warning.
         return const Color(0xFFDC2626);
       case PasswordIssueKind.weak:
       case PasswordIssueKind.reused:
@@ -416,6 +611,9 @@ class _FindingCard extends StatelessWidget {
     final details = <String>[
       if (finding.kind == PasswordIssueKind.reused)
         l10n.auditSharedCount(finding.sharedCount),
+      if (finding.kind == PasswordIssueKind.pwned &&
+          finding.pwnedCount != null)
+        l10n.hibpSeenCount(finding.pwnedCount!),
       if (finding.strength != null)
         '${l10n.auditStrength}: ${finding.strength!.getLabel(l10n)}',
       if (finding.expiry != null)
@@ -504,6 +702,8 @@ class _FindingCard extends StatelessWidget {
       case PasswordIssueKind.expired:
       case PasswordIssueKind.expiringSoon:
         return Icons.event_busy_rounded;
+      case PasswordIssueKind.pwned:
+        return Icons.gpp_bad_rounded;
     }
   }
 
@@ -511,5 +711,77 @@ class _FindingCard extends StatelessWidget {
     final m = d.month.toString().padLeft(2, '0');
     final day = d.day.toString().padLeft(2, '0');
     return '${d.year}-$m-$day';
+  }
+}
+
+class _BreachErrorBanner extends StatelessWidget {
+  final AppLocalizations l10n;
+
+  const _BreachErrorBanner({required this.l10n});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            Icons.cloud_off_rounded,
+            size: 16,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              l10n.hibpCheckFailed,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Compact linear progress shown in the app bar while the HIBP check runs,
+/// with an x/y counter so the user can see it is actually moving.
+class _BreachProgressIndicator extends StatelessWidget {
+  final int progress;
+  final int total;
+
+  const _BreachProgressIndicator({required this.progress, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    return SizedBox(
+      width: 120,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            l10n.hibpProgress(progress, total),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: LinearProgressIndicator(
+              value: total == 0 ? null : progress / total,
+              minHeight: 4,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

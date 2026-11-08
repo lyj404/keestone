@@ -11,6 +11,7 @@ import 'package:window_manager/legacy.dart';
 import 'app.dart';
 import 'core/crypto/crypto_service.dart';
 import 'core/providers/global_container.dart';
+import 'features/autofill/services/autofill_method_handler.dart';
 import 'core/utils/clipboard_utils.dart';
 import 'core/utils/legacy_migration.dart';
 import 'core/utils/logger.dart';
@@ -53,6 +54,10 @@ void main() async {
   // an externally-owned container; it lives for the whole process and is
   // intentionally not disposed (no shorter owner than the app itself).
   globalContainer = ProviderContainer();
+
+  // Wire up the autofill method channel. The handler reads the global
+  // ProviderContainer, so it only needs to be registered once per process.
+  AutofillMethodHandler.register();
 
   runApp(
     UncontrolledProviderScope(

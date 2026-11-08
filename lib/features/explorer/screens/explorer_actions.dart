@@ -128,6 +128,18 @@ extension _ExplorerActions on _ExplorerBodyState {
     }
   }
 
+  void _toggleFavorite(BuildContext context, WidgetRef ref, KdbxEntry entry) {
+    final l10n = AppLocalizations.of(context)!;
+    final nowFavorite = toggleFavorite(ref, entry);
+    showToast(context, nowFavorite ? l10n.addFavorite : l10n.removeFavorite);
+  }
+
+  void _togglePin(BuildContext context, WidgetRef ref, KdbxEntry entry) {
+    final l10n = AppLocalizations.of(context)!;
+    final nowPinned = togglePin(ref, entry);
+    showToast(context, nowPinned ? l10n.pinEntry : l10n.unpinEntry);
+  }
+
   void _deleteGroup(
     BuildContext context,
     WidgetRef ref,
