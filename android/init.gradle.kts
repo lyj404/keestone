@@ -1,37 +1,37 @@
 // Bypass flaky GitHub Releases redirects (504s) for all builds, including
-// Flutter's `:gradle` included build, by prepending Aliyun/Tencent mirrors.
-def ALIYUN_PUBLIC = 'https://maven.aliyun.com/repository/public'
-def ALIYUN_GOOGLE = 'https://maven.aliyun.com/repository/google'
-def ALIYUN_PLUGIN = 'https://maven.aliyun.com/repository/gradle-plugin'
+// Flutter's `:gradle` included build, by prepending Aliyun mirrors.
+val aliyunPublic = "https://maven.aliyun.com/repository/public"
+val aliyunGoogle = "https://maven.aliyun.com/repository/google"
+val aliyunPlugin = "https://maven.aliyun.com/repository/gradle-plugin"
 
 allprojects {
     buildscript {
         repositories {
-            maven { url ALIYUN_PUBLIC }
-            maven { url ALIYUN_GOOGLE }
-            maven { url ALIYUN_PLUGIN }
+            maven { url = uri(aliyunPublic) }
+            maven { url = uri(aliyunGoogle) }
+            maven { url = uri(aliyunPlugin) }
         }
     }
     repositories {
-        maven { url ALIYUN_PUBLIC }
-        maven { url ALIYUN_GOOGLE }
-        maven { url ALIYUN_PLUGIN }
+        maven { url = uri(aliyunPublic) }
+        maven { url = uri(aliyunGoogle) }
+        maven { url = uri(aliyunPlugin) }
     }
 }
 
-settingsEvaluated { settings ->
-    settings.pluginManagement {
+settingsEvaluated {
+    pluginManagement {
         repositories {
-            maven { url ALIYUN_PLUGIN }
-            maven { url ALIYUN_PUBLIC }
-            maven { url ALIYUN_GOOGLE }
+            maven { url = uri(aliyunPlugin) }
+            maven { url = uri(aliyunPublic) }
+            maven { url = uri(aliyunGoogle) }
         }
     }
-    settings.dependencyResolutionManagement {
+    dependencyResolutionManagement {
         repositories {
-            maven { url ALIYUN_PUBLIC }
-            maven { url ALIYUN_GOOGLE }
-            maven { url ALIYUN_PLUGIN }
+            maven { url = uri(aliyunPublic) }
+            maven { url = uri(aliyunGoogle) }
+            maven { url = uri(aliyunPlugin) }
         }
     }
 }
