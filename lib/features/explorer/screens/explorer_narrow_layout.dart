@@ -177,7 +177,7 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
               size: 22,
               color: colorScheme.primary,
             ),
-            label: l10n.settings,
+            label: l10n.more,
           ),
         ],
       ),
@@ -323,14 +323,6 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
                 _syncToCloud(context);
               case 'sync_down':
                 _syncFromCloud(context);
-              case 'import_csv':
-                widget.onImportCsv?.call();
-              case 'export_csv':
-                widget.onExportCsv?.call();
-              case 'export_kdbx':
-                widget.onExportKdbx?.call();
-              case 'password_audit':
-                context.push('/audit');
               case 'batch_select':
                 widget.onToggleMultiSelect();
             }
@@ -356,43 +348,6 @@ class _NarrowLayoutState extends ConsumerState<_NarrowLayout> {
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-            const PopupMenuDivider(),
-            PopupMenuItem(
-              value: 'import_csv',
-              child: ListTile(
-                leading: const Icon(Icons.file_upload_rounded),
-                title: Text(l10n.importCsv),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'export_csv',
-              child: ListTile(
-                leading: const Icon(Icons.file_download_rounded),
-                title: Text(l10n.exportCsv),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'export_kdbx',
-              child: ListTile(
-                leading: const Icon(Icons.save_as_rounded),
-                title: Text(l10n.exportKdbx),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-            PopupMenuItem(
-              value: 'password_audit',
-              child: ListTile(
-                leading: const Icon(Icons.health_and_safety_outlined),
-                title: Text(l10n.passwordHealth),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
             PopupMenuItem(
               value: 'batch_select',
               child: ListTile(

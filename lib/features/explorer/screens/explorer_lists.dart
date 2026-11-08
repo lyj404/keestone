@@ -574,7 +574,7 @@ class _MobileToolsPanel extends StatelessWidget {
           const SizedBox(height: 16),
           _ToolsSection(
             brightness: brightness,
-            title: l10n.more,
+            title: l10n.settings,
             children: [
               _ToolTile(
                 icon: Icons.settings_rounded,
