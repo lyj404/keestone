@@ -33,13 +33,10 @@ int grab_error_handler(Display*, XErrorEvent*) {
   return 0;
 }
 
-gboolean dispatch_hotkey(GSource*, GSourceFunc, gpointer) {
+gboolean dispatch_hotkey(gpointer) {
   if (g_state.channel != nullptr) {
-    FlValue* args = fl_value_new_bool(TRUE);
-    fl_method_channel_invoke_method(g_state.channel,
-                                    fl_value_new_string("hotkeyPressed"),
-                                    args, nullptr, nullptr, nullptr);
-    fl_value_unref(args);
+    fl_method_channel_invoke_method(g_state.channel, "hotkeyPressed", nullptr,
+                                    nullptr, nullptr, nullptr);
   }
   return G_SOURCE_CONTINUE;
 }
@@ -78,7 +75,7 @@ gboolean poll_x_events(gpointer) {
         (event.xkey.state & (ControlMask | Mod1Mask)) ==
             (ControlMask | Mod1Mask) &&
         XLookupKeysym(&event.xkey, 0) == kHotkeyKeysym) {
-      dispatch_hotkey(nullptr, nullptr, nullptr);
+      dispatch_hotkey(nullptr);
     }
   }
   return G_SOURCE_CONTINUE;
@@ -209,11 +206,6 @@ void method_call_cb(FlMethodChannel* channel, FlMethodCall* call,
                     gpointer) {
   FlMethodResponse* response = handle_method_call(call);
   fl_method_call_respond(call, response, nullptr);
-  if (FL_IS_METHOD_SUCCESS_RESPONSE(response) ||
-      FL_IS_METHOD_ERROR_RESPONSE(response)) {
-    // Success/error responses own their data; nothing to free beyond the
-    // response object itself.
-  }
   g_object_unref(response);
 }
 

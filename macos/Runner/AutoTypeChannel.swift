@@ -1,4 +1,5 @@
 import Cocoa
+import Carbon.HIToolbox
 import FlutterMacOS
 
 // Registers the "keestone/autotype" method channel on macOS.
@@ -50,7 +51,7 @@ enum AutoTypeChannel {
 
   // Ctrl + Option(Ctrl+Alt+A kept per spec; Option is Alt on macOS)
   private static let hotkeyModifiers: UInt32 = UInt32(controlKey | optionKey)
-  private static let hotkeyKeyCode: UInt32 = 0 // kVK_ANSI_A
+  private static let hotkeyKeyCode: UInt32 = UInt32(kVK_ANSI_A)
 
   private static func registerHotkey() {
     var hotkeyID = EventHotKeyID(signature: OSType(0x4B53544E) /* KSTN */, id: 1)
@@ -62,15 +63,15 @@ enum AutoTypeChannel {
       &hotkeyRef)
     guard status == noErr else { return }
 
-    var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+    var eventType = EventTypeSpec(eventClass: kEventClassKeyboard, eventKind: kEventHotKeyPressed)
     InstallEventHandler(
       GetApplicationEventTarget(),
-      { _, _, _, userData -> OSStatus in
+      { _, _, _, _ -> OSStatus in
         AutoTypeChannel.channel?.invokeMethod("hotkeyPressed", arguments: true)
         return noErr
       },
       1, &eventType, nil, nil)
-    _ = hotkeyID
+    hotkeyID.id += 1 // keep var from being optimised away; IDs start at 1
   }
 
   // MARK: - Event tap (needed so CGEvents we post go to the focused app)

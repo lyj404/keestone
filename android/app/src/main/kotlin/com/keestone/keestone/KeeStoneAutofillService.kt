@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.CancellationSignal
-import android.os.CountDownLatch
 import android.os.Handler
 import android.os.Looper
 import android.service.autofill.AutofillService
@@ -23,6 +22,7 @@ import androidx.annotation.RequiresApi
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.CountDownLatch
 
 private const val TAG = "KeeStoneAutofill"
 private const val CHANNEL = "com.keestone.keestone/autofill"
@@ -44,7 +44,7 @@ class KeeStoneAutofillService : AutofillService() {
         cancellationSignal: CancellationSignal,
         callback: FillCallback,
     ) {
-        val structures = request.fillRequestContexts.map { it.structure }
+        val structures = request.fillContexts.map { it.structure }
         val target = structures.firstNotNullOfOrNull { parseStructure(it) }
         if (target == null) {
             callback.onSuccess(null)
@@ -105,19 +105,17 @@ class KeeStoneAutofillService : AutofillService() {
         passwordIds: MutableList<AutofillId>,
         onDomain: (String) -> Unit,
     ) {
-        // WebView domain (API 28+).
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val d = node.domain
-            if (!d.isNullOrEmpty()) onDomain(d)
-        }
+        // WebView domain: ViewNode.getWebDomain() (API 26+).
+        val d = node.webDomain
+        if (!d.isNullOrEmpty()) onDomain(d)
         val html = node.htmlInfo
         if (html != null) {
             var inputType = ""
             var action: String? = null
-            for (entry in html.attributes) {
-                when (entry.key.lowercase()) {
-                    "type" -> inputType = entry.value.lowercase()
-                    "action", "href" -> if (action == null) action = entry.value
+            for (entry in html.attributes.orEmpty()) {
+                when (entry.first.lowercase()) {
+                    "type" -> inputType = entry.second.lowercase()
+                    "action", "href" -> if (action == null) action = entry.second
                 }
             }
             action?.let { extractHost(it)?.let(onDomain) }
@@ -158,14 +156,15 @@ class KeeStoneAutofillService : AutofillService() {
     // ── Engine IPC ────────────────────────────────────────────────────────────
 
     private fun queryEngine(packageId: String, domain: String?): Bundle? {
-        val engine: FlutterEngine? =
+        val engine =
             FlutterEngineCache.getInstance().get(KeeStoneApplication.ENGINE_ID)
                 ?: return null
+        val messenger = engine.dartExecutor.binaryMessenger
         val latch = CountDownLatch(1)
         var response: Any? = null
         val args = mapOf("packageId" to packageId, "domain" to domain)
         Handler(Looper.getMainLooper()).post {
-            MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+            MethodChannel(messenger, CHANNEL)
                 .invokeMethod("getCredentials", args, object : MethodChannel.Result {
                     override fun success(result: Any?) {
                         response = result

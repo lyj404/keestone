@@ -1,6 +1,8 @@
 #ifndef RUNNER_AUTOTYPE_WINDOW_H_
 #define RUNNER_AUTOTYPE_WINDOW_H_
 
+#include <windows.h>
+
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 
