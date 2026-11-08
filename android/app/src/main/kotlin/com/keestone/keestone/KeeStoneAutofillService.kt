@@ -26,7 +26,7 @@ import java.util.concurrent.CountDownLatch
 
 private const val TAG = "KeeStoneAutofill"
 private const val CHANNEL = "com.keestone.keestone/autofill"
-private const val CHANNEL_TIMEOUT_MS = 2500L
+private const val CHANNEL_TIMEOUT_MS = 4000L
 private const val MAX_DATASETS = 10
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -185,7 +185,14 @@ class KeeStoneAutofillService : AutofillService() {
             Log.w(TAG, "autofill channel timed out")
             return null
         }
-        return response as? Bundle
+        // MethodChannel.Result.success delivers the Dart Map as a HashMap;
+        // wrap it into a Bundle so getString()/get() below work uniformly.
+        val map = response as? Map<*, *> ?: return null
+        return Bundle().apply {
+            putString("status", map["status"] as? String)
+            putSerializable("candidates", map["candidates"] as? java.io.Serializable)
+            putString("filePath", map["filePath"] as? String)
+        }
     }
 
     // ── Response builders ─────────────────────────────────────────────────────
@@ -260,12 +267,16 @@ class KeeStoneAutofillService : AutofillService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val builder = FillResponse.Builder()
-        if ((target.usernameIds + target.passwordIds).isNotEmpty()) {
-            builder.addDataset(
-                Dataset.Builder(presentation(label))
-                    .setAuthentication(pi.intentSender)
-                    .build(),
-            )
+        val allIds = target.usernameIds + target.passwordIds
+        if (allIds.isNotEmpty()) {
+            // Android 14+ requires every dataset to bind at least one field.
+            // Authentication datasets have no value yet, so bind the first
+            // field with an empty text value purely to satisfy that check;
+            // tapping the dataset launches the auth intent instead of filling.
+            val ds = Dataset.Builder(presentation(label))
+                .setValue(allIds.first(), AutofillValue.forText(""))
+                .setAuthentication(pi.intentSender)
+            builder.addDataset(ds.build())
         }
         return builder.build()
     }
