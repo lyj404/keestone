@@ -30,6 +30,8 @@ private const val CHANNEL_TIMEOUT_MS = 4000L
 private const val MAX_DATASETS = 10
 private const val SNAPSHOT_NAME = "keestone_autofill_snapshot.bin"
 private const val KEY_NAME = "keestone_autofill_snapshot.key"
+// FillRequest.FLAG_AUTHENTICATION_RESULT (API 34+; constant value 4).
+private const val FILL_FLAG_AUTHENTICATION_RESULT = 0x4
 
 @RequiresApi(Build.VERSION_CODES.O)
 class KeeStoneAutofillService : AutofillService() {
@@ -59,7 +61,7 @@ class KeeStoneAutofillService : AutofillService() {
         val candidates = querySnapshot(target.packageName, target.domain)
         if (candidates.isNotEmpty()) {
             val isAuthResult =
-                (request.flags and FillRequest.FLAG_AUTHENTICATION_RESULT) != 0
+                (request.flags and FILL_FLAG_AUTHENTICATION_RESULT) != 0
             val response =
                 if (isAuthResult) {
                     // User just authenticated via AutofillAuthActivity — fill now.

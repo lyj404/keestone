@@ -2,12 +2,13 @@ package com.keestone.keestone
 
 import android.app.Activity
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
-import android.hardware.biometrics.BiometricManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 
@@ -26,18 +27,14 @@ class AutofillAuthActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val manager = getSystemService(BiometricManager::class.java)
-        val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            BiometricManager.Authenticators.BIOMETRIC_WEAK or
-                BiometricManager.Authenticators.DEVICE_CREDENTIAL
-        } else {
-            0
-        }
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_WEAK or
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        val manager = BiometricManager.from(this)
         val canAuth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            manager?.canAuthenticate(authenticators)
+            manager.canAuthenticate(authenticators)
         } else {
             @Suppress("DEPRECATION")
-            manager?.canAuthenticate()
+            manager.canAuthenticate()
         }
         if (canAuth != BiometricManager.BIOMETRIC_SUCCESS) {
             Log.w(TAG, "biometric unavailable: $canAuth")
@@ -64,10 +61,7 @@ class AutofillAuthActivity : AppCompatActivity() {
         val info = BiometricPrompt.PromptInfo.Builder()
             .setTitle(getString(R.string.autofill_auth_title))
             .setSubtitle(getString(R.string.autofill_auth_subtitle))
-            .setAllowedAuthenticators(
-                BiometricPrompt.Authenticators.BIOMETRIC_WEAK or
-                    BiometricPrompt.Authenticators.DEVICE_CREDENTIAL,
-            )
+            .setAllowedAuthenticators(authenticators)
             .build()
         prompt.authenticate(info)
     }
@@ -81,7 +75,7 @@ class AutofillAuthActivity : AppCompatActivity() {
         private const val TAG = "KeeStoneAutofillAuth"
 
         /** PendingIntent handed to Dataset.Builder.setAuthentication. */
-        fun authIntentSender(context: android.content.Context): PendingIntent =
+        fun authIntentSender(context: Context): PendingIntent =
             PendingIntent.getActivity(
                 context,
                 2001,
