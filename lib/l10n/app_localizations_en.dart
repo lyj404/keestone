@@ -411,6 +411,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noResults => 'No matching results';
 
   @override
+  String get autotypePickTitle => 'AutoType — pick an entry';
+
+  @override
+  String get autotypeEntry => 'AutoType';
+
+  @override
+  String get autotypeEnable => 'Enable AutoType';
+
+  @override
+  String get autotypeSequence => 'AutoType sequence';
+
+  @override
+  String autotypeSequenceHint(
+    Object ENTER,
+    Object PASSWORD,
+    Object TAB,
+    Object USERNAME,
+  ) {
+    return '$USERNAME$TAB$PASSWORD$ENTER';
+  }
+
+  @override
+  String autotypeSequenceHelp(
+    Object CLEARFIELD,
+    Object DELAY,
+    Object ENTER,
+    Object NOTES,
+    Object PASSWORD,
+    Object SPACE,
+    Object TAB,
+    Object TITLE,
+    Object TOTP,
+    Object URL,
+    Object USERNAME,
+  ) {
+    return 'Supports $USERNAME $PASSWORD $URL $TITLE $NOTES $TOTP, keys $TAB $ENTER $SPACE, $DELAY<ms> pause and $CLEARFIELD';
+  }
+
+  @override
+  String get autotypeSettingsTitle => 'AutoType';
+
+  @override
+  String get autotypeSettingsSubtitle =>
+      'Global hotkey Ctrl+Alt+A to pick an entry and type it automatically (Linux: X11 sessions only)';
+
+  @override
+  String get autotypeHotkeyOk => 'Hotkey Ctrl+Alt+A registered';
+
+  @override
+  String get autotypeHotkeyFail =>
+      'Hotkey registration failed — it may be taken by another app';
+
+  @override
+  String get autotypeWaylandDisabled =>
+      'AutoType is not supported on Wayland sessions — please use X11';
+
+  @override
+  String get usernameSuggestTitle => 'Username suggestions';
+
+  @override
+  String get usernameSuggestSubtitle =>
+      'Suggest usernames already in this database while typing — tap to fill';
+
+  @override
   String get webdavSync => 'WebDAV Sync';
 
   @override

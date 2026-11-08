@@ -246,8 +246,9 @@ class _AddEntrySheetState extends ConsumerState<_AddEntrySheet> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  TextField(
+                  UsernameSuggestField(
                     controller: _usernameCtrl,
+                    labelText: l10n.username,
                     decoration: InputDecoration(
                       labelText: l10n.username,
                       prefixIcon: const Icon(Icons.person_outline_rounded),

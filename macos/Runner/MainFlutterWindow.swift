@@ -10,6 +10,9 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    // AutoType global hotkey + CGEvent typing (Ctrl+Alt+A).
+    AutoTypeChannel.register(with: flutterViewController.engine.binaryMessenger)
+
     super.awakeFromNib()
   }
 }

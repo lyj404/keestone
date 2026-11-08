@@ -405,6 +405,67 @@ class AppLocalizationsZh extends AppLocalizations {
   String get noResults => '未找到匹配结果';
 
   @override
+  String get autotypePickTitle => 'AutoType 选择条目';
+
+  @override
+  String get autotypeEntry => 'AutoType';
+
+  @override
+  String get autotypeEnable => '启用 AutoType';
+
+  @override
+  String get autotypeSequence => 'AutoType 序列';
+
+  @override
+  String autotypeSequenceHint(
+    Object ENTER,
+    Object PASSWORD,
+    Object TAB,
+    Object USERNAME,
+  ) {
+    return '$USERNAME$TAB$PASSWORD$ENTER';
+  }
+
+  @override
+  String autotypeSequenceHelp(
+    Object CLEARFIELD,
+    Object DELAY,
+    Object ENTER,
+    Object NOTES,
+    Object PASSWORD,
+    Object SPACE,
+    Object TAB,
+    Object TITLE,
+    Object TOTP,
+    Object URL,
+    Object USERNAME,
+  ) {
+    return '支持 $USERNAME $PASSWORD $URL $TITLE $NOTES $TOTP、按键 $TAB $ENTER $SPACE、$DELAY<ms> 延迟和 $CLEARFIELD 清空输入框';
+  }
+
+  @override
+  String get autotypeSettingsTitle => 'AutoType 自动输入';
+
+  @override
+  String get autotypeSettingsSubtitle =>
+      '全局热键 Ctrl+Alt+A 呼出条目选择并自动键入（Linux 仅支持 X11 会话）';
+
+  @override
+  String get autotypeHotkeyOk => '热键 Ctrl+Alt+A 已注册';
+
+  @override
+  String get autotypeHotkeyFail => '热键注册失败，可能被其它程序占用';
+
+  @override
+  String get autotypeWaylandDisabled => 'Wayland 会话不支持自动输入，请使用 X11 会话';
+
+  @override
+  String get usernameSuggestTitle => '用户名自动提示';
+
+  @override
+  String get usernameSuggestSubtitle => '输入用户名时提示当前数据库中已有的用户名，点击即可填入';
+
+  @override
   String get webdavSync => 'WebDAV 同步';
 
   @override

@@ -25,6 +25,7 @@ import '../../../core/widgets/attachments_section.dart';
 import '../../../core/services/background_service.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../entry/widgets/username_suggest_field.dart';
 import '../../database/data/database_service.dart'
     show DatabaseService, SyncAuditChange, SyncAuditReport;
 import '../../database/providers/database_provider.dart';

@@ -21,6 +21,7 @@ import '../../database/providers/database_provider.dart';
 import '../../explorer/providers/explorer_provider.dart';
 import '../../totp/data/totp_service.dart';
 import '../../totp/widgets/totp_edit_sheet.dart';
+import '../widgets/username_suggest_field.dart';
 
 part 'entry_edit_sections.dart';
 
@@ -266,8 +267,10 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
                     height: 1,
                     color: colorScheme.outlineVariant.withValues(alpha: 0.15),
                   ),
-                  TextFormField(
+                  UsernameSuggestField(
                     controller: _usernameCtrl,
+                    labelText: l10n.username,
+                    excludeEntry: _entry,
                     decoration: InputDecoration(
                       labelText: l10n.username,
                       prefixIcon: const Icon(Icons.person_outline_rounded),

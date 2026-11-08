@@ -6,6 +6,7 @@
 #include <optional>
 #include <variant>
 
+#include "autotype_window.h"
 #include "flutter/generated_plugin_registrant.h"
 
 #ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
@@ -77,6 +78,9 @@ bool FlutterWindow::OnCreate() {
   // registered. The following call ensures a frame is pending to ensure the
   // window is shown. It is a no-op if the first frame hasn't completed yet.
   flutter_controller_->ForceRedraw();
+
+  // Register the AutoType global hotkey (Ctrl+Alt+A) and its method channel.
+  AutoTypeWindow::Initialize(flutter_controller_->engine()->messenger());
 
   return true;
 }

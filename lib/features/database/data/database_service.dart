@@ -607,7 +607,12 @@ class DatabaseService {
     final entry = _db!.createEntry(parent: parent);
     entry.times = KdbxTimes.fromTime();
     _allEntriesCache = null;
-    markDirty();
+    // Deliberately not marked dirty: createEntry is also used to
+    // pre-create draft entries when an editor opens (mobile add sheet).
+    // Marking dirty here would arm the auto-save timers on an empty draft
+    // and persist a half-filled entry while the user is still typing.
+    // Callers that mean it call markDirty() explicitly (save, CSV import,
+    // TOTP capture).
     return entry;
   }
 

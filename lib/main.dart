@@ -12,6 +12,9 @@ import 'app.dart';
 import 'core/crypto/crypto_service.dart';
 import 'core/providers/global_container.dart';
 import 'features/autofill/services/autofill_method_handler.dart';
+import 'features/autotype/providers/autotype_provider.dart';
+import 'features/autotype/services/autotype_native.dart';
+import 'features/autotype/widgets/autotype_entry_picker.dart';
 import 'core/utils/clipboard_utils.dart';
 import 'core/utils/legacy_migration.dart';
 import 'core/utils/logger.dart';
@@ -95,8 +98,22 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
         if (!mounted) return;
         // Seed may have loaded after first frame; apply current seed.
         await _applySeedIcons(ref.read(themeSeedProvider));
+        _setupAutoType();
       });
     }
+  }
+
+  /// Hooks the AutoType hotkey (Ctrl+Alt+A, Windows) to an entry picker that
+  /// renders on the root navigator. Kept disabled until the user turns it on
+  /// in settings.
+  void _setupAutoType() {
+    if (!autotypePlatformSupported) return;
+    final service = ref.read(autoTypeServiceProvider);
+    service.pickEntry = (candidates) async {
+      final navContext = rootNavigatorKey.currentContext;
+      if (navContext == null) return null;
+      return showAutoTypeEntryPicker(navContext, candidates);
+    };
   }
 
   Future<void> _initTray() async {

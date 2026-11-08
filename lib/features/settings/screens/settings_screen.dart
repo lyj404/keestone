@@ -25,6 +25,9 @@ import '../../../core/services/log_export_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../autofill/providers/autofill_provider.dart';
 import '../../autofill/services/autofill_control.dart';
+import '../../autotype/providers/autotype_provider.dart';
+import '../../autotype/services/autotype_native.dart';
+import '../providers/username_suggest_provider.dart';
 import '../../sync/data/git_config.dart';
 import '../data/webdav_config.dart';
 import '../providers/settings_provider.dart';
@@ -241,9 +244,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return [
       _languageCard(brightness, l10n, ref),
       _autoSaveCard(brightness, l10n, ref),
+      _usernameSuggestCard(brightness, l10n, ref),
       _expirationReminderCard(brightness, l10n, ref),
       if (Platform.isAndroid || Platform.isIOS)
         _autofillCard(brightness, l10n, ref),
+      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
+        _autotypeCard(brightness, l10n, ref),
       if (Platform.isMacOS || Platform.isAndroid)
         _logExportCard(brightness, l10n),
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
@@ -356,6 +362,53 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Widget _usernameSuggestCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final enabled = ref.watch(usernameSuggestProvider);
+    return _SectionCard(
+      brightness: brightness,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: ClayDecoration.iconContainer(brightness: brightness),
+            child: Icon(
+              Icons.person_search_rounded,
+              size: 20,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.usernameSuggestTitle,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  l10n.usernameSuggestSubtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          Switch.adaptive(
+            value: enabled,
+            onChanged: (v) =>
+                ref.read(usernameSuggestProvider.notifier).setEnabled(v),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _expirationReminderCard(
     Brightness brightness,
     AppLocalizations l10n,
@@ -424,6 +477,115 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _autotypeCard(
+    Brightness brightness,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final status = ref.watch(autoTypeStatusProvider);
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: ClayDecoration.iconContainer(brightness: brightness),
+                child: Icon(
+                  Icons.keyboard_rounded,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.autotypeSettingsTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      l10n.autotypeSettingsSubtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: status.enabled,
+                onChanged: autotypeSessionUnsupported
+                    ? null
+                    : (v) async {
+                  final service = ref.read(autoTypeServiceProvider);
+                  await service.setEnabled(v);
+                  final registered =
+                      v && autotypePlatformSupported
+                          ? await AutoTypeNative.isHotkeyRegistered()
+                          : false;
+                  ref.read(autoTypeStatusProvider.notifier).state =
+                      service.status.copyWith(
+                    hotkeyRegistered: registered,
+                  );
+                  if (v && mounted) {
+                    showToast(
+                      context,
+                      registered
+                          ? l10n.autotypeHotkeyOk
+                          : l10n.autotypeHotkeyFail,
+                      isError: !registered,
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+          if (status.enabled && status.hotkeyRegistered) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.autotypeHotkeyOk,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ],
+          if (autotypeSessionUnsupported) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    l10n.autotypeWaylandDisabled,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

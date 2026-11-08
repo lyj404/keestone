@@ -860,6 +860,101 @@ abstract class AppLocalizations {
   /// **'未找到匹配结果'**
   String get noResults;
 
+  /// No description provided for @autotypePickTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'AutoType 选择条目'**
+  String get autotypePickTitle;
+
+  /// No description provided for @autotypeEntry.
+  ///
+  /// In zh, this message translates to:
+  /// **'AutoType'**
+  String get autotypeEntry;
+
+  /// No description provided for @autotypeEnable.
+  ///
+  /// In zh, this message translates to:
+  /// **'启用 AutoType'**
+  String get autotypeEnable;
+
+  /// No description provided for @autotypeSequence.
+  ///
+  /// In zh, this message translates to:
+  /// **'AutoType 序列'**
+  String get autotypeSequence;
+
+  /// No description provided for @autotypeSequenceHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'{USERNAME}{TAB}{PASSWORD}{ENTER}'**
+  String autotypeSequenceHint(
+    Object ENTER,
+    Object PASSWORD,
+    Object TAB,
+    Object USERNAME,
+  );
+
+  /// No description provided for @autotypeSequenceHelp.
+  ///
+  /// In zh, this message translates to:
+  /// **'支持 {USERNAME} {PASSWORD} {URL} {TITLE} {NOTES} {TOTP}、按键 {TAB} {ENTER} {SPACE}、{DELAY}<ms> 延迟和 {CLEARFIELD} 清空输入框'**
+  String autotypeSequenceHelp(
+    Object CLEARFIELD,
+    Object DELAY,
+    Object ENTER,
+    Object NOTES,
+    Object PASSWORD,
+    Object SPACE,
+    Object TAB,
+    Object TITLE,
+    Object TOTP,
+    Object URL,
+    Object USERNAME,
+  );
+
+  /// No description provided for @autotypeSettingsTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'AutoType 自动输入'**
+  String get autotypeSettingsTitle;
+
+  /// No description provided for @autotypeSettingsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'全局热键 Ctrl+Alt+A 呼出条目选择并自动键入（Linux 仅支持 X11 会话）'**
+  String get autotypeSettingsSubtitle;
+
+  /// No description provided for @autotypeHotkeyOk.
+  ///
+  /// In zh, this message translates to:
+  /// **'热键 Ctrl+Alt+A 已注册'**
+  String get autotypeHotkeyOk;
+
+  /// No description provided for @autotypeHotkeyFail.
+  ///
+  /// In zh, this message translates to:
+  /// **'热键注册失败，可能被其它程序占用'**
+  String get autotypeHotkeyFail;
+
+  /// No description provided for @autotypeWaylandDisabled.
+  ///
+  /// In zh, this message translates to:
+  /// **'Wayland 会话不支持自动输入，请使用 X11 会话'**
+  String get autotypeWaylandDisabled;
+
+  /// No description provided for @usernameSuggestTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'用户名自动提示'**
+  String get usernameSuggestTitle;
+
+  /// No description provided for @usernameSuggestSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'输入用户名时提示当前数据库中已有的用户名，点击即可填入'**
+  String get usernameSuggestSubtitle;
+
   /// No description provided for @webdavSync.
   ///
   /// In zh, this message translates to:

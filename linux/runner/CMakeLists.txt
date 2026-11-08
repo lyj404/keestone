@@ -11,6 +11,7 @@ add_executable(${BINARY_NAME}
   "my_application.cc"
   "legacy_keyring_migration.cc"
   "secure_storage_channel.cc"
+  "autotype_channel.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
@@ -27,6 +28,10 @@ target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 # Used by the legacy keyring migration (already a runtime dependency via the
 # flutter_secure_storage plugin).
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::SECRET)
+# AutoType: X11 grab + XTest keystroke injection (X11 sessions only).
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(XTST REQUIRED IMPORTED_TARGET xtst)
+target_link_libraries(${BINARY_NAME} PRIVATE X11 PkgConfig::XTST)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 
