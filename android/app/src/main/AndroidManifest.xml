@@ -8,6 +8,11 @@
         android:name=".KeeStoneApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
+            android:name=".AutofillAuthActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/TranslucentTheme" />
+        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"

@@ -58,8 +58,18 @@ class KeeStoneAutofillService : AutofillService() {
         // the Dart engine usually cannot answer the channel in time.
         val candidates = querySnapshot(target.packageName, target.domain)
         if (candidates.isNotEmpty()) {
-            buildDatasetsResponse(target, candidates)?.let { callback.onSuccess(it) }
-                ?: callback.onSuccess(buildOpenAppResponse(target))
+            val isAuthResult =
+                (request.flags and FillRequest.FLAG_AUTHENTICATION_RESULT) != 0
+            val response =
+                if (isAuthResult) {
+                    // User just authenticated via AutofillAuthActivity — fill now.
+                    buildDatasetsResponse(target, candidates)
+                } else {
+                    // First pass: require biometric/device-credential confirmation
+                    // before handing out credentials (Bitwarden-style flow).
+                    buildBiometricGatedResponse(target, candidates)
+                }
+            callback.onSuccess(response ?: buildOpenAppResponse(target))
             return
         }
         if (snapshotExists()) {
@@ -301,6 +311,43 @@ class KeeStoneAutofillService : AutofillService() {
         return RemoteViews(packageName, android.R.layout.simple_list_item_1).apply {
             setTextViewText(android.R.id.text1, label)
         }
+    }
+
+    /**
+     * Datasets whose values are placeholders (empty) and whose tap launches
+     * [AutofillAuthActivity]. After a successful biometric/device-credential
+     * authentication the framework retries onFillRequest with
+     * FLAG_AUTHENTICATION_RESULT and we return the real credentials.
+     */
+    private fun buildBiometricGatedResponse(
+        target: AutofillTarget,
+        candidates: List<Map<String, Any?>>,
+    ): FillResponse? {
+        val builder = FillResponse.Builder()
+        var added = 0
+        for (c in candidates) {
+            if (added >= MAX_DATASETS) break
+            val username = c["username"] as? String ?: ""
+            val label = buildString {
+                (c["title"] as? String)?.takeIf { it.isNotEmpty() }?.let { append(it) }
+                if (username.isNotEmpty()) {
+                    if (isNotEmpty()) append(" — ")
+                    append(username)
+                }
+                if (isEmpty()) append("KeeStone")
+            }
+            val allIds = target.usernameIds + target.passwordIds
+            if (allIds.isEmpty()) continue
+            // Bind the username field with a placeholder so the dataset passes
+            // the "at least one field" check; the real fill happens after auth.
+            val ds = Dataset.Builder(presentation(label))
+                .setValue(allIds.first(), AutofillValue.forText(""))
+                .setAuthentication(AutofillAuthActivity.authIntentSender(this).intentSender)
+            builder.addDataset(ds.build())
+            added++
+        }
+        if (added == 0) return null
+        return builder.build()
     }
 
     private fun buildDatasetsResponse(

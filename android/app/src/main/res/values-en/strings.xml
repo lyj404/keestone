@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="autofill_auth_title">KeeStone autofill</string>
+    <string name="autofill_auth_subtitle">Verify your identity to fill credentials</string>
+</resources>
