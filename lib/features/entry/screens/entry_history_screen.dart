@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kpasslib/kpasslib.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/clipboard_utils.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/widgets/toast.dart';
 import '../../../core/widgets/button_label.dart';
@@ -232,6 +233,7 @@ class EntryHistoryScreen extends ConsumerWidget {
                       label: l10n.password,
                       value: password,
                       obscure: true,
+                      copyLabel: l10n.password,
                     ),
                   if (url.isNotEmpty) _DetailField(label: l10n.url, value: url),
                   if (notes.isNotEmpty)
@@ -436,37 +438,83 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-class _DetailField extends StatelessWidget {
+class _DetailField extends StatefulWidget {
   final String label;
   final String value;
   final bool obscure;
+  final String? copyLabel;
 
   const _DetailField({
     required this.label,
     required this.value,
     this.obscure = false,
+    this.copyLabel,
   });
+
+  @override
+  State<_DetailField> createState() => _DetailFieldState();
+}
+
+class _DetailFieldState extends State<_DetailField> {
+  bool _visible = false;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+    final obscure = widget.obscure && !_visible;
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-              letterSpacing: 0.3,
-            ),
+          Row(
+            children: [
+              Text(
+                widget.label,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const Spacer(),
+              if (widget.obscure)
+                SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: IconButton(
+                    icon: Icon(
+                      _visible
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                      size: 15,
+                    ),
+                    tooltip: _visible ? l10n.hide : l10n.show,
+                    padding: EdgeInsets.zero,
+                    onPressed: () => setState(() => _visible = !_visible),
+                  ),
+                ),
+              if (widget.copyLabel != null)
+                SizedBox(
+                  width: 30,
+                  height: 30,
+                  child: IconButton(
+                    icon: const Icon(Icons.copy_rounded, size: 15),
+                    tooltip: l10n.copy,
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      copyToClipboardWithAutoClear(widget.value);
+                      showToast(context, l10n.copiedField(widget.label));
+                    },
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           SelectableText(
-            obscure ? '●' * value.length : value,
+            obscure ? '●' * widget.value.length : widget.value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontFamily: obscure ? 'monospace' : null,
               letterSpacing: obscure ? 2 : null,
