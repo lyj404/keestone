@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/utils/logger.dart';
 import '../../database/data/database_service.dart';
@@ -28,18 +30,36 @@ const _keyStorage = FlutterSecureStorage(
 /// The snapshot is the *only* credential material that leaves the main app's
 /// memory: it contains just the fields autofill needs, and is deleted on lock.
 class AutofillSnapshotService {
-  /// Writes a fresh snapshot for the currently open [service]. No-op if the
-  /// database is closed or the App Group container is unavailable.
+  /// Writes a fresh snapshot for the currently open [service].
+  ///
+  /// iOS: App Group container (read by the Credential Provider Extension).
+  /// Android: app files directory — the prewarmed autofill Flutter engine
+  /// runs in the same process and reads it from Dart directly, so no native
+  /// plumbing is needed.
   Future<void> writeFor(DatabaseService service) async {
     if (!service.isOpen) return;
-    String? containerPath;
-    try {
-      containerPath = await _channel.invokeMethod<String>('getContainerPath');
-    } catch (e) {
-      log.w('app_group.getContainerPath failed (iOS App Group not configured?)', error: e);
+    String? filePath;
+    if (Platform.isIOS) {
+      String? containerPath;
+      try {
+        containerPath = await _channel.invokeMethod<String>('getContainerPath');
+      } catch (e) {
+        log.w('app_group.getContainerPath failed (iOS App Group not configured?)', error: e);
+        return;
+      }
+      if (containerPath == null) return;
+      filePath = _joinPath(containerPath, _snapshotFileName);
+    } else if (Platform.isAndroid) {
+      try {
+        final dir = await getApplicationSupportDirectory();
+        filePath = _joinPath(dir.path, _snapshotFileName);
+      } catch (e) {
+        log.w('getApplicationSupportDirectory failed', error: e);
+        return;
+      }
+    } else {
       return;
     }
-    if (containerPath == null) return;
 
     final snapshot = _buildSnapshot(service);
     if (snapshot.entries.isEmpty) return;
@@ -52,26 +72,68 @@ class AutofillSnapshotService {
       final box = await cipher.encrypt(clearText, secretKey: secretKey);
       final combined = box.concatenation();
       final wrapped = AutofillSnapshotFile.wrap(Uint8List.fromList(combined));
-      final file = _joinPath(containerPath, _snapshotFileName);
-      await _channel.invokeMethod('writeFile', {
-        'path': file,
-        'bytes': wrapped,
-      });
+      if (Platform.isIOS) {
+        await _channel.invokeMethod('writeFile', {
+          'path': filePath,
+          'bytes': wrapped,
+        });
+      } else {
+        final file = File(filePath);
+        await file.parent.create(recursive: true);
+        await file.writeAsBytes(wrapped, flush: true);
+      }
     } catch (e, st) {
       log.e('Autofill snapshot write failed', error: e, stackTrace: st);
+    }
+  }
+
+  /// Loads and decrypts the snapshot for the prewarmed autofill engine on
+  /// Android (same process, same files dir). Returns null when missing,
+  /// unreadable or malformed — the caller falls back to "locked".
+  Future<AutofillSnapshot?> readForMatching() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final dir = await getApplicationSupportDirectory();
+      final file = File(_joinPath(dir.path, _snapshotFileName));
+      if (!await file.exists()) return null;
+      final wrapped = await file.readAsBytes();
+      final combined = AutofillSnapshotFile.unwrap(wrapped);
+      if (combined == null) return null;
+      final key = await _getOrCreateKey();
+      final cipher = AesGcm.with256bits();
+      final secretBox = SecretBox.fromConcatenation(
+        combined,
+        nonceLength: cipher.nonceLength,
+        macLength: cipher.macAlgorithm.macLength,
+      );
+      final clearText = await cipher.decrypt(
+        secretBox,
+        secretKey: SecretKey(key),
+      );
+      final json = jsonDecode(utf8.decode(clearText)) as Map<String, dynamic>;
+      return AutofillSnapshot.fromJson(json);
+    } catch (e) {
+      log.w('Autofill snapshot read failed', error: e);
+      return null;
     }
   }
 
   /// Deletes the snapshot (called on lock/close so no credentials linger).
   Future<void> delete() async {
     try {
-      final containerPath = await _channel.invokeMethod<String>('getContainerPath');
-      if (containerPath == null) return;
-      await _channel.invokeMethod('deleteFile', {
-        'path': _joinPath(containerPath, _snapshotFileName),
-      });
+      if (Platform.isIOS) {
+        final containerPath = await _channel.invokeMethod<String>('getContainerPath');
+        if (containerPath == null) return;
+        await _channel.invokeMethod('deleteFile', {
+          'path': _joinPath(containerPath, _snapshotFileName),
+        });
+      } else if (Platform.isAndroid) {
+        final dir = await getApplicationSupportDirectory();
+        final file = File(_joinPath(dir.path, _snapshotFileName));
+        if (await file.exists()) await file.delete();
+      }
     } catch (_) {
-      // Container/keychain unavailable — nothing to delete.
+      // Storage unavailable — nothing to delete.
     }
   }
 

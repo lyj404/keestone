@@ -5,6 +5,7 @@ import '../../../core/providers/global_container.dart';
 import '../../../core/utils/logger.dart';
 import '../../database/providers/database_provider.dart';
 import '../data/autofill_matcher.dart';
+import 'autofill_snapshot_service.dart';
 
 /// The platform channel that the Android autofill service uses to ask the
 /// running Flutter engine (same process as `KeeVaultApplication`) for
@@ -52,6 +53,18 @@ class AutofillMethodHandler {
     final service = globalContainer.read(databaseServiceProvider);
 
     if (!service.isOpen) {
+      // The prewarmed engine (Android autofill) is a separate Dart isolate
+      // that never opens the database itself. Fall back to the encrypted
+      // snapshot written by the main engine on unlock — this is what makes
+      // filling work without showing "Unlock KeeStone" every time.
+      final snapshot = await AutofillSnapshotService().readForMatching();
+      if (snapshot != null) {
+        final snapshotCandidates = AutofillMatcher.matchSnapshot(
+          snapshot,
+          query: AutofillQuery(packageId: packageId, domain: domain),
+        );
+        return AutofillMatchResult.unlocked(snapshotCandidates).toJson();
+      }
       return AutofillMatchResult.locked(filePath: service.filePath).toJson();
     }
 

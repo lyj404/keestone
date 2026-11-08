@@ -825,10 +825,12 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   }
 
   void _maybeWriteAutofillSnapshot() {
-    // The snapshot is consumed only by the iOS Credential Provider Extension;
-    // on other platforms writeFor is a no-op but we skip the channel round-trip
-    // entirely here to avoid overhead on every save.
-    if (!Platform.isIOS) return;
+    // The snapshot feeds the iOS Credential Provider Extension (App Group
+    // container) and the Android prewarmed autofill engine (app files dir —
+    // a separate Dart isolate that cannot see this engine's open database).
+    // On other platforms writeFor is a no-op but we skip the work entirely
+    // here to avoid overhead on every save.
+    if (!Platform.isIOS && !Platform.isAndroid) return;
     if (!_ref.read(autofillEnabledProvider)) return;
     unawaited(
       AutofillSnapshotService().writeFor(_service).catchError((e, st) {

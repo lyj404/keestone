@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:kpasslib/kpasslib.dart';
 
+import 'autofill_credential_snapshot.dart';
+
 /// A minimal, serializable view of a vault entry for the autofill bridge.
 ///
 /// The native autofill service receives these as a JSON array and renders the
@@ -143,6 +145,58 @@ class AutofillMatcher {
     scored.sort((a, b) => b.score.compareTo(a.score));
     final take = scored.length > limit ? scored.sublist(0, limit) : scored;
     return take.map((s) => _candidate(s.entry)).toList(growable: false);
+  }
+
+  /// Matches against a decrypted snapshot (used by the prewarmed Android
+  /// autofill engine, which cannot see the main engine's open database).
+  /// Snapshot entries already exclude the recycle bin.
+  static List<AutofillCandidate> matchSnapshot(
+    AutofillSnapshot snapshot, {
+    required AutofillQuery query,
+    int limit = 20,
+  }) {
+    if (query.isEmpty) return const [];
+
+    final lowerDomain = query.domain?.toLowerCase();
+    final lowerPackage = query.packageId?.toLowerCase();
+
+    final scored = <({AutofillSnapshotEntry entry, int score})>[];
+    for (final entry in snapshot.entries) {
+      int bestScore = 0;
+      for (final pkg in entry.packageIds) {
+        if (lowerPackage == null) break;
+        if (pkg == lowerPackage) {
+          bestScore = max(bestScore, 100);
+        } else if (lowerPackage.endsWith('.$pkg') ||
+            pkg.endsWith('.$lowerPackage')) {
+          bestScore = max(bestScore, 40);
+        }
+      }
+      for (final domain in entry.domains) {
+        if (lowerDomain == null) break;
+        if (domain == lowerDomain) {
+          bestScore = max(bestScore, 100);
+        } else if (lowerDomain.endsWith('.$domain') ||
+            domain.endsWith('.$lowerDomain')) {
+          bestScore = max(bestScore, 60);
+        }
+      }
+      if (bestScore == 0) continue;
+      scored.add((entry: entry, score: bestScore));
+    }
+
+    scored.sort((a, b) => b.score.compareTo(a.score));
+    final take = scored.length > limit ? scored.sublist(0, limit) : scored;
+    return take.map((s) {
+      final e = s.entry;
+      return AutofillCandidate(
+        uuid: e.uuid,
+        title: e.title,
+        username: e.username,
+        password: e.password,
+        subtitle: e.title.isEmpty ? e.username : e.title,
+      );
+    }).toList(growable: false);
   }
 
   static AutofillCandidate _candidate(KdbxEntry entry) {

@@ -473,7 +473,10 @@ class _EntryListTileState extends State<EntryListTile> {
                           ],
                         ),
                       ),
-                      if (widget.onTogglePin != null)
+                      // Mobile keeps the row lean: pin/favorite only appear
+                      // as badges when active (toggle via long-press menu),
+                      // copy lives in the menu too.
+                      if (!widget.mobileStyle && widget.onTogglePin != null)
                         _actionButton(
                           colorScheme: colorScheme,
                           icon: isPinnedEntry(widget.entry)
@@ -484,8 +487,15 @@ class _EntryListTileState extends State<EntryListTile> {
                               ? colorScheme.primary
                               : null,
                           onTap: widget.onTogglePin,
+                        )
+                      else if (widget.mobileStyle &&
+                          isPinnedEntry(widget.entry))
+                        Icon(
+                          Icons.push_pin_rounded,
+                          size: 14,
+                          color: colorScheme.primary,
                         ),
-                      if (widget.onToggleFavorite != null)
+                      if (!widget.mobileStyle && widget.onToggleFavorite != null)
                         _actionButton(
                           colorScheme: colorScheme,
                           icon: isFavoriteEntry(widget.entry)
@@ -496,6 +506,13 @@ class _EntryListTileState extends State<EntryListTile> {
                               ? const Color(0xFFF59E0B)
                               : null,
                           onTap: widget.onToggleFavorite,
+                        )
+                      else if (widget.mobileStyle &&
+                          isFavoriteEntry(widget.entry))
+                        Icon(
+                          Icons.star_rounded,
+                          size: 15,
+                          color: const Color(0xFFF59E0B),
                         ),
                       if (_isExpired) ...[
                         Container(
@@ -528,7 +545,7 @@ class _EntryListTileState extends State<EntryListTile> {
                         ),
                         const SizedBox(width: ClayLayout.space8),
                       ],
-                      if (_password.isNotEmpty)
+                      if (_password.isNotEmpty && !widget.mobileStyle)
                         _actionButton(
                           colorScheme: colorScheme,
                           icon: Icons.copy_rounded,

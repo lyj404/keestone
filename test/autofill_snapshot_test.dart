@@ -4,8 +4,14 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:keestone/features/autofill/data/autofill_credential_snapshot.dart';
+import 'package:keestone/features/autofill/data/autofill_matcher.dart';
 
 void main() {
+  autofillSnapshotEntryTests();
+  autofillMatcherMatchSnapshotTests();
+}
+
+void autofillSnapshotEntryTests() {
   group('AutofillSnapshotEntry', () {
     test('round-trips through JSON', () {
       final e = AutofillSnapshotEntry(
@@ -121,6 +127,67 @@ void main() {
         jsonDecode(utf8.decode(plain)),
         jsonDecode(s.toUtf8JsonString()),
       );
+    });
+  });
+}
+
+void autofillMatcherMatchSnapshotTests() {
+  group('AutofillMatcher.matchSnapshot', () {
+    final snapshot = AutofillSnapshot(
+      createdAt: 0,
+      entries: [
+        AutofillSnapshotEntry(
+          uuid: '1',
+          title: '飞鸟云',
+          username: 'user@feiniaoyun.top',
+          password: 'pw1',
+          domains: const ['feiniaoyun.top'],
+          packageIds: const [],
+        ),
+        AutofillSnapshotEntry(
+          uuid: '2',
+          title: '淘宝',
+          username: 'user',
+          password: 'pw2',
+          domains: const [],
+          packageIds: const ['com.taobao.taobao'],
+        ),
+      ],
+    );
+
+    test('matches web domain exactly', () {
+      final result = AutofillMatcher.matchSnapshot(
+        snapshot,
+        query: const AutofillQuery(packageId: 'org.via.via', domain: 'feiniaoyun.top'),
+      );
+      expect(result, hasLength(1));
+      expect(result.first.uuid, '1');
+      expect(result.first.password, 'pw1');
+    });
+
+    test('matches androidapp package id', () {
+      final result = AutofillMatcher.matchSnapshot(
+        snapshot,
+        query: const AutofillQuery(packageId: 'com.taobao.taobao', domain: null),
+      );
+      expect(result, hasLength(1));
+      expect(result.first.uuid, '2');
+    });
+
+    test('returns empty when nothing matches', () {
+      final result = AutofillMatcher.matchSnapshot(
+        snapshot,
+        query: const AutofillQuery(packageId: 'com.other.app', domain: 'example.org'),
+      );
+      expect(result, isEmpty);
+    });
+
+    test('returns empty for empty query', () {
+      final result = AutofillMatcher.matchSnapshot(
+        snapshot,
+        query: const AutofillQuery(packageId: null, domain: null),
+      );
+      expect(result, isEmpty);
     });
   });
 }
