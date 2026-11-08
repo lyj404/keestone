@@ -63,10 +63,12 @@ enum AutoTypeChannel {
       &hotkeyRef)
     guard status == noErr else { return }
 
-    var eventType = EventTypeSpec(eventClass: kEventClassKeyboard, eventKind: kEventHotKeyPressed)
+    var eventType = EventTypeSpec(
+      eventClass: OSType(kEventClassKeyboard),
+      eventKind: UInt32(kEventHotKeyPressed))
     InstallEventHandler(
       GetApplicationEventTarget(),
-      { _, _, _, _ -> OSStatus in
+      { _, _, _ -> OSStatus in
         AutoTypeChannel.channel?.invokeMethod("hotkeyPressed", arguments: true)
         return noErr
       },
@@ -112,10 +114,10 @@ enum AutoTypeChannel {
       let chunk = Array(units[index..<end])
       var buffer = chunk
       guard let down = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: true) else { break }
-      down.keyboardSetUnicodeString(stringLength: chunk.count, string: &buffer)
+      down.keyboardSetUnicodeString(stringLength: chunk.count, unicodeString: &buffer)
       down.post(tap: .cghidEventTap)
       if let up = CGEvent(keyboardEventSource: nil, virtualKey: 0, keyDown: false) {
-        up.keyboardSetUnicodeString(stringLength: chunk.count, string: &buffer)
+        up.keyboardSetUnicodeString(stringLength: chunk.count, unicodeString: &buffer)
         up.post(tap: .cghidEventTap)
       }
       usleep(4000)
