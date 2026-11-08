@@ -415,6 +415,11 @@ jobs:
           cp native/kreepto-rust/target/armv7-linux-androideabi/release/libkreepto.so android/app/src/main/jniLibs/armeabi-v7a/
           cp native/kreepto-rust/target/x86_64-linux-android/release/libkreepto.so android/app/src/main/jniLibs/x86_64/
 
+      - name: Install Gradle init script (mirror repos, bypass GitHub 504s)
+        run: |
+          mkdir -p ~/.gradle/init.d
+          cp android/init.gradle.kts ~/.gradle/init.d/mirrors.init.gradle.kts
+
       - run: flutter build apk --release --split-per-abi
 
       - name: Package
