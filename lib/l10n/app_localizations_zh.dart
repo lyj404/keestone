@@ -954,7 +954,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get exportLogs => '导出日志';
 
   @override
-  String get exportLogsDescription => '通过系统分享面板发送应用日志文件';
+  String get exportLogsDescription => '将应用日志文件保存到指定位置';
 
   @override
   String get noLogsToExport => '暂无日志文件';

@@ -11,7 +11,6 @@ import flutter_local_notifications
 import flutter_secure_storage_darwin
 import local_auth_darwin
 import mobile_scanner
-import share_plus
 import system_tray
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
@@ -21,6 +20,5 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FlutterSecureStorageDarwinPlugin.register(with: registry.registrar(forPlugin: "FlutterSecureStorageDarwinPlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
-  SharePlusMacosPlugin.register(with: registry.registrar(forPlugin: "SharePlusMacosPlugin"))
   SystemTrayPlugin.register(with: registry.registrar(forPlugin: "SystemTrayPlugin"))
 }

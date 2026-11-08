@@ -392,7 +392,7 @@
   "exportSuccess": "导出成功",
   "exportFailed": "导出失败",
   "exportLogs": "导出日志",
-  "exportLogsDescription": "通过系统分享面板发送应用日志文件",
+  "exportLogsDescription": "将应用日志文件保存到指定位置",
   "noLogsToExport": "暂无日志文件",
   "noEntriesToExport": "没有可导出的条目",
   "noEntriesInCsv": "CSV 文件中未找到有效条目",

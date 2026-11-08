@@ -1913,7 +1913,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportLogsDescription.
   ///
   /// In zh, this message translates to:
-  /// **'通过系统分享面板发送应用日志文件'**
+  /// **'将应用日志文件保存到指定位置'**
   String get exportLogsDescription;
 
   /// No description provided for @noLogsToExport.

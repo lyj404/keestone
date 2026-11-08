@@ -973,7 +973,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get exportLogsDescription =>
-      'Share the app log files via the system share sheet';
+      'Save the app log file to a chosen location';
 
   @override
   String get noLogsToExport => 'No log files found';

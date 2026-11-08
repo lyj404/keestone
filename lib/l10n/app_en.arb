@@ -347,7 +347,7 @@
   "exportSuccess": "Export successful",
   "exportFailed": "Export failed",
   "exportLogs": "Export Logs",
-  "exportLogsDescription": "Share the app log files via the system share sheet",
+  "exportLogsDescription": "Save the app log file to a chosen location",
   "noLogsToExport": "No log files found",
   "noEntriesToExport": "No entries to export",
   "noEntriesInCsv": "No valid entries found in CSV file",
