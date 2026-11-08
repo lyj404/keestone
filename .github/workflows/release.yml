@@ -480,16 +480,17 @@ jobs:
 
           | Platform / 平台 | Download / 下载 |
           | --- | --- |
-          | ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) | ZIP / 压缩包: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)]($base/KeeStone-$tag-windows-x64.zip) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)]($base/KeeStone-$tag-windows-arm64.zip)<br>Installer / 安装程序: [![x64](https://img.shields.io/badge/x64-555?style=flat-square)]($base/KeeStone-$tag-windows-x64-setup.exe) [![ARM64](https://img.shields.io/badge/ARM64-555?style=flat-square)]($base/KeeStone-$tag-windows-arm64-setup.exe) |
-          | ![Debian / Ubuntu](https://img.shields.io/badge/Debian%20%2F%20Ubuntu-A81D33?style=flat-square&logo=debian&logoColor=white) | [![amd64](https://img.shields.io/badge/amd64-555?style=flat-square)]($base/keestone_${version}_amd64.deb) [![arm64](https://img.shields.io/badge/arm64-555?style=flat-square)]($base/keestone_${version}_arm64.deb) |
+          | ![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white) | ZIP / 压缩包: [![x64](https://img.shields.io/badge/x64-007EC6?style=flat-square)]($base/KeeStone-$tag-windows-x64.zip) [![ARM64](https://img.shields.io/badge/ARM64-3EAD5F?style=flat-square)]($base/KeeStone-$tag-windows-arm64.zip)<br>Installer / 安装程序: [![x64](https://img.shields.io/badge/x64-007EC6?style=flat-square)]($base/KeeStone-$tag-windows-x64-setup.exe) [![ARM64](https://img.shields.io/badge/ARM64-3EAD5F?style=flat-square)]($base/KeeStone-$tag-windows-arm64-setup.exe) |
+          | ![Debian / Ubuntu](https://img.shields.io/badge/Debian%20%2F%20Ubuntu-A81D33?style=flat-square&logo=debian&logoColor=white) | [![amd64](https://img.shields.io/badge/amd64-007EC6?style=flat-square)]($base/keestone_${version}_amd64.deb) [![arm64](https://img.shields.io/badge/arm64-3EAD5F?style=flat-square)]($base/keestone_${version}_arm64.deb) |
           | ![Arch Linux](https://img.shields.io/badge/Arch%20Linux-1793D1?style=flat-square&logo=archlinux&logoColor=white) | \`yay -S keestone-bin\` or / 或 \`paru -S keestone-bin\` |
-          | ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white) | [![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-555?style=flat-square)]($base/KeeStone-$tag-macos-arm64.zip) [![Intel](https://img.shields.io/badge/Intel-555?style=flat-square)]($base/KeeStone-$tag-macos-x64.zip) |
-          | ![Android](https://img.shields.io/badge/Android-3DDC84?style=flat-square&logo=android&logoColor=white) | [![arm64-v8a](https://img.shields.io/badge/arm64--v8a-555?style=flat-square)]($base/KeeStone-$tag-android-arm64-v8a.apk) [![armeabi-v7a](https://img.shields.io/badge/armeabi--v7a-555?style=flat-square)]($base/KeeStone-$tag-android-armeabi-v7a.apk) [![x86_64](https://img.shields.io/badge/x86__64-555?style=flat-square)]($base/KeeStone-$tag-android-x86_64.apk) |
+          | ![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white) | [![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-999999?style=flat-square)]($base/KeeStone-$tag-macos-arm64.zip) [![Intel](https://img.shields.io/badge/Intel-0071C5?style=flat-square)]($base/KeeStone-$tag-macos-x64.zip) |
+          | ![Android](https://img.shields.io/badge/Android-3DDC84?style=flat-square&logo=android&logoColor=white) | [![arm64-v8a](https://img.shields.io/badge/arm64--v8a-3DDC84?style=flat-square)]($base/KeeStone-$tag-android-arm64-v8a.apk) [![armeabi-v7a](https://img.shields.io/badge/armeabi--v7a-0F9D58?style=flat-square)]($base/KeeStone-$tag-android-armeabi-v7a.apk) [![x86_64](https://img.shields.io/badge/x86__64-4A90D9?style=flat-square)]($base/KeeStone-$tag-android-x86_64.apk) |
           EOF
 
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           body_path: release-notes.md
           files: |
@@ -508,12 +509,20 @@ jobs:
 
       - name: Extract version
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # AUR pkgver forbids hyphens: v0.9.9-beta.1 -> 0.9.9beta.1
+          echo "pkgver=${version//-/}" >> "$GITHUB_OUTPUT"
 
       - name: Update PKGBUILD version
         run: |
-          sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.version }}/" PKGBUILD
+          version="${{ steps.version.outputs.version }}"
+          sed -i "s/pkgver=.*/pkgver=${{ steps.version.outputs.pkgver }}/" PKGBUILD
           sed -i "s/pkgrel=.*/pkgrel=1/" PKGBUILD
+          # Download URLs must keep the original tag name (v0.9.9-beta.1),
+          # which differs from the sanitized pkgver on pre-release tags.
+          sed -i -E "s|releases/download/v[^/]+|releases/download/v${version}|g" PKGBUILD
 
       - name: Resolve release archive checksums
         id: archive
