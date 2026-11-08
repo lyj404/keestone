@@ -31,7 +31,7 @@ class AutoSaveNotifier extends StateNotifier<int> {
     state = seconds;
     await _storage.write(key: _key, value: seconds.toString());
     _cancelTimers();
-    _scheduleIdle();
+    onDirty();
   }
 
   /// User activity postpones only the idle deadline. The hard max deadline

@@ -201,7 +201,9 @@ class TotpService {
       return _parseOtpAuthUri(uri);
     }
     if (_looksLikeBase32(uri)) {
-      return TotpConfig(secret: uri.replaceAll(' ', ''));
+      return TotpConfig(
+        secret: uri.replaceAll(' ', '').replaceAll('-', ''),
+      );
     }
     return null;
   }
@@ -256,7 +258,10 @@ class TotpService {
   /// by the `otp` package. Returns null when the payload cannot be decoded.
   String? _normalizeSecret(String secret, _SecretEncoding encoding) {
     try {
-      final cleaned = secret.replaceAll(' ', '').replaceAll('\n', '');
+      final cleaned = secret
+          .replaceAll(' ', '')
+          .replaceAll('\n', '')
+          .replaceAll('-', '');
       switch (encoding) {
         case _SecretEncoding.base32:
           final stripped = cleaned.replaceAll('=', '').toUpperCase();
@@ -329,7 +334,7 @@ class TotpService {
 
     secret = uri.queryParameters['secret'];
     if (secret == null || secret.isEmpty) return null;
-    secret = secret.replaceAll(' ', '');
+    secret = secret.replaceAll(' ', '').replaceAll('-', '');
     if (!_looksLikeBase32(secret)) return null;
 
     final p = uri.queryParameters['period'];
