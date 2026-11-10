@@ -66,7 +66,10 @@ class AutofillSnapshotService {
     }
 
     final snapshot = _buildSnapshot(service);
-    if (snapshot.entries.isEmpty) return;
+    if (snapshot.entries.isEmpty) {
+      await delete();
+      return;
+    }
 
     try {
       final clearText = Uint8List.fromList(utf8.encode(snapshot.toUtf8JsonString()));

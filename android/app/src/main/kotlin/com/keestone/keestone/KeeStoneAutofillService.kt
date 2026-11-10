@@ -30,8 +30,6 @@ private const val CHANNEL_TIMEOUT_MS = 4000L
 private const val MAX_DATASETS = 10
 private const val SNAPSHOT_NAME = "keestone_autofill_snapshot.bin"
 private const val KEY_NAME = "keestone_autofill_snapshot.key"
-// FillRequest.FLAG_AUTHENTICATION_RESULT (API 34+; constant value 4).
-private const val FILL_FLAG_AUTHENTICATION_RESULT = 0x4
 
 @RequiresApi(Build.VERSION_CODES.O)
 class KeeStoneAutofillService : AutofillService() {
@@ -58,19 +56,9 @@ class KeeStoneAutofillService : AutofillService() {
         // Primary path: decrypt the snapshot directly. OEM process managers
         // (e.g. OPPO HansManager) freeze background apps within seconds, so
         // the Dart engine usually cannot answer the channel in time.
-        val candidates = querySnapshot(target.packageName, target.domain)
+        val candidates = AutofillSnapshotReader.query(this, target.packageName, target.domain)
         if (candidates.isNotEmpty()) {
-            val isAuthResult =
-                (request.flags and FILL_FLAG_AUTHENTICATION_RESULT) != 0
-            val response =
-                if (isAuthResult) {
-                    // User just authenticated via AutofillAuthActivity — fill now.
-                    buildDatasetsResponse(target, candidates)
-                } else {
-                    // First pass: require biometric/device-credential confirmation
-                    // before handing out credentials (Bitwarden-style flow).
-                    buildBiometricGatedResponse(target, candidates)
-                }
+            val response = buildBiometricGatedResponse(target, candidates)
             callback.onSuccess(response ?: buildOpenAppResponse(target))
             return
         }
@@ -80,29 +68,9 @@ class KeeStoneAutofillService : AutofillService() {
             return
         }
 
-        // Fallback: ask the live engine (also covers "vault open but no
-        // snapshot yet"); on timeout offer to open the app.
-        val result = queryEngine(target.packageName, target.domain)
-        if (result == null) {
-            callback.onSuccess(buildOpenAppResponse(target))
-            return
-        }
-
-        when (result.getString("status")) {
-            "unlocked" -> {
-                @Suppress("UNCHECKED_CAST")
-                val engineCandidates =
-                    (result.get("candidates") as? List<Map<String, Any?>>) ?: emptyList()
-                if (engineCandidates.isEmpty()) {
-                    callback.onSuccess(null)
-                } else {
-                    buildDatasetsResponse(target, engineCandidates)?.let { callback.onSuccess(it) }
-                        ?: callback.onSuccess(null)
-                }
-            }
-            "locked" -> callback.onSuccess(buildUnlockResponse(target, result.getString("filePath")))
-            else -> callback.onSuccess(null)
-        }
+        // A channel call here blocks the service's main thread, which is also
+        // needed to deliver its reply. Open the vault to create a snapshot.
+        callback.onSuccess(buildOpenAppResponse(target))
     }
 
     override fun onSaveRequest(request: SaveRequest, callback: SaveCallback) {
@@ -167,7 +135,17 @@ class KeeStoneAutofillService : AutofillService() {
                 }) {
                 node.autofillId?.let(usernameIds::add)
             }
-            if (hints.any { it == android.view.View.AUTOFILL_HINT_PASSWORD }) {
+            val inputType = node.inputType
+            val variation = inputType and android.text.InputType.TYPE_MASK_VARIATION
+            val inputClass = inputType and android.text.InputType.TYPE_MASK_CLASS
+            val isPassword = (inputClass == android.text.InputType.TYPE_CLASS_TEXT &&
+                variation in listOf(
+                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD,
+                    android.text.InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD,
+                    android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+                )) || (inputClass == android.text.InputType.TYPE_CLASS_NUMBER &&
+                variation == android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD)
+            if (hints.any { it == android.view.View.AUTOFILL_HINT_PASSWORD } || isPassword) {
                 node.autofillId?.let(passwordIds::add)
             }
         }
@@ -191,10 +169,11 @@ class KeeStoneAutofillService : AutofillService() {
      * Same process/uid as the app, so the app-private files dir is readable
      * even while the Dart engine is frozen by OEM process managers.
      */
-    private fun querySnapshot(packageId: String, domain: String?): List<Map<String, Any?>> {
-        val snapshotFile = java.io.File(filesDir, SNAPSHOT_NAME)
+    internal object AutofillSnapshotReader {
+    fun query(context: android.content.Context, packageId: String, domain: String?): List<Map<String, Any?>> {
+        val snapshotFile = java.io.File(context.filesDir, SNAPSHOT_NAME)
         if (!snapshotFile.exists()) return emptyList()
-        val keyFile = java.io.File(filesDir, KEY_NAME)
+        val keyFile = java.io.File(context.filesDir, KEY_NAME)
         if (!keyFile.exists()) return emptyList()
         return try {
             val bytes = snapshotFile.readBytes()
@@ -262,6 +241,8 @@ class KeeStoneAutofillService : AutofillService() {
         }
     }
 
+    }
+
     private fun snapshotExists(): Boolean =
         java.io.File(filesDir, SNAPSHOT_NAME).exists()
 
@@ -317,9 +298,8 @@ class KeeStoneAutofillService : AutofillService() {
 
     /**
      * Datasets whose values are placeholders (empty) and whose tap launches
-     * [AutofillAuthActivity]. After a successful biometric/device-credential
-     * authentication the framework retries onFillRequest with
-     * FLAG_AUTHENTICATION_RESULT and we return the real credentials.
+     * [AutofillAuthActivity], which returns the selected dataset after
+     * successful biometric/device-credential authentication.
      */
     private fun buildBiometricGatedResponse(
         target: AutofillTarget,
@@ -340,11 +320,13 @@ class KeeStoneAutofillService : AutofillService() {
             }
             val allIds = target.usernameIds + target.passwordIds
             if (allIds.isEmpty()) continue
-            // Bind the username field with a placeholder so the dataset passes
-            // the "at least one field" check; the real fill happens after auth.
+            // Bind all fields with null values until authentication succeeds.
             val ds = Dataset.Builder(presentation(label))
-                .setValue(allIds.first(), AutofillValue.forText(""))
-                .setAuthentication(AutofillAuthActivity.authIntentSender(this).intentSender)
+                .apply { allIds.forEach { setValue(it, null) } }
+                .setAuthentication(AutofillAuthActivity.authIntentSender(
+                    this, added, target.packageName, target.domain,
+                    c["uuid"] as? String ?: "", target.usernameIds, target.passwordIds,
+                ).intentSender)
             builder.addDataset(ds.build())
             added++
         }

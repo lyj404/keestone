@@ -25,6 +25,8 @@ import '../../../core/services/log_export_service.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../autofill/providers/autofill_provider.dart';
 import '../../autofill/services/autofill_control.dart';
+import '../../autofill/services/autofill_snapshot_service.dart';
+import '../../database/providers/database_provider.dart';
 import '../../autotype/providers/autotype_provider.dart';
 import '../../autotype/services/autotype_native.dart';
 import '../providers/username_suggest_provider.dart';
@@ -633,9 +635,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               Switch.adaptive(
                 value: enabled,
-                onChanged: (v) => ref
-                    .read(autofillEnabledProvider.notifier)
-                    .setEnabled(v),
+                onChanged: (v) async {
+                  await ref.read(autofillEnabledProvider.notifier).setEnabled(v);
+                  final snapshots = AutofillSnapshotService();
+                  if (v) {
+                    await snapshots.writeFor(ref.read(databaseServiceProvider));
+                  } else {
+                    await snapshots.delete();
+                  }
+                },
               ),
             ],
           ),
