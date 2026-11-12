@@ -21,9 +21,16 @@ A cross-platform KeePass-compatible password manager built with Flutter.
 - File attachments, entry history, custom fields, tags & groups
 - Password generator, auto-lock/save, clipboard auto-clear, expiry reminders
 - Local password health audit (weak / reused / expired passwords; no network)
+- Optional Have I Been Pwned password breach checks
+- Android autofill for browsers and apps; desktop AutoType
+- Favorites and pinned entries, entry templates, username suggestions
 - System tray, keyboard shortcuts, light/dark theme, Chinese/English
 
 ## Install
+
+The features added during the 0.9.9 beta are available in the
+[beta releases](https://github.com/lyj404/keestone/releases); they are not
+included in the 0.9.6 downloads below.
 
 Download version 0.9.6 for your platform:
 | Platform | Download |
@@ -73,12 +80,11 @@ Log files are named `keestone-error.log` (plus older generations
 relocated.
 
 On **macOS and Android**, where the path is hard to reach manually, use
-**Settings → General → Export Logs** to share the log files via the system
-share sheet.
+**Settings → General → Export Logs** to save the log files to a chosen location.
 
 ## Password Health
 
-Open **Password Health** from Tools, the overflow menu, or Settings (available on desktop and mobile). The scan is fully local — nothing leaves the device.
+Open **Password Health** from Tools, the overflow menu, or Settings (available on desktop and mobile). The standard scan is fully local.
 
 | Check | Description |
 | ----- | ----------- |
@@ -89,6 +95,50 @@ Open **Password Health** from Tools, the overflow menu, or Settings (available o
 | Expiring soon | Expires within 7 days |
 
 Results are ranked by severity. Tap a finding to open the entry and fix it. The report never includes plaintext passwords.
+
+The optional **Check for breaches** action queries Have I Been Pwned's Pwned
+Passwords service after confirmation. It uses k-anonymity: only the first five
+characters of each password's SHA-1 hash are sent; the full hash and password
+stay on the device. Network failures are reported separately from a clean result.
+
+## Autofill and AutoType
+
+On Android, enable **Autofill** in KeeStone's settings and select KeeStone as
+the system autofill service. Unlock the database, then select a suggested entry
+in a supported app or browser. Store a full URL such as
+`https://example.com/login` in the entry's URL field; Android app package IDs
+can be specified as `androidapp://com.example.app`. Filling requires device
+authentication, independently of the app's biometric unlock setting.
+
+To configure an Android app entry:
+
+1. Find the app's package ID. For an app listed on Google Play, it is the
+   value of `id` in its listing URL. Alternatively, connect the device with USB
+   debugging enabled and run `adb shell pm list packages -3` to list installed
+   third-party package IDs.
+2. Edit the entry and put `androidapp://com.example.app` in its **URL** field,
+   replacing `com.example.app` with the app's package ID. To use one entry for
+   both a website and an app, separate values with a semicolon or a newline, for
+   example: `https://example.com/login; androidapp://com.example.app`.
+3. Save the entry, unlock the database, open the app's login screen and tap a
+   username or password field. Select the KeeStone suggestion and authenticate
+   when prompted. The target app must expose its login fields to Android autofill.
+
+Desktop AutoType uses **Ctrl+Alt+A** to choose an entry and type into the
+previously focused window. Entries can use a custom KeePass AutoType sequence.
+On macOS, grant accessibility permission; on Linux, AutoType requires X11 and
+is unavailable on Wayland.
+
+An iOS Credential Provider extension is included in the source, but requires
+Apple Developer signing and device setup and has not been presented as a tested
+release feature. See [iOS setup and verification](ios/CredentialProvider/README.md).
+
+## Organizing entries
+
+Mark entries as favorites or pin them to the top; a favorites view is available
+on desktop and mobile. New entries can use built-in templates for logins, bank
+accounts, cards, secure notes, servers, identities and software licenses.
+Username suggestions draw from the current database and can be disabled in settings.
 
 ## Cloud Sync
 
