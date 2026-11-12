@@ -1715,6 +1715,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get syncBackendGit => 'Git';
 
   @override
+  String get syncBackendS3 => 'S3';
+
+  @override
+  String get s3Endpoint => 'S3 Endpoint';
+
+  @override
+  String get s3EndpointHelper =>
+      'e.g. https://s3.us-east-1.amazonaws.com or https://play.min.io';
+
+  @override
+  String get s3Region => 'Region';
+
+  @override
+  String get s3RegionHelper => 'e.g. us-east-1 (MinIO commonly uses us-east-1)';
+
+  @override
+  String get s3Bucket => 'Bucket';
+
+  @override
+  String get s3AccessKeyId => 'Access Key ID';
+
+  @override
+  String get s3SecretAccessKey => 'Secret Access Key';
+
+  @override
+  String get s3SessionToken => 'Session Token (optional)';
+
+  @override
+  String get s3PathStyle => 'Path-style addressing';
+
+  @override
+  String get s3PathStyleHelper =>
+      'Required by most self-hosted services (MinIO, Ceph); AWS S3 also accepts it';
+
+  @override
+  String s3BucketNotFound(String bucket) {
+    return 'Bucket not found: $bucket';
+  }
+
+  @override
+  String get s3InsecureHttpTitle => 'Insecure S3 connection';
+
+  @override
   String get gitRepoUrl => 'Site URL';
 
   @override

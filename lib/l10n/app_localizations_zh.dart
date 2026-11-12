@@ -1666,6 +1666,48 @@ class AppLocalizationsZh extends AppLocalizations {
   String get syncBackendGit => 'Git';
 
   @override
+  String get syncBackendS3 => 'S3';
+
+  @override
+  String get s3Endpoint => 'S3 端点';
+
+  @override
+  String get s3EndpointHelper =>
+      '例如 https://s3.us-east-1.amazonaws.com 或 https://play.min.io';
+
+  @override
+  String get s3Region => '区域';
+
+  @override
+  String get s3RegionHelper => '例如 us-east-1（MinIO 通常填 us-east-1）';
+
+  @override
+  String get s3Bucket => '存储桶';
+
+  @override
+  String get s3AccessKeyId => 'Access Key ID';
+
+  @override
+  String get s3SecretAccessKey => 'Secret Access Key';
+
+  @override
+  String get s3SessionToken => '会话令牌（可选）';
+
+  @override
+  String get s3PathStyle => '路径风格寻址';
+
+  @override
+  String get s3PathStyleHelper => '自托管服务（MinIO、Ceph 等）通常需要开启；AWS S3 亦支持';
+
+  @override
+  String s3BucketNotFound(String bucket) {
+    return '存储桶不存在：$bucket';
+  }
+
+  @override
+  String get s3InsecureHttpTitle => '不安全的 S3 连接';
+
+  @override
   String get gitRepoUrl => '站点地址';
 
   @override

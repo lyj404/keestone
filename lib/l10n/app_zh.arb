@@ -624,6 +624,26 @@
   "syncBackend": "同步后端",
   "syncBackendWebdav": "WebDAV",
   "syncBackendGit": "Git",
+  "syncBackendS3": "S3",
+  "s3Endpoint": "S3 端点",
+  "s3EndpointHelper": "例如 https://s3.us-east-1.amazonaws.com 或 https://play.min.io",
+  "s3Region": "区域",
+  "s3RegionHelper": "例如 us-east-1（MinIO 通常填 us-east-1）",
+  "s3Bucket": "存储桶",
+  "s3AccessKeyId": "Access Key ID",
+  "s3SecretAccessKey": "Secret Access Key",
+  "s3SessionToken": "会话令牌（可选）",
+  "s3PathStyle": "路径风格寻址",
+  "s3PathStyleHelper": "自托管服务（MinIO、Ceph 等）通常需要开启；AWS S3 亦支持",
+  "s3BucketNotFound": "存储桶不存在：{bucket}",
+  "@s3BucketNotFound": {
+    "placeholders": {
+      "bucket": {
+        "type": "String"
+      }
+    }
+  },
+  "s3InsecureHttpTitle": "不安全的 S3 连接",
   "gitRepoUrl": "站点地址",
   "gitSiteUrlHelper": "选填——仅自建 GitLab 需要填写自己的域名",
   "gitGistId": "Gist/Snippet ID",

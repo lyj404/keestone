@@ -31,6 +31,7 @@ import '../../autotype/providers/autotype_provider.dart';
 import '../../autotype/services/autotype_native.dart';
 import '../providers/username_suggest_provider.dart';
 import '../../sync/data/git_config.dart';
+import '../../sync/data/s3_config.dart';
 import '../data/webdav_config.dart';
 import '../providers/settings_provider.dart';
 import '../../sync/providers/sync_provider.dart';
@@ -62,6 +63,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _gitRepoController = TextEditingController();
   final _gitTokenController = TextEditingController();
   final _gitFileController = TextEditingController(text: 'database.kdbx');
+  // S3 sync form controllers.
+  final _s3EndpointController = TextEditingController();
+  final _s3RegionController = TextEditingController();
+  final _s3BucketController = TextEditingController();
+  final _s3AccessKeyController = TextEditingController();
+  final _s3SecretController = TextEditingController();
+  final _s3SessionTokenController = TextEditingController();
+  final _s3PathController = TextEditingController();
+  final _s3FileController = TextEditingController(text: 'database.kdbx');
 
   /// Gist/snippet id of the loaded profile, shown read-only after the first
   /// sync creates the remote store.
@@ -69,10 +79,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<WebDavConfig> _profiles = const [];
   String? _selectedProfileId;
   String? _selectedGitProfileId;
+  String? _selectedS3ProfileId;
   String _gitProvider = 'github';
+  bool _s3PathStyle = true;
 
   /// Which sync backend the sync cards currently edit.
-  String _syncMode = 'webdav'; // 'webdav' | 'git'
+  String _syncMode = 'webdav'; // 'webdav' | 'git' | 's3'
   bool _enabled = false;
   bool _testing = false;
   bool? _connectionOk;
@@ -91,17 +103,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final gitProfiles = await ref
         .read(gitSettingsServiceProvider)
         .getProfiles();
+    final s3Profiles = await ref
+        .read(s3SettingsServiceProvider)
+        .getProfiles();
     if (!mounted) return;
     // Default the backend switch to whichever sync backend is actually
     // enabled; re-entering settings must not reset an explicit choice.
     final gitEnabled = gitProfiles.any((p) => p.enabled);
+    final s3Enabled = s3Profiles.any((p) => p.enabled);
     setState(() {
       _profiles = state.profiles;
       _selectedProfileId = state.activeProfile?.id;
       _applyConfigToForm(state.activeProfile);
       _selectedGitProfileId = gitProfiles.isEmpty ? null : gitProfiles.first.id;
       _applyGitConfigToForm(gitProfiles.isEmpty ? null : gitProfiles.first);
-      _syncMode = gitEnabled ? 'git' : 'webdav';
+      _selectedS3ProfileId = s3Profiles.isEmpty ? null : s3Profiles.first.id;
+      _applyS3ConfigToForm(s3Profiles.isEmpty ? null : s3Profiles.first);
+      _syncMode = gitEnabled ? 'git' : (s3Enabled ? 's3' : 'webdav');
       _connectionOk = null;
       _connectionError = null;
     });
@@ -118,6 +136,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _gitRepoController.dispose();
     _gitTokenController.dispose();
     _gitFileController.dispose();
+    _s3EndpointController.dispose();
+    _s3RegionController.dispose();
+    _s3BucketController.dispose();
+    _s3AccessKeyController.dispose();
+    _s3SecretController.dispose();
+    _s3SessionTokenController.dispose();
+    _s3PathController.dispose();
+    _s3FileController.dispose();
     super.dispose();
   }
 

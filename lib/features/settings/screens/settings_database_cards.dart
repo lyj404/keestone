@@ -362,9 +362,10 @@ extension _SettingsDatabaseCards on _SettingsScreenState {
       await ref.read(webDavSettingsServiceProvider).saveConfig(config);
       await ref.read(webDavSettingsServiceProvider).setActiveProfile(profileId);
       if (_enabled) {
-        // The two sync backends are mutually exclusive: enabling WebDAV
-        // disables Git so no entry point can ever pick the wrong one.
+        // The sync backends are mutually exclusive: enabling WebDAV disables
+        // Git and S3 so no entry point can ever pick the wrong one.
         await _disableGitProfiles();
+        await _disableAllS3Profiles();
       }
       _selectedProfileId = profileId;
       await _loadConfig();

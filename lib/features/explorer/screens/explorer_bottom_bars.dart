@@ -244,6 +244,7 @@ Future<void> _syncToCloud(BuildContext context) async {
       : null;
   final backend = await resolveSyncBackend(
     (id) => container.read(gitSettingsServiceProvider).getConfigById(id),
+    (id) => container.read(s3SettingsServiceProvider).getConfigById(id),
     (id) => container.read(webDavSettingsServiceProvider).getConfigById(id),
     profileId,
   );
@@ -368,10 +369,11 @@ Future<void> _syncFromCloud(BuildContext context) async {
       .getLastOpenedFile();
   final backend = await resolveSyncBackend(
     (id) => container.read(gitSettingsServiceProvider).getConfigById(id),
+    (id) => container.read(s3SettingsServiceProvider).getConfigById(id),
     (id) => container.read(webDavSettingsServiceProvider).getConfigById(id),
     recent?.webDavProfileId,
   );
-  // An enabled Git config wins over WebDAV, matching DatabaseNotifier.
+  // An enabled Git or S3 config wins over WebDAV, matching DatabaseNotifier.
   final useGit = backend.hasGit;
   if (!backend.hasEnabled) {
     if (context.mounted) {
@@ -380,10 +382,11 @@ Future<void> _syncFromCloud(BuildContext context) async {
     return;
   }
   if (!context.mounted) return;
-  // Git targets handle "no remote database yet" inside reloadFromCloud and
-  // report it through the standard sync error dialog; only WebDAV needs the
-  // upfront remoteFileExists probe to avoid clobbering an absent path.
-  if (!useGit) {
+  // Git and S3 targets handle "no remote database yet" inside
+  // reloadFromCloud and report it through the standard sync error dialog;
+  // only WebDAV needs the upfront remoteFileExists probe to avoid
+  // clobbering an absent path.
+  if (!useGit && !backend.hasS3) {
     final bool exists;
     try {
       exists = await container

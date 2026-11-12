@@ -579,6 +579,26 @@
   "syncBackend": "Sync Backend",
   "syncBackendWebdav": "WebDAV",
   "syncBackendGit": "Git",
+  "syncBackendS3": "S3",
+  "s3Endpoint": "S3 Endpoint",
+  "s3EndpointHelper": "e.g. https://s3.us-east-1.amazonaws.com or https://play.min.io",
+  "s3Region": "Region",
+  "s3RegionHelper": "e.g. us-east-1 (MinIO commonly uses us-east-1)",
+  "s3Bucket": "Bucket",
+  "s3AccessKeyId": "Access Key ID",
+  "s3SecretAccessKey": "Secret Access Key",
+  "s3SessionToken": "Session Token (optional)",
+  "s3PathStyle": "Path-style addressing",
+  "s3PathStyleHelper": "Required by most self-hosted services (MinIO, Ceph); AWS S3 also accepts it",
+  "s3BucketNotFound": "Bucket not found: {bucket}",
+  "@s3BucketNotFound": {
+    "placeholders": {
+      "bucket": {
+        "type": "String"
+      }
+    }
+  },
+  "s3InsecureHttpTitle": "Insecure S3 connection",
   "gitRepoUrl": "Site URL",
   "gitSiteUrlHelper": "Optional — only a self-hosted GitLab needs its own address",
   "gitGistId": "Gist/Snippet ID",

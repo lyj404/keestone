@@ -17,8 +17,11 @@ extension _SettingsSyncCards on _SettingsScreenState {
           _webdavConfigCard(brightness, l10n),
           ..._webdavActions(l10n),
         ],
-      ] else ...[
+      ] else if (_syncMode == 'git') ...[
         _gitConfigCard(brightness, l10n),
+      ] else ...[
+        _s3ConfigCard(brightness, l10n),
+        ..._s3Actions(l10n),
       ],
     ];
     return [
@@ -36,65 +39,66 @@ extension _SettingsSyncCards on _SettingsScreenState {
   Widget _syncModeCard(Brightness brightness, AppLocalizations l10n) {
     return _SectionCard(
       brightness: brightness,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: ClayDecoration.iconContainer(
-                  brightness: brightness,
+      // Full width so the centered header and the SegmentedButton share one
+      // visual axis; SectionCard's outer column would otherwise shrink-wrap
+      // this group and pin it to the card's leading edge.
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: ClayDecoration.iconContainer(brightness: brightness),
+              child: Icon(
+                Icons.cloud_upload_rounded,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l10n.syncBackend,
+              style: Theme.of(context).textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.autoSyncOnSave,
+              style: Theme.of(context).textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            SegmentedButton<String>(
+              segments: [
+                ButtonSegment(
+                  value: 'webdav',
+                  label: ButtonLabel(l10n.syncBackendWebdav),
+                  icon: const Icon(Icons.dns_rounded, size: 18),
                 ),
-                child: Icon(
-                  Icons.cloud_upload_rounded,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                ButtonSegment(
+                  value: 'git',
+                  label: ButtonLabel(l10n.syncBackendGit),
+                  icon: const Icon(Icons.merge_rounded, size: 18),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.syncBackend,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      l10n.autoSyncOnSave,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                ButtonSegment(
+                  value: 's3',
+                  label: ButtonLabel(l10n.syncBackendS3),
+                  icon: const Icon(Icons.storage_rounded, size: 18),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(
-                value: 'webdav',
-                label: ButtonLabel(l10n.syncBackendWebdav),
-                icon: const Icon(Icons.dns_rounded, size: 18),
-              ),
-              ButtonSegment(
-                value: 'git',
-                label: ButtonLabel(l10n.syncBackendGit),
-                icon: const Icon(Icons.merge_rounded, size: 18),
-              ),
-            ],
-            selected: {_syncMode},
-            onSelectionChanged: (selection) {
-              if (selection.isEmpty) return;
-              setState(() {
-                _syncMode = selection.first;
-                _connectionOk = null;
-                _connectionError = null;
-              });
-            },
-          ),
-        ],
+              ],
+              selected: {_syncMode},
+              onSelectionChanged: (selection) {
+                if (selection.isEmpty) return;
+                setState(() {
+                  _syncMode = selection.first;
+                  _connectionOk = null;
+                  _connectionError = null;
+                });
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -234,9 +238,10 @@ extension _SettingsSyncCards on _SettingsScreenState {
           );
       await ref.read(gitSettingsServiceProvider).saveConfig(config);
       if (config.enabled) {
-        // The two sync backends are mutually exclusive: enabling Git
-        // disables WebDAV so no entry point can ever pick the wrong one.
+        // The sync backends are mutually exclusive: enabling Git disables
+        // WebDAV and S3 so no entry point can ever pick the wrong one.
         await _disableAllWebDavProfiles();
+        await _disableAllS3Profiles();
       }
       if (!mounted) return;
       await _loadConfig();
@@ -297,6 +302,340 @@ extension _SettingsSyncCards on _SettingsScreenState {
 
   String _generateGitProfileId() {
     return 'git_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  // --- S3 sync ------------------------------------------------------------
+
+  Widget _s3ConfigCard(Brightness brightness, AppLocalizations l10n) {
+    return _SectionCard(
+      brightness: brightness,
+      child: Column(
+        children: [
+          TextFormField(
+            controller: _s3EndpointController,
+            decoration: InputDecoration(
+              labelText: l10n.s3Endpoint,
+              helperText: l10n.s3EndpointHelper,
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) {
+                return l10n.pleaseEnterServerAddress;
+              }
+              final uri = Uri.tryParse(v.trim());
+              if (uri == null ||
+                  !uri.hasAuthority ||
+                  (uri.scheme != 'http' && uri.scheme != 'https')) {
+                return l10n.webDavInvalidUrl;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _s3RegionController,
+            decoration: InputDecoration(
+              labelText: l10n.s3Region,
+              helperText: l10n.s3RegionHelper,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _s3BucketController,
+            decoration: InputDecoration(labelText: l10n.s3Bucket),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? l10n.pleaseEnterName : null,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _s3AccessKeyController,
+            decoration: InputDecoration(labelText: l10n.s3AccessKeyId),
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterUsername : null,
+          ),
+          const SizedBox(height: 12),
+          PasswordTextField(
+            controller: _s3SecretController,
+            labelText: l10n.s3SecretAccessKey,
+            showPrefixIcon: false,
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterPassword : null,
+          ),
+          const SizedBox(height: 12),
+          PasswordTextField(
+            controller: _s3SessionTokenController,
+            labelText: l10n.s3SessionToken,
+            showPrefixIcon: false,
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _s3PathController,
+            decoration: InputDecoration(
+              labelText: l10n.remotePathOptional,
+              hintText: l10n.remotePathHint,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _s3FileController,
+            decoration: InputDecoration(
+              labelText: l10n.filename,
+              hintText: 'database.kdbx',
+            ),
+            validator: (v) =>
+                (v == null || v.isEmpty) ? l10n.pleaseEnterName : null,
+          ),
+          const SizedBox(height: 4),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.s3PathStyle),
+            subtitle: Text(
+              l10n.s3PathStyleHelper,
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: Theme.of(context).colorScheme.outline),
+            ),
+            value: _s3PathStyle,
+            onChanged: (v) => setState(() => _s3PathStyle = v),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _s3Actions(AppLocalizations l10n) {
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _testing ? null : _testS3Connection,
+              icon: _testing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.wifi_find_rounded, size: 18),
+              label: ButtonLabel(_testing ? l10n.testing : l10n.testConnection),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(ClayLayout.radiusLg),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      if (_connectionOk != null)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: _connectionOk!
+                ? ClayColors.secondary.withValues(alpha: 0.1)
+                : ClayColors.error.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                _connectionOk!
+                    ? Icons.check_circle_rounded
+                    : Icons.error_rounded,
+                size: 18,
+                color: _connectionOk! ? ClayColors.secondary : ClayColors.error,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _connectionOk!
+                      ? l10n.connectionSuccess
+                      : (_connectionError ?? l10n.connectionFailed),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: _connectionOk!
+                        ? ClayColors.secondary
+                        : ClayColors.error,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      const SizedBox(height: 8),
+      FilledButton.icon(
+        onPressed: _saveS3,
+        icon: const Icon(Icons.save_rounded, size: 18),
+        label: ButtonLabel(l10n.save),
+        style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+      ),
+    ];
+  }
+
+  S3SyncConfig _s3ConfigFromForm({bool enabled = true}) => S3SyncConfig(
+    id: _selectedS3ProfileId ?? _generateS3ProfileId(),
+    name: 'S3',
+    endpoint: _s3EndpointController.text.trim(),
+    region: _s3RegionController.text.trim(),
+    bucket: _s3BucketController.text.trim(),
+    accessKeyId: _s3AccessKeyController.text.trim(),
+    secretAccessKey: _s3SecretController.text,
+    sessionToken: _s3SessionTokenController.text.trim(),
+    remotePath: _s3PathController.text.trim(),
+    remoteFilename: _s3FileController.text.trim(),
+    usePathStyle: _s3PathStyle,
+    enabled: enabled,
+  );
+
+  Future<bool> _confirmInsecureS3() async {
+    final config = _s3ConfigFromForm();
+    bool insecure;
+    try {
+      insecure = config.usesInsecureHttp;
+    } on FormatException {
+      return false;
+    }
+    if (!insecure) return true;
+    final l10n = AppLocalizations.of(context)!;
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(l10n.s3InsecureHttpTitle),
+            content: Text(l10n.webDavInsecureHttpBody),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: ButtonLabel(l10n.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: ButtonLabel(l10n.confirm),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _testS3Connection() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!await _confirmInsecureS3() || !mounted) return;
+    setState(() {
+      _testing = true;
+      _connectionOk = null;
+      _connectionError = null;
+    });
+    try {
+      final errorKey = await ref
+          .read(s3SyncServiceProvider)
+          .testConnection(_s3ConfigFromForm());
+      if (!mounted) return;
+      setState(() {
+        _testing = false;
+        _connectionOk = errorKey == null;
+        _connectionError = _translateS3Error(errorKey);
+      });
+    } catch (e, st) {
+      log.e('S3 test connection failed', error: e, stackTrace: st);
+      if (mounted) {
+        setState(() {
+          _testing = false;
+          _connectionOk = false;
+          _connectionError = e.toString();
+        });
+      }
+    }
+  }
+
+  String? _translateS3Error(String? errorKey) {
+    if (errorKey == null) return null;
+    final l10n = AppLocalizations.of(context)!;
+    if (errorKey == 'auth_failed') return l10n.authFailedCheckCredentials;
+    if (errorKey == 'network_failed') return l10n.networkFailedCheckServer;
+    if (errorKey.startsWith('bucket_not_found:')) {
+      final bucket = errorKey.substring('bucket_not_found:'.length);
+      return l10n.s3BucketNotFound(bucket);
+    }
+    if (errorKey.startsWith('connection_failed:')) {
+      final msg = errorKey.substring('connection_failed:'.length);
+      return l10n.connectionFailedMsg(msg);
+    }
+    return errorKey;
+  }
+
+  /// Persists the form, merging it into the stored profile so secrets the
+  /// form does not edit survive a save.
+  Future<void> _saveS3() async {
+    log.i('[S3Sync] Save button clicked');
+    try {
+      if (!_formKey.currentState!.validate()) return;
+      if (!await _confirmInsecureS3() || !mounted) return;
+      final profileId = _selectedS3ProfileId ?? _generateS3ProfileId();
+      final existing = await ref
+          .read(s3SettingsServiceProvider)
+          .getConfigById(profileId);
+      final config = _s3ConfigFromForm(enabled: existing?.enabled ?? true)
+          .copyWith(id: profileId);
+      await ref.read(s3SettingsServiceProvider).saveConfig(config);
+      if (config.enabled) {
+        // The three sync backends are mutually exclusive: enabling S3
+        // disables WebDAV and Git so no entry point can ever pick the
+        // wrong one.
+        await _disableAllWebDavProfiles();
+        await _disableGitProfiles();
+      }
+      if (!mounted) return;
+      await _loadConfig();
+      if (!mounted) return;
+      _selectedS3ProfileId = profileId;
+      setState(() {
+        _connectionOk = null;
+        _connectionError = null;
+      });
+      final l10n = AppLocalizations.of(context)!;
+      showToast(context, l10n.saved);
+    } catch (e, st) {
+      log.e('[S3Sync] Save failed', error: e, stackTrace: st);
+      if (mounted) {
+        showToast(context, e.toString(), isError: true);
+      }
+    }
+  }
+
+  void _applyS3ConfigToForm(S3SyncConfig? config) {
+    if (config == null) {
+      _s3EndpointController.text = '';
+      _s3RegionController.text = '';
+      _s3BucketController.text = '';
+      _s3AccessKeyController.text = '';
+      _s3SecretController.text = '';
+      _s3SessionTokenController.text = '';
+      _s3PathController.text = '';
+      _s3FileController.text = 'database.kdbx';
+      _s3PathStyle = true;
+      return;
+    }
+    _s3EndpointController.text = config.endpoint;
+    _s3RegionController.text = config.region;
+    _s3BucketController.text = config.bucket;
+    _s3AccessKeyController.text = config.accessKeyId;
+    _s3SecretController.text = config.secretAccessKey;
+    _s3SessionTokenController.text = config.sessionToken;
+    _s3PathController.text = config.remotePath;
+    _s3FileController.text = config.remoteFilename;
+    _s3PathStyle = config.usePathStyle;
+  }
+
+  /// Disables every S3 profile. Used to enforce the mutual exclusion of the
+  /// sync backends when WebDAV or Git is enabled.
+  Future<void> _disableAllS3Profiles() async {
+    final service = ref.read(s3SettingsServiceProvider);
+    for (final profile in await service.getProfiles()) {
+      if (!profile.enabled) continue;
+      await service.saveConfig(profile.copyWith(enabled: false));
+    }
+  }
+
+  String _generateS3ProfileId() {
+    return 's3_${DateTime.now().microsecondsSinceEpoch}';
   }
 
   Widget _webdavToggleCard(Brightness brightness, AppLocalizations l10n) {

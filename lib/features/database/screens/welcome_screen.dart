@@ -182,7 +182,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       void dismissLoading() {
         if (!loadingVisible || !mounted) return;
         loadingVisible = false;
-        Navigator.of(context).pop();
+        // The loading dialog is anchored to the welcome page; if that page
+        // was rebuilt (e.g. a recent-files invalidation), the dialog was
+        // silently removed with it. Popping blindly would then pop the last
+        // remaining page and crash go_router, so only pop when something is
+        // actually left to pop.
+        final navigator = Navigator.of(context);
+        if (navigator.canPop()) navigator.pop();
       }
 
       try {
@@ -562,7 +568,11 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     void dismissLoading() {
       if (!loadingVisible || !context.mounted) return;
       loadingVisible = false;
-      Navigator.of(context).pop();
+      // Same guard as the auto-open flow: the dialog can be silently removed
+      // when its anchor page is rebuilt, and a blind pop would then pop the
+      // last remaining page and crash go_router.
+      final navigator = Navigator.of(context);
+      if (navigator.canPop()) navigator.pop();
     }
 
     try {
@@ -689,11 +699,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 
   /// Resolves the cloud backend for [profileId] via the shared resolver in
-  /// sync_provider.dart (Git first for null ids). Returns null when nothing
-  /// is configured.
+  /// sync_provider.dart (Git, then S3, for null ids). Returns null when
+  /// nothing is configured.
   Future<_CloudTarget?> _resolveCloudTarget(String? profileId) async {
     final resolved = await resolveSyncBackend(
       (id) => ref.read(gitSettingsServiceProvider).getConfigById(id),
+      (id) => ref.read(s3SettingsServiceProvider).getConfigById(id),
       (id) => ref.read(webDavSettingsServiceProvider).getConfigById(id),
       profileId,
     );
@@ -703,6 +714,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
       return _CloudTarget(
         profileId: config.id,
         remotePath: config.filePath,
+        info: () => service.getRemoteFileInfo(config),
+        downloadToLocal: () => service.downloadToLocal(config),
+      );
+    }
+    if (resolved.hasS3) {
+      final config = resolved.s3!;
+      final service = ref.read(s3SyncServiceProvider);
+      return _CloudTarget(
+        profileId: config.id,
+        remotePath: config.objectKey,
         info: () => service.getRemoteFileInfo(config),
         downloadToLocal: () => service.downloadToLocal(config),
       );

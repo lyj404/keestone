@@ -3253,6 +3253,84 @@ abstract class AppLocalizations {
   /// **'Git'**
   String get syncBackendGit;
 
+  /// No description provided for @syncBackendS3.
+  ///
+  /// In zh, this message translates to:
+  /// **'S3'**
+  String get syncBackendS3;
+
+  /// No description provided for @s3Endpoint.
+  ///
+  /// In zh, this message translates to:
+  /// **'S3 端点'**
+  String get s3Endpoint;
+
+  /// No description provided for @s3EndpointHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如 https://s3.us-east-1.amazonaws.com 或 https://play.min.io'**
+  String get s3EndpointHelper;
+
+  /// No description provided for @s3Region.
+  ///
+  /// In zh, this message translates to:
+  /// **'区域'**
+  String get s3Region;
+
+  /// No description provided for @s3RegionHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'例如 us-east-1（MinIO 通常填 us-east-1）'**
+  String get s3RegionHelper;
+
+  /// No description provided for @s3Bucket.
+  ///
+  /// In zh, this message translates to:
+  /// **'存储桶'**
+  String get s3Bucket;
+
+  /// No description provided for @s3AccessKeyId.
+  ///
+  /// In zh, this message translates to:
+  /// **'Access Key ID'**
+  String get s3AccessKeyId;
+
+  /// No description provided for @s3SecretAccessKey.
+  ///
+  /// In zh, this message translates to:
+  /// **'Secret Access Key'**
+  String get s3SecretAccessKey;
+
+  /// No description provided for @s3SessionToken.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话令牌（可选）'**
+  String get s3SessionToken;
+
+  /// No description provided for @s3PathStyle.
+  ///
+  /// In zh, this message translates to:
+  /// **'路径风格寻址'**
+  String get s3PathStyle;
+
+  /// No description provided for @s3PathStyleHelper.
+  ///
+  /// In zh, this message translates to:
+  /// **'自托管服务（MinIO、Ceph 等）通常需要开启；AWS S3 亦支持'**
+  String get s3PathStyleHelper;
+
+  /// No description provided for @s3BucketNotFound.
+  ///
+  /// In zh, this message translates to:
+  /// **'存储桶不存在：{bucket}'**
+  String s3BucketNotFound(String bucket);
+
+  /// No description provided for @s3InsecureHttpTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'不安全的 S3 连接'**
+  String get s3InsecureHttpTitle;
+
   /// No description provided for @gitRepoUrl.
   ///
   /// In zh, this message translates to:

@@ -22,13 +22,14 @@ import '../../explorer/providers/explorer_provider.dart'
 import '../../settings/data/webdav_config.dart';
 import '../../settings/providers/settings_provider.dart';
 import '../../sync/data/git_config.dart';
+import '../../sync/data/s3_config.dart';
 import '../../sync/data/sync_service.dart'
     show RemoteFileInfo, SyncErrorType, SyncException, normalizeETag;
 import '../../sync/providers/sync_provider.dart';
 
 /// Which remote backend the current session syncs against. Git is the newer
 /// API-based backend; WebDAV remains the default for existing setups.
-enum SyncBackend { webdav, git }
+enum SyncBackend { webdav, git, s3 }
 
 final databaseServiceProvider = Provider<DatabaseService>((ref) {
   return DatabaseService();
@@ -66,17 +67,20 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
   DatabaseService get _service => _ref.read(databaseServiceProvider);
 
   /// Resolves the sync target for [profileId]. Git profile ids carry a
-  /// `git_` prefix; a null id falls back to whichever backend has an enabled
-  /// config (Git first, so configuring Git overrides a leftover/incomplete
-  /// WebDAV profile). Delegates to the shared resolver in sync_provider.dart
-  /// so all entry points agree on backend selection.
+  /// `git_` prefix and S3 ids an `s3_` prefix; a null id falls back to
+  /// whichever backend has an enabled config (Git first, then S3, so
+  /// configuring them overrides a leftover/incomplete WebDAV profile).
+  /// Delegates to the shared resolver in sync_provider.dart so all entry
+  /// points agree on backend selection.
   Future<_SyncTarget?> _resolveProfileById(String? profileId) async {
     final resolved = await resolveSyncBackend(
       (id) => _ref.read(gitSettingsServiceProvider).getConfigById(id),
+      (id) => _ref.read(s3SettingsServiceProvider).getConfigById(id),
       (id) => _ref.read(webDavSettingsServiceProvider).getConfigById(id),
       profileId,
     );
     if (resolved.hasGit) return _SyncTarget.git(resolved.git!);
+    if (resolved.hasS3) return _SyncTarget.s3(resolved.s3!);
     if (resolved.hasWebdav) return _SyncTarget.webdav(resolved.webdav!);
     return null;
   }
@@ -959,6 +963,8 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
           _ref.read(syncServiceProvider).getRemoteFileInfo(config),
         _GitTarget(:final config) =>
           _ref.read(gitSyncServiceProvider).getRemoteFileInfo(config),
+        _S3Target(:final config) =>
+          _ref.read(s3SyncServiceProvider).getRemoteFileInfo(config),
       };
 
   Future<({Uint8List bytes, RemoteFileInfo info})?> _downloadWithInfo(
@@ -968,6 +974,8 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
       _ref.read(syncServiceProvider).downloadWithInfo(config),
     _GitTarget(:final config) =>
       _ref.read(gitSyncServiceProvider).downloadWithInfo(config),
+    _S3Target(:final config) =>
+      _ref.read(s3SyncServiceProvider).downloadWithInfo(config),
   };
 
   Future<RemoteFileInfo> _upload(
@@ -999,6 +1007,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         force: force,
       );
     }(),
+    _S3Target(:final config) => _ref
+        .read(s3SyncServiceProvider)
+        .uploadDatabase(config, bytes, expected: expected, force: force),
   };
 }
 
@@ -1013,6 +1024,7 @@ sealed class _SyncTarget {
 
   factory _SyncTarget.webdav(WebDavConfig config) = _WebDavTarget;
   factory _SyncTarget.git(GitSyncConfig config) = _GitTarget;
+  factory _SyncTarget.s3(S3SyncConfig config) = _S3Target;
 }
 
 class _WebDavTarget extends _SyncTarget {
@@ -1035,6 +1047,17 @@ class _GitTarget extends _SyncTarget {
 
   @override
   String get remotePath => config.filePath;
+}
+
+class _S3Target extends _SyncTarget {
+  final S3SyncConfig config;
+  const _S3Target(this.config);
+
+  @override
+  String get profileId => config.id;
+
+  @override
+  String get remotePath => config.objectKey;
 }
 
 final recentFilesProvider = FutureProvider<List<RecentFile>>((ref) async {
