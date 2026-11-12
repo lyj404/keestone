@@ -18,6 +18,8 @@ class LogExportService {
     // collectLogFiles is newest first; export the current generation.
     final bytes = Uint8List.fromList(await files.first.readAsBytes());
 
+    // saveFile writes [bytes] to the chosen location itself (on desktop it
+    // uses a portal/native dialog and returns a file URI).
     final result = await FilePicker.saveFile(
       dialogTitle: 'Export Logs',
       fileName: 'keestone.log',

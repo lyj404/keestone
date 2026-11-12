@@ -162,6 +162,9 @@ class DatabaseNotifier extends StateNotifier<AsyncValue<KdbxDatabase?>> {
         _ref.read(expirationReminderProvider.notifier).checkExpiringEntries(db),
       );
     } catch (e, st) {
+      // The unlock screen renders this error inline; make sure it also lands
+      // in the log file for diagnosis.
+      log.e('Database openFile failed: $filePath', error: e, stackTrace: st);
       state = AsyncValue.error(e, st);
     }
   }

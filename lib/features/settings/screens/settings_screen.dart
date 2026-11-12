@@ -252,8 +252,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _autofillCard(brightness, l10n, ref),
       if (Platform.isWindows || Platform.isMacOS || Platform.isLinux)
         _autotypeCard(brightness, l10n, ref),
-      if (Platform.isMacOS || Platform.isAndroid)
-        _logExportCard(brightness, l10n),
+      if (!Platform.isIOS) _logExportCard(brightness, l10n),
       if (Platform.isWindows || Platform.isLinux || Platform.isMacOS)
         _closeBehaviorCard(brightness, l10n, ref),
     ];

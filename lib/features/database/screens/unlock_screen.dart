@@ -139,6 +139,11 @@ class _UnlockScreenState extends ConsumerState<UnlockScreen> {
         }
       } else if (next.hasError) {
         final error = next.error!;
+        log.e(
+          'Unlock failed for $_filePath',
+          error: error,
+          stackTrace: next.stackTrace,
+        );
         if (error is DatabaseCorruptedException) {
           setState(() => _error = l10n.databaseCorrupted);
           _offerBackupRestore();

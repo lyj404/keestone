@@ -246,9 +246,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
             ),
           );
         }
-      } catch (e) {
+      } catch (e, st) {
         _autoOpened = false;
         dismissLoading();
+        // This catch previously only showed a dialog; the exception never
+        // reached the log file, so RangeErrors like keestone#2 left no trace.
+        log.e('Cloud auto-open download failed', error: e, stackTrace: st);
         if (mounted && exists) {
           _setCloudOfflineMode(_translateDownloadError(e, l10n));
           ref.read(openedFromCloudProvider.notifier).state = true;
@@ -643,8 +646,9 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, st) {
       dismissLoading();
+      log.e('Cloud download failed', error: e, stackTrace: st);
       if (!context.mounted) return;
       if (cachedFile != null) {
         final cachedLocalFile = File(cachedFile.path);

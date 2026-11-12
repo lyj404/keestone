@@ -25,6 +25,18 @@ class DatabaseCorruptedException implements Exception {
 
 /// Returns true if the exception indicates a corrupt/invalid KDBX file.
 bool isCorruptionError(Object e) {
+  // The KDBX parser (kpasslib) reads bytes without bounds checks, so a
+  // truncated or mangled file surfaces as a raw RangeError/FormatException/
+  // TypeError rather than a descriptive parse error (keestone#2). Classify
+  // those parse-time exception types as corruption so the user gets the
+  // backup-restore flow instead of a raw exception string.
+  if (e is RangeError ||
+      e is FormatException ||
+      e is TypeError ||
+      e is StateError ||
+      e is ArgumentError) {
+    return true;
+  }
   final msg = e.toString().toLowerCase();
   return msg.contains('corrupt') ||
       msg.contains('bad version') ||
@@ -370,15 +382,20 @@ class DatabaseService {
     _checkOpenGeneration(generation);
     _preloadedBytes = null;
     _preloadedFilePath = null;
+    log.i(
+      'Database bytes loaded: $filePath, ${bytes.length} bytes'
+      '${canUsePreload ? ' (preloaded)' : ''}',
+    );
     try {
       final db = await _loadDatabase(bytes, password, keyData: keyData);
       _checkOpenGeneration(generation);
       _db = db;
-    } catch (e) {
+    } catch (e, st) {
       if (isCorruptionError(e)) {
-        log.e('Database file corrupted: $filePath', error: e);
+        log.e('Database file corrupted: $filePath', error: e, stackTrace: st);
         throw DatabaseCorruptedException(e);
       }
+      log.e('Database open failed: $filePath', error: e, stackTrace: st);
       rethrow;
     }
     _filePath = filePath;

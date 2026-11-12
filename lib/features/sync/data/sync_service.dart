@@ -470,6 +470,10 @@ class SyncService {
     // the cloud, so the replacement must be atomic: a bare writeAsBytes
     // interrupted mid-write would corrupt the only local copy.
     await const AtomicFileStore().commit(file.path, result.bytes);
+    log.i(
+      'Cloud cache written: ${file.path}, ${result.bytes.length} bytes, '
+      'etag=${result.info.eTag}, mTime=${result.info.mTime}',
+    );
     return (path: file.path, info: result.info);
   }
 

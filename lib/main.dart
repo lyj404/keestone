@@ -3,7 +3,9 @@ import 'dart:async';
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
+import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:window_manager/legacy.dart';
@@ -30,8 +32,12 @@ import 'core/widgets/button_label.dart';
 import 'l10n/app_localizations.dart';
 import 'features/database/providers/database_provider.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  // Everything below runs in a guarded zone so uncaught async errors are
+  // written to the log file instead of vanishing (e.g. the RangeError from
+  // keestone#2 that left no trace in keestone-error.log).
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
   initSecureStoreBackend();
   await LegacyMigration.run();
@@ -62,12 +68,30 @@ void main() async {
   // ProviderContainer, so it only needs to be registered once per process.
   AutofillMethodHandler.register();
 
+  // Route framework and platform-dispatcher errors into the same file log.
+  final originalFlutterError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    log.e(
+      'Flutter framework error',
+      error: details.exception,
+      stackTrace: details.stack,
+    );
+    originalFlutterError?.call(details);
+  };
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    log.e('Uncaught platform error', error: error, stackTrace: stackTrace);
+    return true;
+  };
+
   runApp(
     UncontrolledProviderScope(
       container: globalContainer,
       child: const KeeStoneAppWrapper(),
     ),
   );
+  }, (error, stackTrace) {
+    log.e('Uncaught error in main zone', error: error, stackTrace: stackTrace);
+  });
 }
 
 class KeeStoneAppWrapper extends ConsumerStatefulWidget {
