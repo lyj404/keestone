@@ -83,5 +83,13 @@ set defaultSecureStore(SecureStore store) => _defaultBackend = store;
 void initSecureStoreBackend() {
   if (Platform.isLinux) {
     defaultSecureStore = LinuxChannelSecureStore();
+  } else if (Platform.isMacOS &&
+      const bool.fromEnvironment('KEYSTONE_TEST_MACOS_KEYCHAIN')) {
+    // Diagnostic builds only: changing keychains can hide existing secrets.
+    defaultSecureStore = const PluginSecureStore(
+      FlutterSecureStorage(
+        mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+      ),
+    );
   }
 }

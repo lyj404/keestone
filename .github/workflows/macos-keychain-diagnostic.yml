@@ -1,0 +1,38 @@
+name: macOS Keychain diagnostic
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostic:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - uses: dtolnay/rust-toolchain@1.90.0
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - run: flutter pub get
+      - run: sh macos/scripts/build_kreepto_macos.sh
+      - name: Test real Keychain access
+        run: flutter test integration_test/macos_keychain_test.dart -d macos
+        continue-on-error: true
+      - name: Build diagnostic app
+        run: flutter build macos --release --dart-define=KEYSTONE_TEST_MACOS_KEYCHAIN=true
+      - name: Inspect and package app
+        run: |
+          app="build/macos/Build/Products/Release/keestone.app"
+          codesign -dvvv "$app" 2>&1 | tee macos-signature.txt
+          codesign -d --entitlements :- "$app" 2>&1 | tee macos-entitlements.txt
+          ditto -c -k --sequesterRsrc --keepParent "$app" KeeStone-macos-x64-diagnostic.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-keychain-diagnostic
+          path: |
+            KeeStone-macos-x64-diagnostic.zip
+            macos-signature.txt
+            macos-entitlements.txt
