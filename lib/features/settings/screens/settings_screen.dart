@@ -896,13 +896,26 @@ class _AutofillDefaultStatusTile extends StatefulWidget {
       _AutofillDefaultStatusTileState();
 }
 
-class _AutofillDefaultStatusTileState extends State<_AutofillDefaultStatusTile> {
+class _AutofillDefaultStatusTileState extends State<_AutofillDefaultStatusTile>
+    with WidgetsBindingObserver {
   bool? _isDefault; // null = unknown / not checked yet
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshDefault();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _refreshDefault();
   }
 
   Future<void> _refreshDefault() async {
@@ -933,9 +946,6 @@ class _AutofillDefaultStatusTileState extends State<_AutofillDefaultStatusTile> 
           : TextButton(
               onPressed: () async {
                 await AutofillControl.requestSetDefault();
-                // The system prompt is async; re-check after a beat.
-                await Future.delayed(const Duration(milliseconds: 500));
-                if (mounted) await _refreshDefault();
               },
               child: Text(l10n.setAsAutofillService),
             ),
