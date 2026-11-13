@@ -57,6 +57,35 @@ void main() {
       );
     });
 
+    test(
+      'decrypting without the original key never creates a replacement',
+      () async {
+        final ciphertext = await encryptor.encrypt('secret');
+        final missingKeyStore = _MemorySecureStore();
+        final other = PasswordEncryptor(missingKeyStore);
+        await expectLater(
+          other.decrypt(ciphertext),
+          throwsA(isA<PasswordDecryptionException>()),
+        );
+        expect(missingKeyStore.values, isEmpty);
+      },
+    );
+
+    test('authenticates old macOS key before recovering credentials', () async {
+      final oldStore = _MemorySecureStore();
+      final ciphertext = await PasswordEncryptor(oldStore).encrypt('secret');
+      final newStore = _MemorySecureStore();
+      await PasswordEncryptor(newStore).encrypt('new secret');
+      final newKey = newStore.values['webdav_enc_key'];
+      final oldKey = oldStore.values['webdav_enc_key'];
+      final migrated = PasswordEncryptor(
+        MacOSMigratingSecureStore(newStore, oldStore),
+      );
+      expect(await migrated.decrypt(ciphertext), 'secret');
+      expect(newStore.values['webdav_enc_key'], newKey);
+      expect(oldStore.values['webdav_enc_key'], oldKey);
+    });
+
     test('returns plaintext as-is and encrypts it on demand', () async {
       expect(await encryptor.decrypt('plain-secret'), 'plain-secret');
       final upgraded = await encryptor.encrypt('plain-secret');

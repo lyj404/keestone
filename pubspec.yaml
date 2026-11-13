@@ -78,11 +78,14 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
   qr: ^4.0.0
+  xml: ^6.2.2
 
 # system_tray is unmaintained and pins uuid ^3; riverpod 3 needs uuid ^4.
 # system_tray only uses Uuid().v4(), which remains compatible.
 dependency_overrides:
   uuid: ^4.6.0
+  kpasslib:
+    path: third_party/kpasslib
 
 flutter:
   uses-material-design: true

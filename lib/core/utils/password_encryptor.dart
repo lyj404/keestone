@@ -48,14 +48,14 @@ class PasswordEncryptor {
     : _storage = storage ?? defaultSecureStore;
 
   /// Returns the device-bound encryption key, generating one if needed.
-  Future<Uint8List> _getOrCreateKey() async {
+  Future<Uint8List> _getOrCreateKey({bool create = true}) async {
     if (_cachedKey != null) return _cachedKey!;
     final inFlight = _keyCreation;
     if (inFlight != null) {
       final key = await inFlight;
       return _cachedKey ?? key;
     }
-    final creation = _readOrCreateKey();
+    final creation = _readOrCreateKey(create: create);
     _keyCreation = creation;
     try {
       final key = await creation;
@@ -66,10 +66,13 @@ class PasswordEncryptor {
     }
   }
 
-  Future<Uint8List> _readOrCreateKey() async {
+  Future<Uint8List> _readOrCreateKey({required bool create}) async {
     final existing = await _storage.read(key: _keyStorageName);
     if (existing != null) {
       return base64Url.decode(existing);
+    }
+    if (!create) {
+      throw StateError('Encryption key is unavailable');
     }
     final random = Random.secure();
     final key = Uint8List.fromList(
@@ -127,14 +130,29 @@ class PasswordEncryptor {
       final data = base64Url.decode(
         encryptedPassword.substring(encryptedMarker.length),
       );
-      final key = await _getOrCreateKey();
+      final key = await _getOrCreateKey(create: false);
       final secretBox = SecretBox.fromConcatenation(
         data,
         nonceLength: AesGcm.defaultNonceLength,
         macLength: 16,
       );
-      final clear = await _aesGcm.decrypt(secretBox, secretKey: SecretKey(key));
-      return utf8.decode(clear);
+      try {
+        final clear = await _aesGcm.decrypt(
+          secretBox,
+          secretKey: SecretKey(key),
+        );
+        return utf8.decode(clear);
+      } on SecretBoxAuthenticationError {
+        final storage = _storage;
+        if (storage is! MacOSMigratingSecureStore) rethrow;
+        final old = await storage.readPrevious(key: _keyStorageName);
+        if (old == null) rethrow;
+        final clear = await _aesGcm.decrypt(
+          secretBox,
+          secretKey: SecretKey(base64Url.decode(old)),
+        );
+        return utf8.decode(clear);
+      }
     } catch (error) {
       throw PasswordDecryptionException('aes-gcm', error);
     }
@@ -145,7 +163,7 @@ class PasswordEncryptor {
       final base64Data = encryptedPassword.substring(
         legacyEncryptedMarker.length,
       );
-      final key = await _getOrCreateKey();
+      final key = await _getOrCreateKey(create: false);
       final data = base64Url.decode(base64Data);
 
       if (data.length <= _legacyIvLength) {

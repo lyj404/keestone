@@ -25,27 +25,8 @@ class DatabaseCorruptedException implements Exception {
 
 /// Returns true if the exception indicates a corrupt/invalid KDBX file.
 bool isCorruptionError(Object e) {
-  // The KDBX parser (kpasslib) reads bytes without bounds checks, so a
-  // truncated or mangled file surfaces as a raw RangeError/FormatException/
-  // TypeError rather than a descriptive parse error (keestone#2). Classify
-  // those parse-time exception types as corruption so the user gets the
-  // backup-restore flow instead of a raw exception string.
-  if (e is RangeError ||
-      e is FormatException ||
-      e is TypeError ||
-      e is StateError ||
-      e is ArgumentError) {
-    return true;
-  }
-  final msg = e.toString().toLowerCase();
-  return msg.contains('corrupt') ||
-      msg.contains('bad version') ||
-      msg.contains('invalid header') ||
-      msg.contains('dataerror') ||
-      msg.contains('format') && msg.contains('invalid') ||
-      (e is InvalidCredentialsError == false &&
-          msg.contains('invalid') &&
-          msg.contains('key'));
+  // A parser or compatibility error does not prove the file is damaged.
+  return e is FileCorruptedError;
 }
 
 /// Pre-computed lowercase text for an entry, used for fast search.

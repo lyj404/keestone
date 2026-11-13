@@ -64,6 +64,11 @@ class MacOSMigratingSecureStore implements SecureStore {
     }
   }
 
+  /// Read without migrating: callers must authenticate data before using an
+  /// older key, because the two Keychains can contain unrelated generations.
+  Future<String?> readPrevious({required String key}) =>
+      _old<String?>(() => previous.read(key: key));
+
   @override
   Future<String?> read({required String key}) async {
     final value = await current.read(key: key);

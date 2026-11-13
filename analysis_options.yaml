@@ -19,6 +19,7 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    - third_party/kpasslib/**
 
 linter:
   rules:

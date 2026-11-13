@@ -615,10 +615,9 @@ packages:
   kpasslib:
     dependency: "direct main"
     description:
-      name: kpasslib
-      sha256: a3fda30b8006dc00c115d970121f1fc48d3eb3cc21d58cf015555689c866750f
-      url: "https://pub.dev"
-    source: hosted
+      path: "third_party/kpasslib"
+      relative: true
+    source: path
     version: "1.1.2"
   leak_tracker:
     dependency: transitive
@@ -1098,7 +1097,7 @@ packages:
     source: hosted
     version: "1.1.0"
   xml:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: xml
       sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
