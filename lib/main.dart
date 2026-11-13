@@ -111,7 +111,7 @@ class _KeeStoneAppWrapperState extends ConsumerState<KeeStoneAppWrapper>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(fileLogOutput.init());
+      unawaited(log.init);
       CryptoService.initialize();
     });
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {

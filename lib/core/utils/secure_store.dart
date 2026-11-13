@@ -41,6 +41,69 @@ class PluginSecureStore implements SecureStore {
   Future<Map<String, String>> readAll() => _storage.readAll();
 }
 
+/// Reads older data-protection Keychain entries when accessible, and moves
+/// them to the macOS file-based Keychain used by ad-hoc signed builds.
+class MacOSMigratingSecureStore implements SecureStore {
+  final SecureStore current;
+  final SecureStore previous;
+
+  const MacOSMigratingSecureStore(this.current, this.previous);
+
+  bool _missingEntitlement(Object error) =>
+      error is PlatformException &&
+      (error.code == '-34018' ||
+          error.details == -34018 ||
+          error.message?.contains('-34018') == true);
+
+  Future<T?> _old<T>(Future<T> Function() action) async {
+    try {
+      return await action();
+    } catch (error) {
+      if (_missingEntitlement(error)) return null;
+      rethrow;
+    }
+  }
+
+  @override
+  Future<String?> read({required String key}) async {
+    final value = await current.read(key: key);
+    if (value != null) return value;
+    final old = await _old(() => previous.read(key: key));
+    if (old != null) {
+      await current.write(key: key, value: old);
+      await _old(() => previous.delete(key: key));
+    }
+    return old;
+  }
+
+  @override
+  Future<void> write({required String key, required String? value}) async {
+    if (value == null) return delete(key: key);
+    await current.write(key: key, value: value);
+    await _old(() => previous.delete(key: key));
+  }
+
+  @override
+  Future<void> delete({required String key}) async {
+    await _old(() => previous.delete(key: key));
+    await current.delete(key: key);
+  }
+
+  @override
+  Future<Map<String, String>> readAll() async {
+    final old = await _old(previous.readAll) ?? {};
+    final values = await current.readAll();
+    for (final entry in old.entries) {
+      if (!values.containsKey(entry.key)) {
+        await current.write(key: entry.key, value: entry.value);
+        values[entry.key] = entry.value;
+      }
+      await _old(() => previous.delete(key: entry.key));
+    }
+    return values;
+  }
+}
+
 class LinuxChannelSecureStore implements SecureStore {
   static const _channel = MethodChannel('keestone/secure_storage');
 
@@ -83,13 +146,14 @@ set defaultSecureStore(SecureStore store) => _defaultBackend = store;
 void initSecureStoreBackend() {
   if (Platform.isLinux) {
     defaultSecureStore = LinuxChannelSecureStore();
-  } else if (Platform.isMacOS &&
-      const bool.fromEnvironment('KEYSTONE_TEST_MACOS_KEYCHAIN')) {
-    // Diagnostic builds only: changing keychains can hide existing secrets.
-    defaultSecureStore = const PluginSecureStore(
-      FlutterSecureStorage(
-        mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+  } else if (Platform.isMacOS) {
+    defaultSecureStore = const MacOSMigratingSecureStore(
+      PluginSecureStore(
+        FlutterSecureStorage(
+          mOptions: MacOsOptions(usesDataProtectionKeychain: false),
+        ),
       ),
+      PluginSecureStore(),
     );
   }
 }

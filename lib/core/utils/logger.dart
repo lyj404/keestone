@@ -9,6 +9,7 @@ import 'file_log_output.dart';
 final fileLogOutput = FileLogOutput(minLevel: Level.info);
 
 final log = Logger(
+  filter: ProductionFilter(),
   printer: PrettyPrinter(
     methodCount: 0,
     dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
