@@ -12,6 +12,7 @@ import android.service.autofill.Dataset
 import android.service.autofill.FillCallback
 import android.service.autofill.FillRequest
 import android.service.autofill.FillResponse
+import android.service.autofill.Presentations
 import android.service.autofill.SaveCallback
 import android.service.autofill.SaveRequest
 import android.util.Log
@@ -47,7 +48,9 @@ class KeeStoneAutofillService : AutofillService() {
         callback: FillCallback,
     ) {
         val structures = request.fillContexts.map { it.structure }
-        val target = structures.firstNotNullOfOrNull { parseStructure(it) }
+        // Later contexts contain the current fields. Some apps replace their
+        // password view when opening a secure keyboard, invalidating older IDs.
+        val target = structures.asReversed().firstNotNullOfOrNull { parseStructure(it) }
         if (target == null) {
             callback.onSuccess(null)
             return
@@ -321,7 +324,18 @@ class KeeStoneAutofillService : AutofillService() {
             val allIds = target.usernameIds + target.passwordIds
             if (allIds.isEmpty()) continue
             // Bind all fields with null values until authentication succeeds.
-            val ds = Dataset.Builder(presentation(label))
+            val menu = presentation(label)
+            val ds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Dataset.Builder(
+                    Presentations.Builder()
+                        .setMenuPresentation(menu)
+                        .setDialogPresentation(presentation(label))
+                        .build(),
+                )
+            } else {
+                Dataset.Builder(menu)
+            }
+            ds
                 .apply { allIds.forEach { setValue(it, null) } }
                 .setAuthentication(AutofillAuthActivity.authIntentSender(
                     this, added, target.packageName, target.domain,
@@ -331,6 +345,11 @@ class KeeStoneAutofillService : AutofillService() {
             added++
         }
         if (added == 0) return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && target.passwordIds.isNotEmpty()) {
+            // Let Android offer its fill dialog for password fields when it is
+            // available, including when an app displays its own keyboard.
+            builder.setFillDialogTriggerIds(*target.passwordIds.toTypedArray())
+        }
         return builder.build()
     }
 
@@ -395,7 +414,7 @@ class KeeStoneAutofillService : AutofillService() {
             this,
             requestCode,
             intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            autofillAuthenticationPendingIntentFlags(),
         )
         val builder = FillResponse.Builder()
         val allIds = target.usernameIds + target.passwordIds

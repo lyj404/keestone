@@ -113,7 +113,12 @@ class AutofillAuthActivity : AppCompatActivity() {
                     putParcelableArrayListExtra("usernameIds", ArrayList(usernameIds))
                     putParcelableArrayListExtra("passwordIds", ArrayList(passwordIds))
                 },
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+                autofillAuthenticationPendingIntentFlags(),
             )
     }
 }
+
+// The autofill framework supplies authentication arguments in a fill-in Intent.
+internal fun autofillAuthenticationPendingIntentFlags(): Int =
+    PendingIntent.FLAG_UPDATE_CURRENT or
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) PendingIntent.FLAG_MUTABLE else 0

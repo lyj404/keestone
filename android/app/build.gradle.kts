@@ -24,6 +24,7 @@ android {
 
     defaultConfig {
         applicationId = "com.keestone.keestone"
+        manifestPlaceholders["appLabel"] = "keestone"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -41,6 +42,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            if (providers.gradleProperty("KEESTONE_TEST").orNull == "true") {
+                applicationIdSuffix = ".test"
+                manifestPlaceholders["appLabel"] = "KeeStone 测试"
+            }
+        }
         release {
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
