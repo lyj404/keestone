@@ -1,12 +1,12 @@
 # Maintainer: lyj404 <lyj404 at proton dot me>
 pkgname=keestone-bin
-pkgver=0.8.4
+pkgver=1.0.0
 pkgrel=1
 pkgdesc='A KeePass-compatible password manager built with Flutter'
 arch=('x86_64' 'aarch64')
 url='https://github.com/lyj404/keestone'
 license=('Apache-2.0')
-depends=('gtk3' 'libsecret' 'libayatana-appindicator' 'dbus')
+depends=('gtk3' 'libsecret' 'dbus' 'libx11' 'libxi')
 makedepends=()
 provides=('keestone')
 conflicts=('keestone')

@@ -1,7 +1,7 @@
 name: keestone
 description: "A KeePass-compatible password manager built with Flutter."
 publish_to: 'none'
-version: 0.9.9+23
+version: 1.0.0+24
 environment:
   sdk: ^3.13.0
 
@@ -52,8 +52,7 @@ dependencies:
   ffi: ^2.1.4
 
   # System tray & window management
-  system_tray: ^2.0.3
-  dart_xdg_status_notifier_item: ^1.1.0
+  tray_manager: ^0.8.3
   window_manager: ^0.6.0
 
   # UI helpers
@@ -80,10 +79,7 @@ dev_dependencies:
   qr: ^4.0.0
   xml: ^6.2.2
 
-# system_tray is unmaintained and pins uuid ^3; riverpod 3 needs uuid ^4.
-# system_tray only uses Uuid().v4(), which remains compatible.
 dependency_overrides:
-  uuid: ^4.6.0
   kpasslib:
     path: third_party/kpasslib
 
