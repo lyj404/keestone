@@ -81,6 +81,14 @@ class KdbxTime {
     // Some clients write empty time elements for absent KDBX 4 timestamps.
     // Preserve the existing null representation rather than reading zero bytes.
     if (string.isEmpty) return null;
+
+    // Some clients also write ISO 8601 text in KDBX 4 metadata. A colon
+    // cannot occur in base64, so this cannot be confused with binary time.
+    if (string.contains(':')) {
+      final textTime = DateTime.tryParse(string);
+      if (textTime != null) return textTime;
+    }
+
     final bytes = base64.decode(string);
     if (bytes.length != 8) {
       throw const FormatException('Invalid KDBX binary timestamp length');

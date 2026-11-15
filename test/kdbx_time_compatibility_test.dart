@@ -13,6 +13,13 @@ class _EmptyBinaryTime extends KdbxTime {
   String? toXmlText({required bool isBinary}) => isBinary ? '' : null;
 }
 
+class _TextBinaryTime extends KdbxTime {
+  _TextBinaryTime(super.time);
+
+  @override
+  String? toXmlText({required bool isBinary}) => time?.toIso8601String();
+}
+
 void main() {
   test('generic parser exceptions are not declared database corruption', () {
     expect(isCorruptionError(RangeError('short')), isFalse);
@@ -42,6 +49,63 @@ void main() {
     final time = KdbxTime(DateTime.utc(2024, 1, 2));
     final encoded = time.toXmlText(isBinary: true)!;
     expect(KdbxTime.fromXmlText(text: encoded, isBinary: true).time, time.time);
+  });
+
+  test('KDBX 4 timestamps accept ISO 8601 text and reject invalid text', () {
+    for (final text in ['2025-12-24T15:36:16Z', '2025-12-24T17:36:16+02:00']) {
+      expect(
+        KdbxTime.fromXmlText(text: text, isBinary: true).time,
+        DateTime.utc(2025, 12, 24, 15, 36, 16),
+      );
+    }
+    expect(
+      () => KdbxTime.fromXmlText(text: 'invalid:timestamp', isBinary: true),
+      throwsFormatException,
+    );
+  });
+
+  test('opens and saves a database with text custom icon times', () async {
+    final directory = await Directory.systemTemp.createTemp('kdbx_icon_time');
+    final file = File('${directory.path}/test.kdbx');
+    final service = DatabaseService();
+    final iconId = KdbxUuid.random();
+    final modified = DateTime.utc(2025, 12, 24, 15, 36, 16);
+    final iconData = [1, 2, 3, 4];
+
+    void verify() {
+      final icon = service.db!.meta.customIcons[iconId]!;
+      expect(icon.data, iconData);
+      expect(icon.name, 'custom icon');
+      expect(icon.modified.time, modified);
+      expect(
+        service.db!.meta.customData.map['key']!.modification.time,
+        modified,
+      );
+    }
+
+    try {
+      await service.createDatabase('test', 'test-password', file.path);
+      service.db!.meta.customIcons[iconId] = KdbxCustomIcon(
+        data: iconData,
+        name: 'custom icon',
+        modified: _TextBinaryTime(modified),
+      );
+      service.db!.meta.customData.map['key'] = KdbxCustomItem(
+        value: 'value',
+        modification: _TextBinaryTime(modified),
+      );
+      await file.writeAsBytes(await service.saveToBytes());
+      service.close();
+      await service.openFile(file.path, 'test-password');
+      verify();
+      await file.writeAsBytes(await service.saveToBytes());
+      service.close();
+      await service.openFile(file.path, 'test-password');
+      verify();
+    } finally {
+      if (service.isOpen) service.close();
+      await directory.delete(recursive: true);
+    }
   });
 
   test('empty timestamps in entry metadata can be parsed and serialized', () {
