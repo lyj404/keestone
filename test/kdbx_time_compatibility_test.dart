@@ -33,14 +33,14 @@ void main() {
     expect(KdbxTime.fromXmlText(text: '', isBinary: true).time, isNull);
   });
 
-  test('short nonempty timestamps are rejected', () {
+  test('short nonempty timestamps are treated as absent', () {
     for (var size = 1; size < 8; size++) {
       expect(
-        () => KdbxTime.fromXmlText(
+        KdbxTime.fromXmlText(
           text: base64.encode(Uint8List(size)),
           isBinary: true,
-        ),
-        throwsFormatException,
+        ).time,
+        isNull,
       );
     }
   });
@@ -51,7 +51,7 @@ void main() {
     expect(KdbxTime.fromXmlText(text: encoded, isBinary: true).time, time.time);
   });
 
-  test('KDBX 4 timestamps accept ISO 8601 text and reject invalid text', () {
+  test('KDBX 4 timestamps accept ISO 8601 text and ignore invalid text', () {
     for (final text in ['2025-12-24T15:36:16Z', '2025-12-24T17:36:16+02:00']) {
       expect(
         KdbxTime.fromXmlText(text: text, isBinary: true).time,
@@ -59,8 +59,8 @@ void main() {
       );
     }
     expect(
-      () => KdbxTime.fromXmlText(text: 'invalid:timestamp', isBinary: true),
-      throwsFormatException,
+      KdbxTime.fromXmlText(text: 'invalid:timestamp', isBinary: true).time,
+      isNull,
     );
   });
 
