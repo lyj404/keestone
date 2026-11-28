@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:kpasslib/kpasslib.dart';
 import 'package:otp/otp.dart';
 
+import '../../../core/constants/app_constants.dart';
+
 class TotpConfig {
   final String secret;
   final int period;
@@ -48,56 +50,54 @@ class TotpService {
   static const _kAlgorithm = 'TimeOtp-Algorithm';
   static const _kTotpField = 'TOTP';
 
-  /// Cheap check for whether [entry] carries a TOTP secret, without fully
-  /// parsing the rest of the config. Used to filter lists before the more
-  /// expensive [loadFromEntry] is deferred to each tile.
-  ///
-  /// Covers KeePass standard string fields, this app's legacy customData
-  /// storage, and an otpauth:// URI in a `TOTP` custom field.
-  bool hasTotp(KdbxEntry entry) {
-    if (_fieldSecretSource(entry) != null) return true;
-    final cd = entry.customData;
-    if (cd != null) {
-      final secret = cd.map[_kSecret]?.value;
-      if (secret != null && secret.isNotEmpty) return true;
-    }
-    return _otpAuthFromTotpField(entry) != null;
-  }
+  bool hasTotp(KdbxEntry entry) => loadFromEntry(entry) != null;
 
   TotpConfig? loadFromEntry(KdbxEntry entry) {
-    final period = _readInt(entry, _kPeriod) ?? 30;
-    final digits = _readInt(entry, _kLength) ?? _readInt(entry, _kSize) ?? 6;
-    final algorithm = _readString(entry, _kAlgorithm) ?? 'HMAC-SHA-1';
-
     final fromFields = _fieldSecretSource(entry);
-    if (fromFields != null) {
-      final secret = _normalizeSecret(fromFields.value, fromFields.encoding);
-      if (secret != null) {
-        return TotpConfig(
-          secret: secret,
-          period: period,
-          digits: digits,
-          algorithm: algorithm,
-        );
-      }
-    }
+    final fields = fromFields == null
+        ? null
+        : _timeOtpConfig(
+            _normalizeSecret(fromFields.value, fromFields.encoding),
+            (key) => _readString(entry, key),
+          );
+    return fields ??
+        _loadLegacyCustomData(entry) ??
+        _otpAuthFromField(entry, _kTotpField) ??
+        _otpAuthFromField(entry, AppConstants.otpField) ??
+        _loadSeedFields(entry);
+  }
 
-    final cd = entry.customData;
-    final legacy = cd?.map[_kSecret]?.value;
-    if (legacy != null && legacy.isNotEmpty) {
-      // Historic app storage: value is treated as Base32.
-      final secret = _normalizeSecret(legacy, _SecretEncoding.base32);
-      if (secret != null) {
-        return TotpConfig(
-          secret: secret,
-          period: period,
-          digits: digits,
-          algorithm: algorithm,
-        );
-      }
-    }
+  TotpConfig? _timeOtpConfig(String? secret, String? Function(String) read) =>
+      _validatedConfig(
+        secret: secret,
+        period: read(_kPeriod),
+        digits: read(_kLength) ?? read(_kSize),
+        algorithm: read(_kAlgorithm),
+      );
 
-    return _otpAuthFromTotpField(entry);
+  TotpConfig? _loadLegacyCustomData(KdbxEntry entry) {
+    final data = entry.customData;
+    final raw = data?.map[_kSecret]?.value;
+    if (raw == null) return null;
+    return _timeOtpConfig(
+      _normalizeSecret(raw, _SecretEncoding.base32),
+      (key) => _readString(entry, key) ?? data?.map[key]?.value,
+    );
+  }
+
+  TotpConfig? _loadSeedFields(KdbxEntry entry) {
+    final raw = _readString(entry, AppConstants.totpSeedField);
+    if (raw == null) return null;
+    final settings = _readString(
+      entry,
+      AppConstants.totpSettingsField,
+    )?.split(';');
+    if (settings != null && settings.length != 2) return null;
+    return _validatedConfig(
+      secret: _normalizeSecret(raw, _SecretEncoding.base32),
+      period: settings?[0],
+      digits: settings?[1],
+    );
   }
 
   /// Copies a TOTP that only lives in this app's legacy [KdbxCustomData]
@@ -112,7 +112,7 @@ class TotpService {
     if (legacySecret == null || legacySecret.isEmpty) return false;
     if (_fieldSecretSource(entry) != null) return false;
 
-    final config = loadFromEntry(entry);
+    final config = _loadLegacyCustomData(entry);
     if (config == null) return false;
     saveToEntry(entry, config);
     return true;
@@ -149,7 +149,48 @@ class TotpService {
     );
   }
 
+  void replaceInEntry(KdbxEntry entry, TotpConfig config) {
+    final uriField = [
+      for (final key in [AppConstants.otpField, _kTotpField])
+        if (_otpAuthFromField(entry, key) != null) key,
+      if (!entry.fields.containsKey(AppConstants.otpField) &&
+          _loadSeedFields(entry) != null)
+        AppConstants.otpField,
+    ].firstOrNull;
+    removeFromEntry(entry);
+    if (uriField == null) {
+      saveToEntry(entry, config);
+      return;
+    }
+
+    final account = config.accountName ?? _readString(entry, 'Title') ?? '';
+    final issuer = config.issuer;
+    final uri = Uri(
+      scheme: 'otpauth',
+      host: 'totp',
+      pathSegments: [issuer == null ? account : '$issuer:$account'],
+      queryParameters: {
+        'secret': config.secret,
+        'period': config.period.toString(),
+        'digits': config.digits.toString(),
+        'algorithm': toOtpAuthAlgorithm(config.algorithm),
+        'issuer': ?issuer,
+      },
+    );
+    entry.fields[uriField] = KdbxTextField.fromText(
+      text: uri.toString(),
+      protected: true,
+    );
+  }
+
   void removeFromEntry(KdbxEntry entry) {
+    for (final key in [_kTotpField, AppConstants.otpField]) {
+      if (_otpAuthFromField(entry, key) != null) entry.fields.remove(key);
+    }
+    if (_loadSeedFields(entry) != null) {
+      entry.fields.remove(AppConstants.totpSeedField);
+      entry.fields.remove(AppConstants.totpSettingsField);
+    }
     for (final key in [
       _kSecretBase32,
       _kSecretHex,
@@ -170,8 +211,8 @@ class TotpService {
     cd.map.remove(_kAlgorithm);
   }
 
-  String generateCode(TotpConfig config) {
-    final now = DateTime.now().millisecondsSinceEpoch;
+  String generateCode(TotpConfig config, {DateTime? at}) {
+    final now = (at ?? DateTime.now()).millisecondsSinceEpoch;
     final secret =
         _normalizeSecret(config.secret, _SecretEncoding.base32) ??
         config.secret;
@@ -190,29 +231,27 @@ class TotpService {
   /// Must use the wall clock — `OTP.remainingSeconds` reads the package's
   /// static `lastUsedTime`, which only advances when a code is generated,
   /// so a pure countdown would freeze until the next HMAC.
-  int remainingSeconds(TotpConfig config) {
-    final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  int remainingSeconds(TotpConfig config, {DateTime? at}) {
+    final nowSec = (at ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
     return config.period - (nowSec % config.period);
   }
+
+  int timeWindow(TotpConfig config, DateTime at) =>
+      at.millisecondsSinceEpoch ~/ (config.period * 1000);
 
   TotpConfig? parseUri(String input) {
     final uri = input.trim();
     if (uri.startsWith('otpauth://')) {
       return _parseOtpAuthUri(uri);
     }
-    if (_looksLikeBase32(uri)) {
-      return TotpConfig(
-        secret: uri.replaceAll(' ', '').replaceAll('-', ''),
-      );
-    }
-    return null;
+    return _validatedConfig(
+      secret: _normalizeSecret(uri, _SecretEncoding.base32),
+    );
   }
 
-  TotpConfig? _otpAuthFromTotpField(KdbxEntry entry) {
-    final raw = entry.fields[_kTotpField]?.text;
-    if (raw == null || raw.isEmpty) return null;
-    if (!raw.startsWith('otpauth://')) return null;
-    return parseUri(raw);
+  TotpConfig? _otpAuthFromField(KdbxEntry entry, String key) {
+    final raw = _readString(entry, key);
+    return raw == null ? null : _parseOtpAuthUri(raw);
   }
 
   ({String value, _SecretEncoding encoding})? _fieldSecretSource(
@@ -244,16 +283,6 @@ class TotpService {
     return t.isEmpty ? null : t;
   }
 
-  int? _readInt(KdbxEntry entry, String key) {
-    final s = _readString(entry, key);
-    if (s == null) return null;
-    final parsed = int.tryParse(s);
-    if (parsed != null && parsed > 0) return parsed;
-    final cd = entry.customData?.map[key]?.value;
-    if (cd == null) return null;
-    return int.tryParse(cd);
-  }
-
   /// Converts any supported secret encoding into the Base32 form required
   /// by the `otp` package. Returns null when the payload cannot be decoded.
   String? _normalizeSecret(String secret, _SecretEncoding encoding) {
@@ -264,7 +293,9 @@ class TotpService {
           .replaceAll('-', '');
       switch (encoding) {
         case _SecretEncoding.base32:
-          final stripped = cleaned.replaceAll('=', '').toUpperCase();
+          final stripped = cleaned
+              .replaceFirst(RegExp(r'=+$'), '')
+              .toUpperCase();
           if (stripped.isEmpty) return null;
           if (!_looksLikeBase32(stripped)) return null;
           return stripped;
@@ -319,61 +350,77 @@ class TotpService {
     return out;
   }
 
-  TotpConfig? _parseOtpAuthUri(String uriStr) {
-    final uri = Uri.tryParse(uriStr);
+  TotpConfig? _parseOtpAuthUri(String input) {
+    if (!input.startsWith('otpauth://')) return null;
+    final uri = Uri.tryParse(input);
     if (uri == null || uri.scheme != 'otpauth' || uri.host != 'totp') {
       return null;
     }
 
-    String? secret;
-    int period = 30;
-    int digits = 6;
-    String algorithm = 'SHA1';
-    String? issuer;
-    String? accountName;
-
-    secret = uri.queryParameters['secret'];
-    if (secret == null || secret.isEmpty) return null;
-    secret = secret.replaceAll(' ', '').replaceAll('-', '');
-    if (!_looksLikeBase32(secret)) return null;
-
-    final p = uri.queryParameters['period'];
-    if (p != null) period = int.tryParse(p) ?? 30;
-
-    final d = uri.queryParameters['digits'];
-    if (d != null) digits = int.tryParse(d) ?? 6;
-
-    final a = uri.queryParameters['algorithm'];
-    if (a != null) algorithm = a;
-
-    issuer = uri.queryParameters['issuer'];
-
-    final path = uri.path;
-    if (path.isNotEmpty && path.startsWith('/')) {
-      final label = Uri.decodeComponent(path.substring(1));
-      final parts = label.split(':');
-      if (parts.length >= 2) {
-        issuer ??= parts[0];
-        accountName = parts.sublist(1).join(':');
-      } else {
-        accountName = label;
-      }
+    try {
+      final parameters = uri.queryParameters;
+      final raw = parameters['secret'];
+      final encoder = parameters['encoder'];
+      if (raw == null || (encoder != null && encoder.isNotEmpty)) return null;
+      final label = uri.pathSegments.join('/');
+      final separator = label.indexOf(':');
+      return _validatedConfig(
+        secret: _normalizeSecret(raw, _SecretEncoding.base32),
+        period: parameters['period'],
+        digits: parameters['digits'],
+        algorithm: parameters['algorithm'],
+        issuer:
+            parameters['issuer'] ??
+            (separator < 0 ? null : label.substring(0, separator)),
+        accountName: label.isEmpty ? null : label.substring(separator + 1),
+      );
+    } on FormatException {
+      return null;
+    } on ArgumentError {
+      return null;
     }
+  }
 
+  TotpConfig? _validatedConfig({
+    required String? secret,
+    String? period,
+    String? digits,
+    String? algorithm,
+    String? issuer,
+    String? accountName,
+  }) {
+    final step = period == null ? 30 : int.tryParse(period.trim());
+    final length = digits == null ? 6 : int.tryParse(digits.trim());
+    final hash = switch (algorithm?.trim().toUpperCase()) {
+      null || 'SHA1' || 'HMAC-SHA-1' => 'SHA1',
+      'SHA256' || 'HMAC-SHA-256' => 'SHA256',
+      'SHA512' || 'HMAC-SHA-512' => 'SHA512',
+      _ => null,
+    };
+    if (secret == null ||
+        step == null ||
+        step < 1 ||
+        step > 86400 ||
+        length == null ||
+        length < 1 ||
+        length > 10 ||
+        hash == null) {
+      return null;
+    }
     return TotpConfig(
       secret: secret,
-      period: period,
-      digits: digits,
-      algorithm: algorithm,
+      period: step,
+      digits: length,
+      algorithm: hash,
       issuer: issuer,
       accountName: accountName,
     );
   }
 
   bool _looksLikeBase32(String s) {
-    final cleaned = s.replaceAll(' ', '').replaceAll('-', '');
-    if (cleaned.length < 16) return false;
-    return RegExp(r'^[A-Za-z2-7]+=*$').hasMatch(cleaned);
+    return s.isNotEmpty &&
+        const {0, 2, 4, 5, 7}.contains(s.length % 8) &&
+        RegExp(r'^[A-Z2-7]+$').hasMatch(s);
   }
 
   String _toKeePassAlgorithm(String algo) {

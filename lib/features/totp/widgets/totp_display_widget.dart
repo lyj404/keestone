@@ -22,6 +22,7 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
   TotpConfig? _config;
   String _code = '';
   int _remaining = 0;
+  int? _window;
 
   @override
   void initState() {
@@ -67,9 +68,6 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
     }
   }
 
-  /// Called once per second by the shared ticker. The code only changes when
-  /// the period wraps (remaining jumps back up), so the HMAC is recomputed
-  /// once per period instead of on every tick.
   void _onTick() {
     _updateCode();
   }
@@ -77,15 +75,18 @@ class _TotpDisplayWidgetState extends ConsumerState<TotpDisplayWidget> {
   void _updateCode({bool force = false}) {
     final config = _config;
     if (config == null) return;
-    final newRemaining = _totpService.remainingSeconds(config);
+    final now = DateTime.now();
+    final newRemaining = _totpService.remainingSeconds(config, at: now);
+    final window = _totpService.timeWindow(config, now);
     String newCode;
     try {
-      newCode = force || newRemaining > _remaining
-          ? _totpService.generateCode(config)
+      newCode = force || window != _window
+          ? _totpService.generateCode(config, at: now)
           : _code;
     } catch (_) {
       newCode = '';
     }
+    _window = window;
     if (mounted && (newCode != _code || newRemaining != _remaining)) {
       setState(() {
         _code = newCode;

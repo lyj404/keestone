@@ -41,6 +41,8 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
   int _period = 30;
   int _digits = 6;
   String _algorithm = 'SHA1';
+  String? _issuer;
+  String? _accountName;
   bool _isUriMode = true;
 
   @override
@@ -57,6 +59,8 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
       _period = widget.initial!.period;
       _digits = widget.initial!.digits;
       _algorithm = widget.initial!.algorithm;
+      _issuer = widget.initial!.issuer;
+      _accountName = widget.initial!.accountName;
       _isUriMode = false;
     }
   }
@@ -81,6 +85,8 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
         _period = config.period;
         _digits = config.digits;
         _algorithm = config.algorithm;
+        _issuer = config.issuer;
+        _accountName = config.accountName;
         _isUriMode = false;
       });
     } else {
@@ -100,17 +106,25 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
   }
 
   void _submit() {
-    final secret = _secretCtrl.text.trim().replaceAll(' ', '');
     final title = _titleCtrl.text.trim();
-    if (secret.isEmpty || title.isEmpty) return;
+    if (_secretCtrl.text.trim().isEmpty || title.isEmpty) return;
+    final parsed = TotpService().parseUri(_secretCtrl.text);
+    if (parsed == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.totpInvalidUri)));
+      return;
+    }
     Navigator.pop(
       context,
       TotpEditResult(
         TotpConfig(
-          secret: secret,
+          secret: parsed.secret,
           period: _period,
           digits: _digits,
           algorithm: _algorithm,
+          issuer: _issuer,
+          accountName: _accountName,
         ),
         title: title,
       ),
@@ -211,10 +225,18 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                         vertical: 12,
                       ),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 15, child: Text('15s')),
-                      DropdownMenuItem(value: 30, child: Text('30s')),
-                      DropdownMenuItem(value: 60, child: Text('60s')),
+                    items: [
+                      for (final period in {
+                        15,
+                        30,
+                        60,
+                        ?widget.initial?.period,
+                        _period,
+                      }.toList()..sort())
+                        DropdownMenuItem(
+                          value: period,
+                          child: Text('${period}s'),
+                        ),
                     ],
                     onChanged: (v) => setState(() => _period = v ?? 30),
                   ),
@@ -231,9 +253,14 @@ class _TotpEditSheetState extends State<_TotpEditSheet> {
                         vertical: 12,
                       ),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 6, child: Text('6')),
-                      DropdownMenuItem(value: 8, child: Text('8')),
+                    items: [
+                      for (final digits in {
+                        6,
+                        8,
+                        ?widget.initial?.digits,
+                        _digits,
+                      }.toList()..sort())
+                        DropdownMenuItem(value: digits, child: Text('$digits')),
                     ],
                     onChanged: (v) => setState(() => _digits = v ?? 6),
                   ),

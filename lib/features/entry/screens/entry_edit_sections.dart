@@ -191,7 +191,12 @@ extension _EntryEditSections on _EntryEditScreenState {
                       ],
                     ),
                   );
-                  if (confirmed == true) setState(() => _totpConfig = null);
+                  if (confirmed == true) {
+                    setState(() {
+                      _totpConfig = null;
+                      _totpChanged = true;
+                    });
+                  }
                   _onFormChanged();
                 },
               ),
@@ -237,7 +242,10 @@ extension _EntryEditSections on _EntryEditScreenState {
                       initialTitle: _titleCtrl.text,
                     );
                     if (result != null) {
-                      setState(() => _totpConfig = result.config);
+                      setState(() {
+                        _totpConfig = result.config;
+                        _totpChanged = true;
+                      });
                     }
                     _onFormChanged();
                   },
@@ -255,7 +263,10 @@ extension _EntryEditSections on _EntryEditScreenState {
                 onPressed: () async {
                   final result = await showTotpEditSheet(context);
                   if (result != null) {
-                    setState(() => _totpConfig = result.config);
+                    setState(() {
+                      _totpConfig = result.config;
+                      _totpChanged = true;
+                    });
                   }
                   _onFormChanged();
                 },

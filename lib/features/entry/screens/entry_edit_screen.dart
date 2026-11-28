@@ -77,6 +77,7 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
   bool _expires = false;
   DateTime? _expiryDate;
   TotpConfig? _totpConfig;
+  bool _totpChanged = false;
   final _totpService = TotpService();
   DatabaseService? _databaseService;
 
@@ -573,10 +574,13 @@ class _EntryEditScreenState extends ConsumerState<EntryEditScreen> {
     entry.tags = _tags.isEmpty ? null : List.from(_tags);
 
     // Save TOTP
-    if (_totpConfig != null) {
-      _totpService.saveToEntry(entry, _totpConfig!);
-    } else if (_isEdit) {
-      _totpService.removeFromEntry(entry);
+    if (_totpChanged) {
+      final config = _totpConfig;
+      if (config == null) {
+        _totpService.removeFromEntry(entry);
+      } else {
+        _totpService.replaceInEntry(entry, config);
+      }
     }
 
     _saved = true;

@@ -9,14 +9,115 @@ KdbxEntry _emptyEntry() {
     icon: KdbxIcon.folder,
     id: KdbxUuid.random(),
   );
-  return KdbxEntry.create(
-    parent: group,
-    meta: meta,
-    id: KdbxUuid.random(),
-  );
+  return KdbxEntry.create(parent: group, meta: meta, id: KdbxUuid.random());
 }
 
 void main() {
+  const sampleSeed = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  final fixedTime = DateTime.fromMillisecondsSinceEpoch(59000, isUtc: true);
+
+  group('TOTP from external KDBX fields', () {
+    final service = TotpService();
+
+    test('reads a protected otp URI with its custom options', () {
+      final entry = _emptyEntry();
+      entry.fields['otp'] = KdbxTextField.fromText(
+        text:
+            '  otpauth://totp/Test:Account%252Fname'
+            '?secret=$sampleSeed&period=29&digits=8&algorithm=SHA1  ',
+        protected: true,
+      );
+
+      expect(service.hasTotp(entry), isTrue);
+      final config = service.loadFromEntry(entry)!;
+      expect(config.accountName, 'Account%2Fname');
+      expect(config.issuer, 'Test');
+      expect(config.period, 29);
+      expect(service.remainingSeconds(config, at: fixedTime), 28);
+      expect(service.timeWindow(config, fixedTime), 2);
+      final nextStep = fixedTime.add(const Duration(seconds: 29));
+      expect(service.remainingSeconds(config, at: nextStep), 28);
+      expect(service.timeWindow(config, nextStep), 3);
+    });
+
+    test('reads seed settings and falls back past an invalid URI', () {
+      final entry = _emptyEntry();
+      entry.fields['otp'] = KdbxTextField.fromText(
+        text: 'otpauth://totp/Test?secret=$sampleSeed&period=0',
+      );
+      entry.fields['TOTP Seed'] = KdbxTextField.fromText(text: sampleSeed);
+      entry.fields['TOTP Settings'] = KdbxTextField.fromText(text: '30;8');
+
+      final config = service.loadFromEntry(entry)!;
+      expect(config.period, 30);
+      expect(config.digits, 8);
+      expect(service.generateCode(config, at: fixedTime), '94287082');
+      entry.fields.remove('TOTP Settings');
+      expect(
+        service.generateCode(service.loadFromEntry(entry)!, at: fixedTime),
+        '287082',
+      );
+    });
+
+    test('matches RFC 6238 vectors for SHA-256 and SHA-512', () {
+      const seedBlock = 'GEZDGNBVGY3TQOJQ';
+      final vectors = {
+        'SHA256': ('$seedBlock$seedBlock${seedBlock}GEZA====', '46119246'),
+        'SHA512': ('${List.filled(6, seedBlock).join()}GEZDGNA=', '90693936'),
+      };
+      for (final MapEntry(key: algorithm, value: (seed, expected))
+          in vectors.entries) {
+        final entry = _emptyEntry();
+        entry.fields['otp'] = KdbxTextField.fromText(
+          text:
+              'otpauth://totp/Test?secret=$seed&digits=8&algorithm=$algorithm',
+        );
+        expect(
+          service.generateCode(service.loadFromEntry(entry)!, at: fixedTime),
+          expected,
+        );
+      }
+    });
+
+    test('does not enumerate malformed or unsupported TOTP', () {
+      for (final uri in [
+        'otpauth://totp/Test?secret=ABC0',
+        'otpauth://totp/Test?secret=A',
+        'otpauth://totp/Test?secret=$sampleSeed&digits=-1',
+        'otpauth://totp/Test?secret=$sampleSeed&algorithm=MD5',
+        'otpauth://totp/Test?secret=$sampleSeed&encoder=steam',
+        'otpauth://totp/Test?secret=%FF',
+        'otpauth://hotp/Test?secret=$sampleSeed',
+      ]) {
+        final entry = _emptyEntry();
+        entry.fields['otp'] = KdbxTextField.fromText(text: uri);
+        expect(service.hasTotp(entry), isFalse, reason: uri);
+        expect(service.loadFromEntry(entry), isNull, reason: uri);
+      }
+    });
+
+    test('replaces recognized formats and removes all valid fallbacks', () {
+      final entry = _emptyEntry();
+      entry.fields['otp'] = KdbxTextField.fromText(
+        text: 'otpauth://totp/Test?secret=$sampleSeed',
+      );
+      entry.fields['TOTP Seed'] = KdbxTextField.fromText(text: sampleSeed);
+      entry.fields['TOTP Settings'] = KdbxTextField.fromText(text: '30;6');
+      const config = TotpConfig(secret: sampleSeed, period: 45, digits: 8);
+
+      service.replaceInEntry(entry, config);
+      expect(entry.fields['otp'], isA<ProtectedTextField>());
+      expect(service.parseUri(entry.fields['otp']!.text)?.period, 45);
+      expect(entry.fields, isNot(contains('TOTP Seed')));
+      expect(entry.fields, isNot(contains('TimeOtp-Period')));
+      expect(service.loadFromEntry(entry)?.digits, 8);
+
+      service.removeFromEntry(entry);
+      expect(service.hasTotp(entry), isFalse);
+      expect(entry.fields, isNot(contains('otp')));
+    });
+  });
+
   group('TotpService remainingSeconds', () {
     test('derives remaining from wall clock, not OTP.lastUsedTime', () {
       final service = TotpService();
@@ -84,7 +185,8 @@ void main() {
     test('detects otpauth URI stored in TOTP custom field', () {
       final entry = _emptyEntry();
       entry.fields['TOTP'] = KdbxTextField.fromText(
-        text: 'otpauth://totp/GitHub:alice%40example.com'
+        text:
+            'otpauth://totp/GitHub:alice%40example.com'
             '?secret=JBSWY3DPEHPK3PXP&issuer=GitHub',
       );
 

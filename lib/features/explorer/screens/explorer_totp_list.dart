@@ -20,6 +20,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
   String _query = '';
   Timer? _debounce;
   List<KdbxEntry>? _totpCache;
+  KdbxDatabase? _cacheDatabase;
   int _cacheRevision = -1;
   String _cacheQuery = '';
 
@@ -96,16 +97,16 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
   @override
   Widget build(BuildContext context) {
     final revision = ref.watch(explorerListRevisionProvider);
+    final database = ref.watch(databaseProvider).value;
     final service = ref.read(databaseServiceProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // Filter with the cheap hasTotp check only; full config parsing is
-    // deferred to each _TotpListTile so per-build cost stays low. The result
-    // is memoized per (revision, query) so keystrokes and unrelated rebuilds
-    // do not rescan the vault.
     final List<KdbxEntry> totpEntries;
     final cached = _totpCache;
-    if (cached != null && _cacheRevision == revision && _cacheQuery == _query) {
+    if (cached != null &&
+        identical(_cacheDatabase, database) &&
+        _cacheRevision == revision &&
+        _cacheQuery == _query) {
       totpEntries = cached;
     } else {
       final q = _query.toLowerCase();
@@ -121,6 +122,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
         filtered.add(entry);
       }
       _totpCache = filtered;
+      _cacheDatabase = database;
       _cacheRevision = revision;
       _cacheQuery = _query;
       totpEntries = filtered;
@@ -182,6 +184,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
                       child: _TotpListTile(
                         key: ValueKey(entry.uuid),
                         entry: entry,
+                        revision: revision,
                         totpService: widget.totpService,
                         onTap: () => widget.onEntryOpen(entry),
                         onDelete: () => _deleteTotpEntry(entry),
@@ -197,6 +200,7 @@ class _MobileTotpTabState extends ConsumerState<_MobileTotpTab> {
 
 class _TotpListTile extends StatefulWidget {
   final KdbxEntry entry;
+  final int revision;
   final TotpService totpService;
   final VoidCallback onTap;
   final VoidCallback onDelete;
@@ -204,6 +208,7 @@ class _TotpListTile extends StatefulWidget {
   const _TotpListTile({
     super.key,
     required this.entry,
+    required this.revision,
     required this.totpService,
     required this.onTap,
     required this.onDelete,
@@ -217,6 +222,7 @@ class _TotpListTileState extends State<_TotpListTile> {
   TotpConfig? _config;
   String _code = '';
   int _remaining = 0;
+  int? _window;
 
   @override
   void initState() {
@@ -227,7 +233,8 @@ class _TotpListTileState extends State<_TotpListTile> {
   @override
   void didUpdateWidget(covariant _TotpListTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(widget.entry, oldWidget.entry)) {
+    if (!identical(widget.entry, oldWidget.entry) ||
+        widget.revision != oldWidget.revision) {
       TotpTicker.instance.removeListener(_onTick);
       _config = null;
       _code = '';
@@ -256,24 +263,22 @@ class _TotpListTileState extends State<_TotpListTile> {
 
   void _onTick() => _updateCode();
 
-  /// Called once per second by the shared ticker. The code only changes when
-  /// the period wraps (remaining jumps back up), so the HMAC is recomputed
-  /// once per period instead of on every tick.
-  ///
-  /// A bad secret must not throw out of initState/build — that used to leave
-  /// the tile (and sometimes the list below it) as an unpainted gray hole.
   void _updateCode({bool force = false}) {
     final config = _config;
     if (config == null) return;
-    final newRemaining = widget.totpService.remainingSeconds(config);
+    final now = DateTime.now();
+    final service = widget.totpService;
+    final newRemaining = service.remainingSeconds(config, at: now);
+    final window = service.timeWindow(config, now);
     String newCode;
     try {
-      newCode = force || newRemaining > _remaining
-          ? widget.totpService.generateCode(config)
+      newCode = force || window != _window
+          ? service.generateCode(config, at: now)
           : _code;
     } catch (_) {
       newCode = '';
     }
+    _window = window;
     if (mounted && (newCode != _code || newRemaining != _remaining)) {
       setState(() {
         _code = newCode;
